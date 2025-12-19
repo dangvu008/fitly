@@ -1,0 +1,156 @@
+export type Language = 'vi' | 'en';
+
+export const translations = {
+  vi: {
+    // Common
+    app_name: 'Thử Đồ AI',
+    loading: 'Đang tải...',
+    save: 'Lưu',
+    cancel: 'Hủy',
+    delete: 'Xóa',
+    share: 'Chia sẻ',
+    download: 'Tải xuống',
+    close: 'Đóng',
+    retry: 'Thử lại',
+    
+    // Navigation
+    nav_home: 'Trang chủ',
+    nav_tryon: 'Thử đồ',
+    nav_history: 'Lịch sử',
+    nav_favorites: 'Yêu thích',
+    nav_profile: 'Hồ sơ',
+    nav_compare: 'So sánh',
+    nav_suggest: 'Gợi ý',
+    
+    // Auth
+    login: 'Đăng nhập',
+    signup: 'Đăng ký',
+    logout: 'Đăng xuất',
+    email: 'Email',
+    password: 'Mật khẩu',
+    
+    // Try-on page
+    tryon_title: 'Thử đồ với AI',
+    tryon_upload_body: 'Tải ảnh toàn thân',
+    tryon_change_photo: 'Đổi ảnh',
+    tryon_upload_photo: 'Tải ảnh',
+    tryon_select_clothing: 'Chọn quần áo để thử đồ với AI',
+    tryon_ai_button: 'Thử đồ với AI',
+    tryon_processing: 'Đang xử lý AI...',
+    tryon_result_title: 'Kết quả thử đồ AI',
+    tryon_saving: 'Đang lưu...',
+    
+    // Outfit slots
+    outfit_selected: 'Outfit đã chọn',
+    outfit_complete: 'Hoàn chỉnh!',
+    outfit_hint: 'Chọn quần áo để tạo outfit thử đồ với AI',
+    slot_top: 'Áo',
+    slot_bottom: 'Quần',
+    slot_dress: 'Đầm',
+    slot_shoes: 'Giày',
+    slot_accessory: 'Phụ kiện',
+    
+    // Categories
+    cat_all: 'Tất cả',
+    cat_top: 'Áo',
+    cat_bottom: 'Quần',
+    cat_dress: 'Đầm',
+    cat_shoes: 'Giày',
+    cat_accessory: 'Phụ kiện',
+    
+    // Messages
+    msg_upload_success: 'Đã tải ảnh thành công!',
+    msg_item_selected: 'Đã chọn',
+    msg_item_removed: 'Đã xóa',
+    msg_saved: 'Đã lưu thành công!',
+    msg_shared: 'Đã sao chép link chia sẻ!',
+    msg_downloaded: 'Đã tải ảnh xuống!',
+    msg_login_required: 'Vui lòng đăng nhập để lưu kết quả',
+    msg_no_result: 'Chưa có kết quả để lưu',
+    msg_upload_body_first: 'Vui lòng tải ảnh toàn thân trước',
+    msg_select_clothing: 'Vui lòng chọn ít nhất một món đồ để thử',
+    msg_tryon_success: 'Đã tạo hình ảnh thử đồ thành công!',
+    msg_image_load_error: 'Không thể tải hình ảnh',
+    
+    // Settings
+    language: 'Ngôn ngữ',
+    theme: 'Giao diện',
+  },
+  en: {
+    // Common
+    app_name: 'AI Try-On',
+    loading: 'Loading...',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    share: 'Share',
+    download: 'Download',
+    close: 'Close',
+    retry: 'Retry',
+    
+    // Navigation
+    nav_home: 'Home',
+    nav_tryon: 'Try-On',
+    nav_history: 'History',
+    nav_favorites: 'Favorites',
+    nav_profile: 'Profile',
+    nav_compare: 'Compare',
+    nav_suggest: 'Suggest',
+    
+    // Auth
+    login: 'Login',
+    signup: 'Sign Up',
+    logout: 'Logout',
+    email: 'Email',
+    password: 'Password',
+    
+    // Try-on page
+    tryon_title: 'AI Try-On',
+    tryon_upload_body: 'Upload body photo',
+    tryon_change_photo: 'Change photo',
+    tryon_upload_photo: 'Upload photo',
+    tryon_select_clothing: 'Select clothing to try on with AI',
+    tryon_ai_button: 'Try on with AI',
+    tryon_processing: 'AI Processing...',
+    tryon_result_title: 'AI Try-On Result',
+    tryon_saving: 'Saving...',
+    
+    // Outfit slots
+    outfit_selected: 'Selected outfit',
+    outfit_complete: 'Complete!',
+    outfit_hint: 'Select clothing to create outfit for AI try-on',
+    slot_top: 'Top',
+    slot_bottom: 'Bottom',
+    slot_dress: 'Dress',
+    slot_shoes: 'Shoes',
+    slot_accessory: 'Accessory',
+    
+    // Categories
+    cat_all: 'All',
+    cat_top: 'Tops',
+    cat_bottom: 'Bottoms',
+    cat_dress: 'Dresses',
+    cat_shoes: 'Shoes',
+    cat_accessory: 'Accessories',
+    
+    // Messages
+    msg_upload_success: 'Photo uploaded successfully!',
+    msg_item_selected: 'Selected',
+    msg_item_removed: 'Removed',
+    msg_saved: 'Saved successfully!',
+    msg_shared: 'Share link copied!',
+    msg_downloaded: 'Photo downloaded!',
+    msg_login_required: 'Please login to save results',
+    msg_no_result: 'No result to save',
+    msg_upload_body_first: 'Please upload a body photo first',
+    msg_select_clothing: 'Please select at least one clothing item',
+    msg_tryon_success: 'Try-on image created successfully!',
+    msg_image_load_error: 'Failed to load image',
+    
+    // Settings
+    language: 'Language',
+    theme: 'Theme',
+  },
+} as const;
+
+export type TranslationKey = keyof typeof translations.vi;

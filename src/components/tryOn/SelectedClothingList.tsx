@@ -3,6 +3,8 @@ import { X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { TranslationKey } from '@/i18n/translations';
 
 interface SelectedClothingListProps {
   items: ClothingItem[];
@@ -11,15 +13,17 @@ interface SelectedClothingListProps {
 
 type OutfitCategory = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory';
 
-const outfitSlots: { category: OutfitCategory; label: string; icon: string }[] = [
-  { category: 'top', label: 'Áo', icon: '👕' },
-  { category: 'bottom', label: 'Quần', icon: '👖' },
-  { category: 'dress', label: 'Đầm', icon: '👗' },
-  { category: 'shoes', label: 'Giày', icon: '👟' },
-  { category: 'accessory', label: 'Phụ kiện', icon: '👜' },
+const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: string }[] = [
+  { category: 'top', labelKey: 'slot_top', icon: '👕' },
+  { category: 'bottom', labelKey: 'slot_bottom', icon: '👖' },
+  { category: 'dress', labelKey: 'slot_dress', icon: '👗' },
+  { category: 'shoes', labelKey: 'slot_shoes', icon: '👟' },
+  { category: 'accessory', labelKey: 'slot_accessory', icon: '👜' },
 ];
 
 export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListProps) => {
+  const { t } = useLanguage();
+  
   // Track newly added items for animation
   const [animatingItems, setAnimatingItems] = useState<Set<string>>(new Set());
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
@@ -116,13 +120,13 @@ export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListPr
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground font-medium">
-          Outfit đã chọn
+          {t('outfit_selected')}
         </p>
         <div className="flex items-center gap-1.5">
           {isOutfitComplete && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-primary animate-scale-in">
               <Sparkles size={12} className="animate-pulse" />
-              Hoàn chỉnh!
+              {t('outfit_complete')}
             </span>
           )}
           <span className={cn(
@@ -189,7 +193,7 @@ export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListPr
                 "text-[10px] font-medium transition-colors duration-200",
                 item ? "text-primary" : "text-muted-foreground"
               )}>
-                {slot.label}
+                {t(slot.labelKey)}
               </span>
             </div>
           );
@@ -198,7 +202,7 @@ export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListPr
 
       {selectedCount === 0 && (
         <p className="text-center text-xs text-muted-foreground py-2 animate-fade-in">
-          Chọn quần áo để tạo outfit thử đồ với AI
+          {t('outfit_hint')}
         </p>
       )}
     </div>
