@@ -77,13 +77,12 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   };
 
   const handleAddClothing = (item: ClothingItem) => {
-    // Check if already selected
-    if (selectedItems.find(i => i.id === item.id)) {
-      toast.info('Món đồ này đã được chọn');
-      return;
-    }
-    setSelectedItems(prev => [...prev, item]);
-    toast.success(`Đã thêm ${item.name}`);
+    // Replace item of same category or add new
+    setSelectedItems(prev => {
+      const filtered = prev.filter(i => i.category !== item.category);
+      return [...filtered, item];
+    });
+    toast.success(`Đã chọn ${item.name}`);
   };
 
   const handleRemoveClothing = (id: string) => {
