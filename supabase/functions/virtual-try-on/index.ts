@@ -29,7 +29,7 @@ serve(async (req) => {
     console.log('Starting virtual try-on process...');
     console.log('Clothing item:', clothingName);
 
-    // Use Lovable AI Gateway with image editing model
+    // Use Lovable AI Gateway with next-gen image model
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -37,37 +37,25 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: "google/gemini-3-pro-image-preview",
         messages: [
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: `You are a professional fashion stylist and image editor. Your task is to create a realistic virtual try-on image.
-
-Take the person from the first image and dress them in the clothing item from the second image (${clothingName || 'clothing item'}). 
-
-Instructions:
-1. Keep the person's face, body pose, and proportions exactly as they are
-2. Replace or overlay the appropriate clothing with the item from the second image
-3. Make sure the clothing fits naturally on the body
-4. Maintain realistic lighting, shadows, and fabric draping
-5. The result should look like a real photograph of the person wearing the clothing
-6. Keep the background similar to the original photo
-
-Create a photorealistic result that looks natural and professionally styled.`
+                text: `Generate a virtual try-on image: Take the person in the first photo and dress them in the ${clothingName || 'clothing item'} shown in the second photo. Keep the person's face, pose and background. Make the clothing fit naturally with realistic shadows.`
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: bodyImage // Base64 or URL of body image
+                  url: bodyImage
                 }
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: clothingImage // Base64 or URL of clothing image
+                  url: clothingImage
                 }
               }
             ]
@@ -98,7 +86,12 @@ Create a photorealistic result that looks natural and professionally styled.`
     }
 
     const data = await response.json();
-    console.log('AI response received');
+    console.log('AI response structure:', JSON.stringify({
+      hasChoices: !!data.choices,
+      messageKeys: data.choices?.[0]?.message ? Object.keys(data.choices[0].message) : [],
+      hasImages: !!data.choices?.[0]?.message?.images,
+      imageCount: data.choices?.[0]?.message?.images?.length || 0
+    }));
 
     // Extract the generated image from the response
     const message = data.choices?.[0]?.message;
