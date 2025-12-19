@@ -15,8 +15,13 @@ export const TryOnCanvas = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onBodyImageChange) {
-      const imageUrl = URL.createObjectURL(file);
-      onBodyImageChange(imageUrl);
+      // Convert to base64 instead of blob URL for AI compatibility
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Url = event.target?.result as string;
+        onBodyImageChange(base64Url);
+      };
+      reader.readAsDataURL(file);
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
