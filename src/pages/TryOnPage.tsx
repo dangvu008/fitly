@@ -8,6 +8,8 @@ import { TryOnToolbar } from '@/components/tryOn/TryOnToolbar';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAITryOn } from '@/hooks/useAITryOn';
+import { useTryOnHistory } from '@/hooks/useTryOnHistory';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface ClothingOverlay {
@@ -35,8 +37,11 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   const [activeCategory, setActiveCategory] = useState<ClothingCategory>('top');
   const [clothing] = useState(sampleClothing);
   const [aiResultImage, setAiResultImage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
+  const { saveTryOnResult } = useTryOnHistory();
+  const { user } = useAuth();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
@@ -197,8 +202,25 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
     }
   };
 
-  const handleSave = () => {
-    toast.success('Đã lưu vào bộ sưu tập!');
+  const handleSave = async () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để lưu kết quả');
+      return;
+    }
+    
+    if (!bodyImage || !aiResultImage) {
+      toast.info('Chưa có kết quả để lưu');
+      return;
+    }
+    
+    setIsSaving(true);
+    const clothingItems = overlays.map(o => ({
+      name: o.item.name,
+      imageUrl: o.item.imageUrl,
+    }));
+    
+    await saveTryOnResult(user.id, bodyImage, aiResultImage, clothingItems);
+    setIsSaving(false);
   };
 
   const handleShare = () => {
@@ -273,9 +295,14 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
                   variant="default"
                   className="flex-1"
                   onClick={handleSave}
+                  disabled={isSaving}
                 >
-                  <Save size={16} />
-                  Lưu
+                  {isSaving ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Save size={16} />
+                  )}
+                  {isSaving ? 'Đang lưu...' : 'Lưu'}
                 </Button>
                 <Button
                   variant="accent"

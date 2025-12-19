@@ -11,7 +11,11 @@ interface Profile {
   avatar_url: string | null;
 }
 
-export const ProfilePage = () => {
+interface ProfilePageProps {
+  onNavigateToHistory?: () => void;
+}
+
+export const ProfilePage = ({ onNavigateToHistory }: ProfilePageProps) => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -58,7 +62,11 @@ export const ProfilePage = () => {
   ];
 
   const handleMenuClick = (label: string) => {
-    toast.info(`Đang phát triển: ${label}`);
+    if (label === 'Lịch sử thử đồ' && onNavigateToHistory) {
+      onNavigateToHistory();
+    } else {
+      toast.info(`Đang phát triển: ${label}`);
+    }
   };
 
   const handleLogout = async () => {

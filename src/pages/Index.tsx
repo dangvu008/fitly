@@ -7,6 +7,7 @@ import { TryOnPage } from './TryOnPage';
 import { ComparePage } from './ComparePage';
 import { FavoritesPage } from './FavoritesPage';
 import { ProfilePage } from './ProfilePage';
+import { HistoryPage } from './HistoryPage';
 import { AuthPage } from './AuthPage';
 import { CompareProvider } from '@/contexts/CompareContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -19,6 +20,7 @@ const pageTitles: Record<string, string> = {
   compare: 'So sánh Outfit',
   favorites: 'Yêu thích',
   profile: 'Tài khoản',
+  history: 'Lịch sử thử đồ',
 };
 
 const MainApp = () => {
@@ -60,7 +62,9 @@ const MainApp = () => {
       case 'favorites':
         return <FavoritesPage onSelectItem={handleSelectItem} />;
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage onNavigateToHistory={() => setActiveTab('history')} />;
+      case 'history':
+        return <HistoryPage />;
       default:
         return null;
     }
