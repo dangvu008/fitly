@@ -29,95 +29,137 @@ serve(async (req) => {
     console.log('Starting virtual try-on process...');
     console.log('Clothing item:', clothingName);
 
-    // Use Lovable AI Gateway with next-gen image model
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    // Use Lovable AI Gateway (try multiple prompt/model variants for robustness)
+    const basePrompt = `Virtual try-on task.
+
+IMPORTANT:
+- IMAGE A is the person to dress (keep the same person, face, pose, body proportions, and background).
+- IMAGE B is ONLY a clothing reference (${clothingName || 'clothing item'}). If IMAGE B contains a person/mannequin, IGNORE their body/face entirely.
+- Transfer ONLY the clothing item from IMAGE B onto the person in IMAGE A.
+- Make it photorealistic with natural fabric drape, wrinkles, and realistic shadows/light.
+
+Return ONE final image.`;
+
+    const attempts: Array<{ model: string; prompt: string }> = [
+      {
         model: "google/gemini-3-pro-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Generate a virtual try-on image: Take the person in the first photo and dress them in the ${clothingName || 'clothing item'} shown in the second photo. Keep the person's face, pose and background. Make the clothing fit naturally with realistic shadows.`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: bodyImage
-                }
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: clothingImage
-                }
-              }
-            ]
-          }
-        ],
-        modalities: ["image", "text"]
-      }),
-    });
+        prompt: basePrompt,
+      },
+      {
+        // Fallback image model (often better for compositing/edit-like tasks)
+        model: "google/gemini-2.5-flash-image",
+        prompt: basePrompt + "\n\nBe extra strict: NEVER change the identity of the person in IMAGE A.",
+      },
+    ];
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Hết hạn mức sử dụng AI, vui lòng nạp thêm credits.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
+    let lastTextResponse: string | undefined;
 
-    const data = await response.json();
-    console.log('AI response structure:', JSON.stringify({
-      hasChoices: !!data.choices,
-      messageKeys: data.choices?.[0]?.message ? Object.keys(data.choices[0].message) : [],
-      hasImages: !!data.choices?.[0]?.message?.images,
-      imageCount: data.choices?.[0]?.message?.images?.length || 0
-    }));
+    for (let i = 0; i < attempts.length; i++) {
+      const { model, prompt } = attempts[i];
+      console.log(`AI attempt ${i + 1}/${attempts.length} with model:`, model);
 
-    // Extract the generated image from the response
-    const message = data.choices?.[0]?.message;
-    const generatedImage = message?.images?.[0]?.image_url?.url;
-    const textResponse = message?.content;
-
-    if (!generatedImage) {
-      console.error('No image generated in response:', JSON.stringify(data));
-      return new Response(
-        JSON.stringify({ 
-          error: 'Không thể tạo hình ảnh thử đồ. Vui lòng thử lại.',
-          textResponse 
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "text", text: "IMAGE A (person to dress):" },
+                { type: "image_url", image_url: { url: bodyImage } },
+                { type: "text", text: "IMAGE B (clothing reference ONLY):" },
+                { type: "image_url", image_url: { url: clothingImage } },
+              ],
+            },
+          ],
+          modalities: ["image", "text"],
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI Gateway error:', response.status, errorText);
+
+        // Surface these to the client as JSON (avoid non-2xx so the client can read the message)
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ success: false, code: 429, error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ success: false, code: 402, error: 'Hết hạn mức sử dụng AI, vui lòng nạp thêm credits.' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // If the first model fails (e.g., 400), try the fallback model once.
+        if (i < attempts.length - 1) {
+          console.log('Retrying with fallback model due to non-OK response...');
+          continue;
+        }
+
+        return new Response(
+          JSON.stringify({ success: false, error: `AI Gateway error: ${response.status}` }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      const message = data.choices?.[0]?.message;
+
+      console.log('AI response structure:', JSON.stringify({
+        hasChoices: !!data.choices,
+        messageKeys: message ? Object.keys(message) : [],
+        hasImages: !!message?.images,
+        imageCount: message?.images?.length || 0,
+      }));
+
+      const generatedImage = message?.images?.[0]?.image_url?.url;
+      lastTextResponse = message?.content;
+
+      if (generatedImage) {
+        console.log('Virtual try-on completed successfully');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            generatedImage,
+            message: lastTextResponse || 'Đã tạo hình ảnh thử đồ thành công!',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.error('No image generated in response:', JSON.stringify(data));
+
+      // If we have more attempts left, try again.
+      if (i < attempts.length - 1) {
+        console.log('No image returned; retrying with fallback model/prompt...');
+        continue;
+      }
+
+      // Surface AI failure as a readable JSON response (non-2xx would hide body from the client SDK)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Không thể tạo hình ảnh thử đồ. Vui lòng thử lại.',
+          textResponse: lastTextResponse,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Virtual try-on completed successfully');
-
+    // Should never reach here
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        generatedImage,
-        message: textResponse || 'Đã tạo hình ảnh thử đồ thành công!'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: 'Không thể tạo hình ảnh thử đồ. Vui lòng thử lại.' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
