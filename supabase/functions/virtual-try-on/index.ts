@@ -12,11 +12,14 @@ serve(async (req) => {
   }
 
   try {
-    const { bodyImage, clothingImage, clothingName } = await req.json();
+    const { bodyImage, clothingItems } = await req.json();
 
-    if (!bodyImage || !clothingImage) {
+    // Support both single item (legacy) and multiple items
+    const items: Array<{ imageUrl: string; name: string }> = clothingItems || [];
+
+    if (!bodyImage || items.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Both body image and clothing image are required' }),
+        JSON.stringify({ error: 'Body image and at least one clothing item are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -27,35 +30,48 @@ serve(async (req) => {
     }
 
     console.log('Starting virtual try-on process...');
-    console.log('Clothing item:', clothingName);
+    console.log('Clothing items:', items.map(i => i.name).join(', '));
+
+    // Build clothing description and image content for the prompt
+    const clothingNames = items.map(i => i.name).join(', ');
+    const clothingList = items.map((item, idx) => `${idx + 1}. ${item.name}`).join('\n');
 
     // Use Lovable AI Gateway (try multiple prompt/model variants for robustness)
     const basePrompt = `Virtual try-on task.
 
-IMPORTANT:
-- IMAGE A is the person to dress (keep the same person, face, pose, body proportions, and background).
-- IMAGE B is ONLY a clothing reference (${clothingName || 'clothing item'}). If IMAGE B contains a person/mannequin, IGNORE their body/face entirely.
-- Transfer ONLY the clothing item from IMAGE B onto the person in IMAGE A.
+IMPORTANT INSTRUCTIONS:
+- IMAGE A is the person to dress. KEEP the same person, face, pose, body proportions, and background EXACTLY.
+- The following images are clothing references ONLY: ${clothingNames}
+${clothingList}
+- If any clothing image contains a person/mannequin, IGNORE their body/face entirely - only use the clothing item itself.
+- Transfer ALL the clothing items onto the person in IMAGE A as a complete outfit.
 - Make it photorealistic with natural fabric drape, wrinkles, and realistic shadows/light.
+- The result should look like a real photo of the person wearing all these items together.
 
-Return ONE final image.`;
+Return ONE final image showing the person wearing the complete outfit.`;
 
-    const attempts: Array<{ model: string; prompt: string }> = [
-      {
-        model: "google/gemini-3-pro-image-preview",
-        prompt: basePrompt,
-      },
-      {
-        // Fallback image model (often better for compositing/edit-like tasks)
-        model: "google/gemini-2.5-flash-image",
-        prompt: basePrompt + "\n\nBe extra strict: NEVER change the identity of the person in IMAGE A.",
-      },
+    // Build content array with body image first, then all clothing images
+    const contentArray: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+      { type: "text", text: basePrompt },
+      { type: "text", text: "IMAGE A (person to dress - KEEP THIS PERSON):" },
+      { type: "image_url", image_url: { url: bodyImage } },
+    ];
+
+    // Add each clothing item
+    items.forEach((item, idx) => {
+      contentArray.push({ type: "text", text: `CLOTHING ${idx + 1} (${item.name}):` });
+      contentArray.push({ type: "image_url", image_url: { url: item.imageUrl } });
+    });
+
+    const attempts: Array<{ model: string }> = [
+      { model: "google/gemini-3-pro-image-preview" },
+      { model: "google/gemini-2.5-flash-image" },
     ];
 
     let lastTextResponse: string | undefined;
 
     for (let i = 0; i < attempts.length; i++) {
-      const { model, prompt } = attempts[i];
+      const { model } = attempts[i];
       console.log(`AI attempt ${i + 1}/${attempts.length} with model:`, model);
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -69,13 +85,7 @@ Return ONE final image.`;
           messages: [
             {
               role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "text", text: "IMAGE A (person to dress):" },
-                { type: "image_url", image_url: { url: bodyImage } },
-                { type: "text", text: "IMAGE B (clothing reference ONLY):" },
-                { type: "image_url", image_url: { url: clothingImage } },
-              ],
+              content: contentArray,
             },
           ],
           modalities: ["image", "text"],

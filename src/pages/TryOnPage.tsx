@@ -121,26 +121,32 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
       return;
     }
 
-    const clothingItem = selectedItems[0];
-    let clothingImageData = clothingItem.imageUrl;
+    // Convert all selected items to base64 if needed
+    const clothingItemsData: Array<{ imageUrl: string; name: string }> = [];
     
-    if (clothingItem.imageUrl.startsWith('http')) {
-      try {
-        const response = await fetch(clothingItem.imageUrl);
-        const blob = await response.blob();
-        clothingImageData = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      } catch (error) {
-        console.error('Error converting image:', error);
-        toast.error('Không thể tải hình ảnh quần áo');
-        return;
+    for (const item of selectedItems) {
+      let imageData = item.imageUrl;
+      
+      if (item.imageUrl.startsWith('http')) {
+        try {
+          const response = await fetch(item.imageUrl);
+          const blob = await response.blob();
+          imageData = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.error('Error converting image:', error);
+          toast.error(`Không thể tải hình ảnh ${item.name}`);
+          return;
+        }
       }
+      
+      clothingItemsData.push({ imageUrl: imageData, name: item.name });
     }
 
-    const result = await processVirtualTryOn(bodyImage, clothingImageData, clothingItem.name);
+    const result = await processVirtualTryOn(bodyImage, clothingItemsData);
     
     if (result?.success && result.generatedImage) {
       setAiResultImage(result.generatedImage);

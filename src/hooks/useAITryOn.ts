@@ -15,20 +15,18 @@ export const useAITryOn = () => {
 
   const processVirtualTryOn = async (
     bodyImage: string,
-    clothingImage: string,
-    clothingName?: string
+    clothingItems: Array<{ imageUrl: string; name: string }>
   ): Promise<TryOnResult | null> => {
     setIsProcessing(true);
     setResult(null);
 
     try {
-      console.log('Starting AI virtual try-on...');
+      console.log('Starting AI virtual try-on with', clothingItems.length, 'items...');
       
       const { data, error } = await supabase.functions.invoke('virtual-try-on', {
         body: {
           bodyImage,
-          clothingImage,
-          clothingName,
+          clothingItems,
         },
       });
 
