@@ -8,13 +8,15 @@ interface ClothingCardProps {
   onSelect?: (item: ClothingItem) => void;
   onToggleFavorite?: (item: ClothingItem) => void;
   size?: 'sm' | 'md' | 'lg';
+  isSelected?: boolean;
 }
 
 export const ClothingCard = ({ 
   item, 
   onSelect, 
   onToggleFavorite,
-  size = 'md' 
+  size = 'md',
+  isSelected = false,
 }: ClothingCardProps) => {
   const sizeClasses = {
     sm: 'w-16 h-16',
@@ -32,8 +34,11 @@ export const ClothingCard = ({
       <button
         onClick={() => onSelect?.(item)}
         className={cn(
-          "relative rounded-2xl overflow-hidden bg-card border border-border shadow-soft transition-all duration-300 hover:shadow-medium hover:scale-105 hover:border-primary/50",
-          sizeClasses[size]
+          "relative rounded-2xl overflow-hidden bg-card border shadow-soft transition-all duration-300 hover:shadow-medium hover:scale-105",
+          sizeClasses[size],
+          isSelected 
+            ? "border-primary ring-2 ring-primary shadow-glow" 
+            : "border-border hover:border-primary/50"
         )}
       >
         <img 

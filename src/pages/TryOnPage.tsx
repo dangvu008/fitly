@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CategorySidebar } from '@/components/clothing/CategorySidebar';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
-import { TryOnToolbar } from '@/components/tryOn/TryOnToolbar';
+import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAITryOn } from '@/hooks/useAITryOn';
@@ -12,27 +12,14 @@ import { useTryOnHistory } from '@/hooks/useTryOnHistory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-interface ClothingOverlay {
-  item: ClothingItem;
-  position: { x: number; y: number };
-  scale: number;
-  rotation: number;
-  opacity: number;
-}
-
 interface TryOnPageProps {
   initialItem?: ClothingItem;
 }
 
 export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   const [bodyImage, setBodyImage] = useState<string | undefined>();
-  const [overlays, setOverlays] = useState<ClothingOverlay[]>(() => 
-    initialItem 
-      ? [{ item: initialItem, position: { x: 100, y: 100 }, scale: 1, rotation: 0, opacity: 0.85 }]
-      : []
-  );
-  const [selectedOverlayIndex, setSelectedOverlayIndex] = useState<number | null>(
-    initialItem ? 0 : null
+  const [selectedItems, setSelectedItems] = useState<ClothingItem[]>(() => 
+    initialItem ? [initialItem] : []
   );
   const [activeCategory, setActiveCategory] = useState<ClothingCategory>('top');
   const [clothing] = useState(sampleClothing);
@@ -90,75 +77,18 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   };
 
   const handleAddClothing = (item: ClothingItem) => {
-    const newOverlay: ClothingOverlay = {
-      item,
-      position: { x: 80 + overlays.length * 20, y: 80 + overlays.length * 20 },
-      scale: 1,
-      rotation: 0,
-      opacity: 0.85,
-    };
-    setOverlays(prev => [...prev, newOverlay]);
-    setSelectedOverlayIndex(overlays.length);
+    // Check if already selected
+    if (selectedItems.find(i => i.id === item.id)) {
+      toast.info('Món đồ này đã được chọn');
+      return;
+    }
+    setSelectedItems(prev => [...prev, item]);
     toast.success(`Đã thêm ${item.name}`);
   };
 
-  const handleOverlayUpdate = (index: number, updates: Partial<ClothingOverlay>) => {
-    setOverlays(prev =>
-      prev.map((overlay, i) =>
-        i === index ? { ...overlay, ...updates } : overlay
-      )
-    );
-  };
-
-  const selectedOverlay = selectedOverlayIndex !== null ? overlays[selectedOverlayIndex] : null;
-
-  const handleOpacityChange = (opacity: number) => {
-    if (selectedOverlayIndex !== null) {
-      handleOverlayUpdate(selectedOverlayIndex, { opacity });
-    }
-  };
-
-  const handleRotate = () => {
-    if (selectedOverlayIndex !== null) {
-      const current = overlays[selectedOverlayIndex].rotation;
-      handleOverlayUpdate(selectedOverlayIndex, { rotation: (current + 15) % 360 });
-    }
-  };
-
-  const handleFlip = () => {
-    if (selectedOverlayIndex !== null) {
-      const current = overlays[selectedOverlayIndex].scale;
-      handleOverlayUpdate(selectedOverlayIndex, { scale: current * -1 });
-    }
-  };
-
-  const handleResize = () => {
-    if (selectedOverlayIndex !== null) {
-      const current = Math.abs(overlays[selectedOverlayIndex].scale);
-      const newScale = current >= 1.5 ? 0.5 : current + 0.25;
-      const sign = overlays[selectedOverlayIndex].scale >= 0 ? 1 : -1;
-      handleOverlayUpdate(selectedOverlayIndex, { scale: newScale * sign });
-    }
-  };
-
-  const handleDelete = () => {
-    if (selectedOverlayIndex !== null) {
-      setOverlays(prev => prev.filter((_, i) => i !== selectedOverlayIndex));
-      setSelectedOverlayIndex(null);
-      toast.success('Đã xóa');
-    }
-  };
-
-  const handleLayer = () => {
-    if (selectedOverlayIndex !== null && selectedOverlayIndex < overlays.length - 1) {
-      setOverlays(prev => {
-        const newArr = [...prev];
-        [newArr[selectedOverlayIndex], newArr[selectedOverlayIndex + 1]] = 
-        [newArr[selectedOverlayIndex + 1], newArr[selectedOverlayIndex]];
-        return newArr;
-      });
-      setSelectedOverlayIndex(selectedOverlayIndex + 1);
-    }
+  const handleRemoveClothing = (id: string) => {
+    setSelectedItems(prev => prev.filter(item => item.id !== id));
+    toast.success('Đã xóa');
   };
 
   const handleAITryOn = async () => {
@@ -167,18 +97,14 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
       return;
     }
 
-    if (overlays.length === 0) {
+    if (selectedItems.length === 0) {
       toast.error('Vui lòng chọn ít nhất một món đồ để thử');
       return;
     }
 
-    // Get the first clothing item for AI processing
-    const clothingItem = overlays[0].item;
-    
-    // Convert clothing image URL to base64 if needed
+    const clothingItem = selectedItems[0];
     let clothingImageData = clothingItem.imageUrl;
     
-    // If it's a URL (not base64), fetch and convert
     if (clothingItem.imageUrl.startsWith('http')) {
       try {
         const response = await fetch(clothingItem.imageUrl);
@@ -214,12 +140,12 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
     }
     
     setIsSaving(true);
-    const clothingItems = overlays.map(o => ({
-      name: o.item.name,
-      imageUrl: o.item.imageUrl,
+    const clothingItemsData = selectedItems.map(item => ({
+      name: item.name,
+      imageUrl: item.imageUrl,
     }));
     
-    await saveTryOnResult(user.id, bodyImage, aiResultImage, clothingItems);
+    await saveTryOnResult(user.id, bodyImage, aiResultImage, clothingItemsData);
     setIsSaving(false);
   };
 
@@ -332,10 +258,6 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
         <div className="flex-1 min-w-0">
           <TryOnCanvas
             bodyImageUrl={bodyImage}
-            overlays={overlays}
-            selectedOverlayIndex={selectedOverlayIndex}
-            onOverlayUpdate={handleOverlayUpdate}
-            onOverlaySelect={setSelectedOverlayIndex}
             onBodyImageChange={(imageUrl) => {
               setBodyImage(imageUrl);
               setAiResultImage(null);
@@ -353,30 +275,28 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
               item={item}
               size="sm"
               onSelect={handleAddClothing}
+              isSelected={selectedItems.some(i => i.id === item.id)}
             />
           ))}
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="px-4 mt-4 space-y-4">
-        <TryOnToolbar
-          opacity={selectedOverlay?.opacity ?? 0.85}
-          onOpacityChange={handleOpacityChange}
-          onResize={handleResize}
-          onRotate={handleRotate}
-          onFlip={handleFlip}
-          onDelete={handleDelete}
-          onLayer={handleLayer}
-          disabled={selectedOverlayIndex === null}
+      {/* Selected Clothing List */}
+      <div className="px-4 mt-4">
+        <SelectedClothingList 
+          items={selectedItems} 
+          onRemove={handleRemoveClothing}
         />
+      </div>
 
+      {/* Action buttons */}
+      <div className="px-4 mt-4 space-y-4">
         {/* AI Try-On Button */}
         <Button
           variant="default"
           className="w-full h-12 text-base"
           onClick={handleAITryOn}
-          disabled={isProcessing || !bodyImage || overlays.length === 0}
+          disabled={isProcessing || !bodyImage || selectedItems.length === 0}
         >
           {isProcessing ? (
             <>
