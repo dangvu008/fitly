@@ -1,22 +1,25 @@
 import { Home, Shirt, Heart, User, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCompare } from '@/contexts/CompareContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { TranslationKey } from '@/i18n/translations';
 
 interface MobileNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const navItems = [
-  { id: 'home', icon: Home, label: 'Trang chủ' },
-  { id: 'tryOn', icon: Shirt, label: 'Thử đồ' },
-  { id: 'compare', icon: Scale, label: 'So sánh' },
-  { id: 'favorites', icon: Heart, label: 'Yêu thích' },
-  { id: 'profile', icon: User, label: 'Tôi' },
+const navItems: { id: string; icon: typeof Home; labelKey: TranslationKey }[] = [
+  { id: 'home', icon: Home, labelKey: 'nav_home' },
+  { id: 'tryOn', icon: Shirt, labelKey: 'nav_tryon' },
+  { id: 'compare', icon: Scale, labelKey: 'nav_compare' },
+  { id: 'favorites', icon: Heart, labelKey: 'nav_favorites' },
+  { id: 'profile', icon: User, labelKey: 'nav_profile' },
 ];
 
 export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
   const { outfitsToCompare } = useCompare();
+  const { t } = useLanguage();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border">
@@ -55,7 +58,7 @@ export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
             </button>
           );
         })}

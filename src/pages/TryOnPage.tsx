@@ -10,6 +10,7 @@ import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAITryOn } from '@/hooks/useAITryOn';
 import { useTryOnHistory } from '@/hooks/useTryOnHistory';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 const BODY_IMAGE_STORAGE_KEY = 'tryon_body_image';
@@ -38,6 +39,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +75,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
         setBodyImage(event.target?.result as string);
         setAiResultImage(null);
         clearResult();
-        toast.success('Đã tải ảnh thành công!');
+        toast.success(t('msg_upload_success'));
       };
       reader.readAsDataURL(file);
     }
@@ -102,22 +104,22 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
       const filtered = prev.filter(i => i.category !== item.category);
       return [...filtered, item];
     });
-    toast.success(`Đã chọn ${item.name}`);
+    toast.success(`${t('msg_item_selected')} ${item.name}`);
   };
 
   const handleRemoveClothing = (id: string) => {
     setSelectedItems(prev => prev.filter(item => item.id !== id));
-    toast.success('Đã xóa');
+    toast.success(t('msg_item_removed'));
   };
 
   const handleAITryOn = async () => {
     if (!bodyImage) {
-      toast.error('Vui lòng tải ảnh toàn thân trước');
+      toast.error(t('msg_upload_body_first'));
       return;
     }
 
     if (selectedItems.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một món đồ để thử');
+      toast.error(t('msg_select_clothing'));
       return;
     }
 
@@ -138,7 +140,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
           });
         } catch (error) {
           console.error('Error converting image:', error);
-          toast.error(`Không thể tải hình ảnh ${item.name}`);
+          toast.error(`${t('msg_image_load_error')} ${item.name}`);
           return;
         }
       }
@@ -155,12 +157,12 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
 
   const handleSave = async () => {
     if (!user) {
-      toast.error('Vui lòng đăng nhập để lưu kết quả');
+      toast.error(t('msg_login_required'));
       return;
     }
     
     if (!bodyImage || !aiResultImage) {
-      toast.info('Chưa có kết quả để lưu');
+      toast.info(t('msg_no_result'));
       return;
     }
     
@@ -175,7 +177,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   };
 
   const handleShare = () => {
-    toast.success('Đã sao chép link chia sẻ!');
+    toast.success(t('msg_shared'));
   };
 
   const handleDownloadResult = () => {
@@ -184,7 +186,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
       link.href = aiResultImage;
       link.download = 'virtual-try-on-result.png';
       link.click();
-      toast.success('Đã tải ảnh xuống!');
+      toast.success(t('msg_downloaded'));
     }
   };
 
@@ -231,7 +233,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
             </div>
             <div className="p-4 space-y-3">
               <h3 className="font-display font-bold text-lg text-center">
-                Kết quả thử đồ AI
+                {t('tryon_result_title')}
               </h3>
               <div className="flex gap-2">
                 <Button
@@ -240,7 +242,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
                   onClick={handleDownloadResult}
                 >
                   <Download size={16} />
-                  Tải xuống
+                  {t('download')}
                 </Button>
                 <Button
                   variant="default"
@@ -253,7 +255,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
                   ) : (
                     <Save size={16} />
                   )}
-                  {isSaving ? 'Đang lưu...' : 'Lưu'}
+                  {isSaving ? t('tryon_saving') : t('save')}
                 </Button>
                 <Button
                   variant="accent"
@@ -287,7 +289,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
               setBodyImage(imageUrl);
               setAiResultImage(null);
               clearResult();
-              toast.success('Đã tải ảnh thành công!');
+              toast.success(t('msg_upload_success'));
             }}
           />
         </div>
@@ -326,12 +328,12 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
           {isProcessing ? (
             <>
               <Loader2 size={20} className="animate-spin" />
-              Đang xử lý AI...
+              {t('tryon_processing')}
             </>
           ) : (
             <>
               <Sparkles size={20} />
-              Thử đồ với AI
+              {t('tryon_ai_button')}
             </>
           )}
         </Button>
@@ -344,7 +346,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
             onClick={handleAddBodyImage}
           >
             <Camera size={18} />
-            {bodyImage ? 'Đổi ảnh' : 'Tải ảnh'}
+            {bodyImage ? t('tryon_change_photo') : t('tryon_upload_photo')}
           </Button>
           <Button
             variant="secondary"
@@ -352,7 +354,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
             onClick={handleSave}
           >
             <Save size={18} />
-            Lưu
+            {t('save')}
           </Button>
           <Button
             variant="accent"
