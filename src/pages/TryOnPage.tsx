@@ -336,6 +336,12 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
             selectedOverlayIndex={selectedOverlayIndex}
             onOverlayUpdate={handleOverlayUpdate}
             onOverlaySelect={setSelectedOverlayIndex}
+            onBodyImageChange={(imageUrl) => {
+              setBodyImage(imageUrl);
+              setAiResultImage(null);
+              clearResult();
+              toast.success('Đã tải ảnh thành công!');
+            }}
           />
         </div>
 
