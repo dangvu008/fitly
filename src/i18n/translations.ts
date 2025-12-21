@@ -72,6 +72,21 @@ export const translations = {
     msg_tryon_success: 'Đã tạo hình ảnh thử đồ thành công!',
     msg_image_load_error: 'Không thể tải hình ảnh',
     
+    // Image validation
+    msg_validating_image: 'Đang xác thực ảnh...',
+    msg_checking_size: 'Đang kiểm tra kích thước...',
+    msg_analyzing_image: 'Đang phân tích ảnh với AI...',
+    msg_removing_background: 'Đang tách nền...',
+    msg_validation_complete: 'Xác thực thành công!',
+    msg_image_too_small: 'Ảnh quá nhỏ (tối thiểu 300x400px)',
+    msg_no_person_detected: 'Không phát hiện người trong ảnh',
+    msg_not_full_body: 'Ảnh không hiển thị toàn thân',
+    msg_poor_quality: 'Chất lượng ảnh quá thấp',
+    msg_detected_gender: 'Phát hiện:',
+    msg_gender_male: 'Nam',
+    msg_gender_female: 'Nữ',
+    msg_gender_unknown: 'Không xác định',
+    
     // Settings
     language: 'Ngôn ngữ',
     theme: 'Giao diện',
@@ -146,6 +161,21 @@ export const translations = {
     msg_select_clothing: 'Please select at least one clothing item',
     msg_tryon_success: 'Try-on image created successfully!',
     msg_image_load_error: 'Failed to load image',
+    
+    // Image validation
+    msg_validating_image: 'Validating image...',
+    msg_checking_size: 'Checking size...',
+    msg_analyzing_image: 'Analyzing image with AI...',
+    msg_removing_background: 'Removing background...',
+    msg_validation_complete: 'Validation complete!',
+    msg_image_too_small: 'Image too small (min 300x400px)',
+    msg_no_person_detected: 'No person detected in image',
+    msg_not_full_body: 'Full body not visible',
+    msg_poor_quality: 'Image quality too low',
+    msg_detected_gender: 'Detected:',
+    msg_gender_male: 'Male',
+    msg_gender_female: 'Female',
+    msg_gender_unknown: 'Unknown',
     
     // Settings
     language: 'Language',
