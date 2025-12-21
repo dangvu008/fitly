@@ -87,6 +87,20 @@ export const translations = {
     msg_gender_female: 'Nữ',
     msg_gender_unknown: 'Không xác định',
     
+    // Clothing validation
+    msg_analyzing_clothing: 'Đang phân tích quần áo...',
+    msg_not_clothing: 'Ảnh không phải quần áo/phụ kiện',
+    msg_clothing_detected: 'Đã nhận diện:',
+    msg_clothing_color: 'Màu:',
+    msg_clothing_style: 'Phong cách:',
+    msg_clothing_category_top: 'Áo',
+    msg_clothing_category_bottom: 'Quần',
+    msg_clothing_category_dress: 'Đầm/Váy',
+    msg_clothing_category_shoes: 'Giày dép',
+    msg_clothing_category_accessory: 'Phụ kiện',
+    msg_upload_clothing: 'Tải ảnh quần áo',
+    msg_clothing_upload_success: 'Đã thêm vào bộ sưu tập!',
+    
     // Settings
     language: 'Ngôn ngữ',
     theme: 'Giao diện',
@@ -176,6 +190,20 @@ export const translations = {
     msg_gender_male: 'Male',
     msg_gender_female: 'Female',
     msg_gender_unknown: 'Unknown',
+    
+    // Clothing validation
+    msg_analyzing_clothing: 'Analyzing clothing...',
+    msg_not_clothing: 'Not a clothing/accessory item',
+    msg_clothing_detected: 'Detected:',
+    msg_clothing_color: 'Color:',
+    msg_clothing_style: 'Style:',
+    msg_clothing_category_top: 'Top',
+    msg_clothing_category_bottom: 'Bottom',
+    msg_clothing_category_dress: 'Dress',
+    msg_clothing_category_shoes: 'Shoes',
+    msg_clothing_category_accessory: 'Accessory',
+    msg_upload_clothing: 'Upload clothing',
+    msg_clothing_upload_success: 'Added to collection!',
     
     // Settings
     language: 'Language',

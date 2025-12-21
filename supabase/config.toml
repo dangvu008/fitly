@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-body-image]
 verify_jwt = false
+
+[functions.analyze-clothing-image]
+verify_jwt = false
