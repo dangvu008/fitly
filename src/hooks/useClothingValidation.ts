@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { removeBackground, hasTransparentBackground } from '@/utils/backgroundRemoval';
 import { ClothingCategory } from '@/types/clothing';
+import { getClothingFixSuggestions } from '@/utils/validationSuggestions';
 
 export interface ClothingAnalysis {
   isClothing: boolean;
@@ -37,6 +38,7 @@ export interface ClothingValidationResult {
   analysis: ClothingAnalysis | null;
   processedImageUrl: string | null;
   errors: string[];
+  suggestions: string[];
 }
 
 export interface ClothingValidationProgress {
@@ -119,10 +121,11 @@ export const useClothingValidation = () => {
 
   const validateAndProcessClothing = useCallback(async (
     imageDataUrl: string,
-    options: { removeBackground?: boolean } = { removeBackground: true }
+    options: { removeBackground?: boolean; language?: 'vi' | 'en' } = { removeBackground: true, language: 'vi' }
   ): Promise<ClothingValidationResult> => {
     setIsValidating(true);
     const errors: string[] = [];
+    const language = options.language || 'vi';
     
     try {
       // Step 1: Check basic quality
@@ -131,11 +134,13 @@ export const useClothingValidation = () => {
       const basicCheck = await checkBasicQuality(imageDataUrl);
       if (!basicCheck.isValid) {
         setProgress({ stage: 'error', progress: 100, message: 'Image quality issues' });
+        const suggestions = getClothingFixSuggestions(basicCheck.errors.map(e => e.includes('small') ? 'image_too_small' : 'default'), language);
         return {
           isValid: false,
           analysis: null,
           processedImageUrl: null,
-          errors: basicCheck.errors
+          errors: basicCheck.errors,
+          suggestions
         };
       }
       
@@ -191,11 +196,13 @@ export const useClothingValidation = () => {
       
       if (errors.length > 0) {
         setProgress({ stage: 'error', progress: 100, message: 'Validation failed' });
+        const suggestions = getClothingFixSuggestions(errors, language);
         return {
           isValid: false,
           analysis,
           processedImageUrl: null,
-          errors
+          errors,
+          suggestions
         };
       }
       
@@ -228,16 +235,19 @@ export const useClothingValidation = () => {
         isValid: true,
         analysis,
         processedImageUrl,
-        errors: []
+        errors: [],
+        suggestions: []
       };
     } catch (error) {
       console.error('Validation error:', error);
       setProgress({ stage: 'error', progress: 100, message: 'Validation failed' });
+      const errorMsg = error instanceof Error ? error.message : 'Unknown validation error';
       return {
         isValid: false,
         analysis: null,
         processedImageUrl: null,
-        errors: [error instanceof Error ? error.message : 'Unknown validation error']
+        errors: [errorMsg],
+        suggestions: getClothingFixSuggestions(['default'], language)
       };
     } finally {
       setIsValidating(false);

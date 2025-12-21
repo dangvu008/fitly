@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { removeBackground, hasTransparentBackground } from '@/utils/backgroundRemoval';
+import { getBodyImageFixSuggestions } from '@/utils/validationSuggestions';
 
 export interface ImageAnalysis {
   isPerson: boolean;
@@ -15,6 +16,7 @@ export interface ValidationResult {
   analysis: ImageAnalysis | null;
   processedImageUrl: string | null;
   errors: string[];
+  suggestions: string[];
 }
 
 export interface ValidationProgress {
@@ -81,10 +83,11 @@ export const useImageValidation = () => {
 
   const validateAndProcessImage = useCallback(async (
     imageDataUrl: string,
-    options: { removeBackground?: boolean } = { removeBackground: true }
+    options: { removeBackground?: boolean; language?: 'vi' | 'en' } = { removeBackground: true, language: 'vi' }
   ): Promise<ValidationResult> => {
     setIsValidating(true);
     const errors: string[] = [];
+    const language = options.language || 'vi';
     
     try {
       // Step 1: Check basic quality
@@ -93,11 +96,13 @@ export const useImageValidation = () => {
       const basicCheck = await checkBasicQuality(imageDataUrl);
       if (!basicCheck.isValid) {
         setProgress({ stage: 'error', progress: 100, message: 'Image quality issues' });
+        const suggestions = getBodyImageFixSuggestions(basicCheck.errors.map(e => e.includes('small') ? 'image_too_small' : 'default'), language);
         return {
           isValid: false,
           analysis: null,
           processedImageUrl: null,
-          errors: basicCheck.errors
+          errors: basicCheck.errors,
+          suggestions
         };
       }
       
@@ -120,29 +125,37 @@ export const useImageValidation = () => {
       }
       
       // Validate analysis results
+      const errorCodes: string[] = [];
+      
       if (!analysis.isPerson) {
         errors.push('No person detected in image');
+        errorCodes.push('no_person');
       }
       
       if (!analysis.isFullBody) {
         errors.push('Full body not visible');
+        errorCodes.push('not_full_body');
       }
       
       if (analysis.quality === 'poor') {
         errors.push('Image quality is too low');
+        errorCodes.push('poor_quality');
       }
       
       if (analysis.issues && analysis.issues.length > 0) {
         errors.push(...analysis.issues);
+        errorCodes.push(...analysis.issues);
       }
       
       if (errors.length > 0) {
         setProgress({ stage: 'error', progress: 100, message: 'Validation failed' });
+        const suggestions = getBodyImageFixSuggestions(errorCodes, language);
         return {
           isValid: false,
           analysis,
           processedImageUrl: null,
-          errors
+          errors,
+          suggestions
         };
       }
       
@@ -177,16 +190,19 @@ export const useImageValidation = () => {
         isValid: true,
         analysis,
         processedImageUrl,
-        errors: []
+        errors: [],
+        suggestions: []
       };
     } catch (error) {
       console.error('Validation error:', error);
       setProgress({ stage: 'error', progress: 100, message: 'Validation failed' });
+      const errorMsg = error instanceof Error ? error.message : 'Unknown validation error';
       return {
         isValid: false,
         analysis: null,
         processedImageUrl: null,
-        errors: [error instanceof Error ? error.message : 'Unknown validation error']
+        errors: [errorMsg],
+        suggestions: getBodyImageFixSuggestions(['default'], language)
       };
     } finally {
       setIsValidating(false);

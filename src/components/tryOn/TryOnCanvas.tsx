@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Camera, ImagePlus, Loader2, Check, X, User, AlertTriangle } from 'lucide-react';
+import { Camera, ImagePlus, Loader2, Check, User, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useImageValidation, ImageAnalysis } from '@/hooks/useImageValidation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
@@ -19,7 +19,7 @@ export const TryOnCanvas = ({
 }: TryOnCanvasProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { validateAndProcessImage, isValidating, progress } = useImageValidation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [lastAnalysis, setLastAnalysis] = useState<ImageAnalysis | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +31,11 @@ export const TryOnCanvas = ({
     reader.onload = async (event) => {
       const base64Url = event.target?.result as string;
       
-      // Validate and process
-      const result = await validateAndProcessImage(base64Url, { removeBackground: true });
+      // Validate and process with language
+      const result = await validateAndProcessImage(base64Url, { 
+        removeBackground: true,
+        language 
+      });
       
       if (result.isValid && result.processedImageUrl) {
         setLastAnalysis(result.analysis);
@@ -48,10 +51,22 @@ export const TryOnCanvas = ({
             
         toast.success(`${t('msg_upload_success')} ${t('msg_detected_gender')} ${genderText}`);
       } else {
-        // Show errors
+        // Show errors with suggestions
         result.errors.forEach(error => {
           toast.error(error);
         });
+        
+        // Show fix suggestions
+        if (result.suggestions && result.suggestions.length > 0) {
+          result.suggestions.forEach((suggestion, index) => {
+            setTimeout(() => {
+              toast.info(suggestion, {
+                duration: 8000,
+                icon: <Lightbulb className="w-4 h-4 text-yellow-500" />
+              });
+            }, (index + 1) * 500);
+          });
+        }
       }
     };
     reader.readAsDataURL(file);
