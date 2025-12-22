@@ -465,50 +465,48 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 className="w-full max-h-[75vh] object-contain bg-card"
               />
               
-              {/* Floating action buttons - bottom right corner */}
-              <div className="absolute bottom-4 right-4 flex items-center gap-2">
-                {/* Change photo button */}
+              {/* Floating action buttons - bottom right corner with glass morphism */}
+              <div className="absolute bottom-4 right-4 flex flex-col items-center gap-2.5 animate-fade-in">
+                {/* Camera - change photo */}
                 <button
                   onClick={() => {
                     handleCloseResult();
                     handleAddBodyImage();
                   }}
-                  className="w-11 h-11 rounded-full bg-card border-2 border-primary text-primary flex items-center justify-center shadow-lg hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105 active:scale-95"
+                  className="group w-10 h-10 rounded-full bg-white/80 dark:bg-card/80 backdrop-blur-md shadow-lg border border-white/20 dark:border-white/10 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:bg-primary hover:border-primary active:scale-95"
                   title={t('tryon_change_photo')}
                 >
-                  <Camera size={18} />
+                  <Camera size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
                 </button>
 
-                {/* Save button */}
+                {/* Save */}
                 <button
                   onClick={handleSave}
-                  disabled={isSaving}
-                  className="w-11 h-11 rounded-full bg-card border border-border text-foreground flex items-center justify-center shadow-lg hover:bg-secondary transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                  title={t('save')}
+                  disabled={isSaving || isResultSaved}
+                  className={cn(
+                    "group w-10 h-10 rounded-full backdrop-blur-md shadow-lg border flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 disabled:opacity-60 disabled:hover:scale-100",
+                    isResultSaved 
+                      ? "bg-emerald-500/90 border-emerald-400/30 text-white" 
+                      : "bg-white/80 dark:bg-card/80 border-white/20 dark:border-white/10 hover:bg-primary hover:border-primary"
+                  )}
+                  title={isResultSaved ? t('msg_already_saved') : t('save')}
                 >
                   {isSaving ? (
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                  ) : isResultSaved ? (
+                    <Heart size={16} className="fill-current" />
                   ) : (
-                    <Save size={18} />
+                    <Save size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
                   )}
                 </button>
 
-                {/* Share to public button */}
-                <button
-                  onClick={handleShareToPublic}
-                  className="w-11 h-11 rounded-full bg-card border border-border text-foreground flex items-center justify-center shadow-lg hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105 active:scale-95"
-                  title="Chia sẻ công khai"
-                >
-                  <Globe size={18} />
-                </button>
-
-                {/* Share button */}
+                {/* Share */}
                 <button
                   onClick={handleShare}
-                  className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+                  className="group w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/25 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-rose-500/40 active:scale-95"
                   title={t('share')}
                 >
-                  <Share2 size={18} />
+                  <Share2 size={16} className="text-white" />
                 </button>
               </div>
 
