@@ -37,7 +37,7 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
   const [clothing, setClothing] = useState(sampleClothing);
   const [recentHistory, setRecentHistory] = useState<TryOnHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
-  const { sharedOutfits, isLoading: loadingSharedOutfits } = useSharedOutfits();
+  const { sharedOutfits, isLoading: loadingSharedOutfits, toggleLike } = useSharedOutfits();
 
   useEffect(() => {
     if (user) {
@@ -223,6 +223,7 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
                 key={outfit.id}
                 outfit={outfit}
                 onClick={() => handleViewOutfitDetail(outfit.id)}
+                onToggleLike={toggleLike}
               />
             ))}
           </div>

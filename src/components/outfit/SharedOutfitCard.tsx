@@ -1,16 +1,23 @@
-import { Heart, ExternalLink } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { SharedOutfit } from '@/hooks/useSharedOutfits';
+import { cn } from '@/lib/utils';
 
 interface SharedOutfitCardProps {
   outfit: SharedOutfit;
   onClick?: () => void;
+  onToggleLike?: (outfitId: string) => void;
 }
 
-export const SharedOutfitCard = ({ outfit, onClick }: SharedOutfitCardProps) => {
+export const SharedOutfitCard = ({ outfit, onClick, onToggleLike }: SharedOutfitCardProps) => {
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleLike?.(outfit.id);
+  };
+
   return (
-    <button
+    <div
       onClick={onClick}
-      className="w-full text-left bg-card rounded-xl overflow-hidden shadow-soft border border-border hover:border-primary/50 transition-all group"
+      className="w-full text-left bg-card rounded-xl overflow-hidden shadow-soft border border-border hover:border-primary/50 transition-all group cursor-pointer"
     >
       <div className="aspect-[3/4] relative overflow-hidden">
         <img
@@ -27,11 +34,22 @@ export const SharedOutfitCard = ({ outfit, onClick }: SharedOutfitCardProps) => 
           </div>
         )}
 
-        {/* Likes count */}
-        <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-1 text-xs">
-          <Heart size={12} className="text-destructive" />
-          <span className="text-foreground">{outfit.likes_count}</span>
-        </div>
+        {/* Like button */}
+        <button
+          onClick={handleLikeClick}
+          className={cn(
+            "absolute top-2 right-2 px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1 text-xs transition-all",
+            outfit.isLiked 
+              ? "bg-destructive/90 text-destructive-foreground" 
+              : "bg-card/90 text-foreground hover:bg-destructive/80 hover:text-destructive-foreground"
+          )}
+        >
+          <Heart 
+            size={12} 
+            className={cn(outfit.isLiked && "fill-current")} 
+          />
+          <span>{outfit.likes_count}</span>
+        </button>
 
         {/* Gradient overlay */}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-foreground/60 to-transparent" />
@@ -46,6 +64,6 @@ export const SharedOutfitCard = ({ outfit, onClick }: SharedOutfitCardProps) => 
           </p>
         </div>
       </div>
-    </button>
+    </div>
   );
 };
