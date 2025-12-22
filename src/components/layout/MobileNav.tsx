@@ -10,7 +10,6 @@ interface MobileNavProps {
 }
 
 const navItems: { id: string; icon: typeof Home; labelKey: TranslationKey }[] = [
-  { id: 'home', icon: Home, labelKey: 'nav_home' },
   { id: 'tryOn', icon: Shirt, labelKey: 'nav_tryon' },
   { id: 'wardrobe', icon: Archive, labelKey: 'nav_wardrobe' },
   { id: 'compare', icon: Scale, labelKey: 'nav_compare' },
