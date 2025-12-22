@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Shirt, Square, Crown, Footprints, Glasses, Heart, ShoppingBag, Check, Search, Plus, Loader2, Filter } from 'lucide-react';
+import { Shirt, Heart, ShoppingBag, Check, Plus, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { sampleClothing } from '@/data/sampleClothing';
 
 interface OutfitHistory {
   id: string;
@@ -23,21 +21,23 @@ interface OutfitHistory {
 
 interface UserClothingWithPurchased extends ClothingItem {
   is_purchased: boolean;
+  purchase_url?: string;
 }
 
-const categoryOptions = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'top', label: 'Áo' },
-  { id: 'bottom', label: 'Quần' },
-  { id: 'dress', label: 'Váy' },
-  { id: 'shoes', label: 'Giày' },
-  { id: 'accessory', label: 'Phụ kiện' },
-];
+type OwnershipFilter = 'all' | 'owned' | 'not_owned';
 
-const statusOptions = [
-  { id: 'all', label: 'Tất cả', icon: null },
-  { id: 'purchased', label: 'Đã mua', icon: Check },
-  { id: 'wishlist', label: 'Wishlist', icon: ShoppingBag },
+interface CategoryOption {
+  id: ClothingCategory;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const categories: CategoryOption[] = [
+  { id: 'top', label: 'Áo', icon: <Shirt size={20} /> },
+  { id: 'bottom', label: 'Quần', icon: <span className="text-lg">👖</span> },
+  { id: 'dress', label: 'Váy', icon: <span className="text-lg">👗</span> },
+  { id: 'shoes', label: 'Giày', icon: <span className="text-lg">👟</span> },
+  { id: 'accessory', label: 'Phụ kiện', icon: <span className="text-lg">👓</span> },
 ];
 
 interface ClosetPageProps {
@@ -46,23 +46,24 @@ interface ClosetPageProps {
 
 export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
   
   const [activeMainTab, setActiveMainTab] = useState<'clothing' | 'outfits'>('clothing');
-  const [activeCategory, setActiveCategory] = useState<ClothingCategory | 'all'>('all');
-  const [purchaseFilter, setPurchaseFilter] = useState<'all' | 'purchased' | 'wishlist'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('top');
+  const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
   
-  const [clothing, setClothing] = useState<UserClothingWithPurchased[]>([]);
+  const [userClothingItems, setUserClothingItems] = useState<UserClothingWithPurchased[]>([]);
   const [outfits, setOutfits] = useState<OutfitHistory[]>([]);
   const [isLoadingClothing, setIsLoadingClothing] = useState(true);
   const [isLoadingOutfits, setIsLoadingOutfits] = useState(true);
 
+  // Sample clothing data
+  const allClothing = sampleClothing;
+
   // Fetch user clothing
   useEffect(() => {
     if (!user) {
-      setClothing([]);
+      setUserClothingItems([]);
       setIsLoadingClothing(false);
       return;
     }
@@ -79,7 +80,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
         console.error('Error fetching clothing:', error);
         toast.error('Không thể tải quần áo');
       } else {
-        setClothing(data?.map(item => ({
+        setUserClothingItems(data?.map(item => ({
           id: item.id,
           name: item.name,
           category: item.category as ClothingCategory,
@@ -90,6 +91,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
           pattern: item.pattern || undefined,
           tags: item.tags || [],
           is_purchased: item.is_purchased ?? false,
+          purchase_url: item.purchase_url || undefined,
         })) || []);
       }
       setIsLoadingClothing(false);
@@ -143,7 +145,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
     if (error) {
       toast.error('Không thể cập nhật trạng thái');
     } else {
-      setClothing(prev => prev.map(item => 
+      setUserClothingItems(prev => prev.map(item => 
         item.id === itemId ? { ...item, is_purchased: !currentStatus } : item
       ));
       toast.success(currentStatus ? 'Đã chuyển sang Wishlist' : 'Đã đánh dấu đã mua');
@@ -167,18 +169,40 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
     }
   };
 
-  // Filter clothing
-  const filteredClothing = clothing.filter(item => {
-    const categoryMatch = activeCategory === 'all' || item.category === activeCategory;
-    const purchaseMatch = purchaseFilter === 'all' || 
-      (purchaseFilter === 'purchased' && item.is_purchased) ||
-      (purchaseFilter === 'wishlist' && !item.is_purchased);
-    const searchMatch = !searchQuery.trim() || 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Get user owned item IDs
+  const userOwnedIds = new Set(userClothingItems.map(item => item.id));
+
+  // Combine and filter clothing by category and ownership
+  const getFilteredClothing = () => {
+    // Filter by category first
+    const categoryFiltered = allClothing.filter(item => item.category === selectedCategory);
+    const userCategoryFiltered = userClothingItems.filter(item => item.category === selectedCategory);
     
-    return categoryMatch && purchaseMatch && searchMatch;
-  });
+    // Combine sample clothing with user clothing (user items take priority)
+    const combinedItems = [...userCategoryFiltered];
+    
+    // Add sample items that aren't duplicated
+    categoryFiltered.forEach(item => {
+      if (!userOwnedIds.has(item.id)) {
+        combinedItems.push({
+          ...item,
+          is_purchased: false,
+          purchase_url: item.shopUrl,
+        } as UserClothingWithPurchased);
+      }
+    });
+
+    // Apply ownership filter
+    if (ownershipFilter === 'owned') {
+      return combinedItems.filter(item => userOwnedIds.has(item.id));
+    } else if (ownershipFilter === 'not_owned') {
+      return combinedItems.filter(item => !userOwnedIds.has(item.id));
+    }
+    
+    return combinedItems;
+  };
+
+  const filteredClothing = getFilteredClothing();
 
   // Filter outfits (favorites only option)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -227,58 +251,72 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
           {/* Clothing Tab */}
           <TabsContent value="clothing" className="space-y-4 mt-4">
-            {/* Search + Filters Row */}
-            <div className="space-y-3">
-              {/* Search */}
-              <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  placeholder="Tìm kiếm quần áo..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            {/* Category Slider with Add Button */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {/* Add New Button */}
+              <button
+                onClick={onNavigateToTryOn}
+                className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 transition-colors"
+              >
+                <Plus size={20} />
+                <span className="text-[10px] mt-0.5">Thêm</span>
+              </button>
+              
+              {/* Category Buttons */}
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={cn(
+                    "flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all",
+                    selectedCategory === cat.id
+                      ? "bg-foreground text-background shadow-lg"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {cat.icon}
+                  <span className="text-[10px] mt-0.5 font-medium">{cat.label}</span>
+                </button>
+              ))}
+            </div>
 
-              {/* Compact Filters */}
-              <div className="flex gap-2">
-                {/* Category Dropdown */}
-                <Select value={activeCategory} onValueChange={(v) => setActiveCategory(v as ClothingCategory | 'all')}>
-                  <SelectTrigger className="w-[120px] h-9">
-                    <SelectValue placeholder="Danh mục" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Status Filter Chips */}
-                <div className="flex gap-1.5 flex-1">
-                  {statusOptions.map(status => {
-                    const isActive = purchaseFilter === status.id;
-                    const Icon = status.icon;
-                    return (
-                      <button
-                        key={status.id}
-                        onClick={() => setPurchaseFilter(status.id as 'all' | 'purchased' | 'wishlist')}
-                        className={cn(
-                          "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                          isActive 
-                            ? "bg-primary text-primary-foreground shadow-sm" 
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        )}
-                      >
-                        {Icon && <Icon size={12} />}
-                        {status.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            {/* Ownership Filter Chips */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setOwnershipFilter('all')}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                  ownershipFilter === 'all'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                Tất cả
+              </button>
+              <button
+                onClick={() => setOwnershipFilter('owned')}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                  ownershipFilter === 'owned'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                <Check size={14} />
+                Có trong tủ
+              </button>
+              <button
+                onClick={() => setOwnershipFilter('not_owned')}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                  ownershipFilter === 'not_owned'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                <ShoppingBag size={14} />
+                Chưa mua
+              </button>
             </div>
 
             {/* Clothing Grid */}
@@ -296,39 +334,68 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {filteredClothing.map(item => (
-                  <div 
-                    key={item.id} 
-                    className="bg-card rounded-xl overflow-hidden border border-border shadow-sm"
-                  >
-                    <div className="relative aspect-square bg-muted">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name}
-                        className="w-full h-full object-contain"
-                      />
-                      {/* Purchase Badge */}
-                      <button
-                        onClick={() => togglePurchased(item.id, item.is_purchased)}
-                        className={cn(
-                          "absolute top-2 right-2 p-1.5 rounded-full transition-colors",
-                          item.is_purchased 
-                            ? "bg-green-500 text-white" 
-                            : "bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-foreground"
+              <div className="grid grid-cols-3 gap-3">
+                {filteredClothing.map((item) => {
+                  const isOwned = userOwnedIds.has(item.id);
+                  const purchaseUrl = item.purchase_url || item.shopUrl;
+                  
+                  return (
+                    <div 
+                      key={item.id} 
+                      className="bg-card rounded-xl overflow-hidden border border-border shadow-sm"
+                    >
+                      <div className="relative aspect-square bg-muted">
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                        
+                        {/* Buy Link Badge */}
+                        {!isOwned && purchaseUrl && (
+                          <a
+                            href={purchaseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                          >
+                            Mua
+                            <ExternalLink size={10} />
+                          </a>
                         )}
-                      >
-                        {item.is_purchased ? <Check size={14} /> : <ShoppingBag size={14} />}
-                      </button>
+                        
+                        {/* Owned Badge */}
+                        {isOwned && (
+                          <button
+                            onClick={() => togglePurchased(item.id, (item as UserClothingWithPurchased).is_purchased)}
+                            className={cn(
+                              "absolute top-2 right-2 p-1.5 rounded-full transition-colors",
+                              (item as UserClothingWithPurchased).is_purchased
+                                ? "bg-green-500 text-white" 
+                                : "bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {(item as UserClothingWithPurchased).is_purchased ? <Check size={14} /> : <ShoppingBag size={14} />}
+                          </button>
+                        )}
+                        
+                        {/* Price Badge */}
+                        {item.price && (
+                          <div className="absolute bottom-2 left-2 px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm text-xs font-medium">
+                            {item.price}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-medium truncate">{item.name}</p>
+                        {item.shopName && (
+                          <p className="text-[10px] text-muted-foreground truncate">{item.shopName}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-2">
-                      <p className="text-sm font-medium truncate">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.is_purchased ? '✓ Đã mua' : 'Wishlist'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>

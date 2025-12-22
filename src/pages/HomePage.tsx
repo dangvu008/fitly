@@ -2,12 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Loader2 } from 'lucide-react';
 import { SkeletonGrid } from '@/components/ui/skeleton-grid';
-import { CategoryClothingSlider } from '@/components/clothing/CategoryClothingSlider';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem } from '@/types/clothing';
-import { useAuth } from '@/contexts/AuthContext';
 import { useSharedOutfits } from '@/hooks/useSharedOutfits';
-import { useUserClothing } from '@/hooks/useUserClothing';
 
 interface HomePageProps {
   onNavigateToTryOn: () => void;
@@ -18,10 +15,8 @@ interface HomePageProps {
 
 export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [clothing] = useState(sampleClothing);
   const { sharedOutfits, isLoading: loadingSharedOutfits, isLoadingMore, hasMore, loadMore } = useSharedOutfits();
-  const { userClothing, isLoading: loadingUserClothing } = useUserClothing();
   
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -49,16 +44,6 @@ export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => 
 
   return (
     <div className="pb-24 pt-16 max-w-lg mx-auto">
-
-      {/* Category Clothing Slider */}
-      <CategoryClothingSlider
-        clothing={clothing}
-        userClothing={userClothing}
-        onSelectItem={onSelectItem}
-        onAddNew={onNavigateToTryOn}
-        isLoading={loadingUserClothing}
-      />
-
       {/* Instagram-style Grid */}
       <section className="animate-fade-in px-4">
         {/* Shared Outfits Header */}
