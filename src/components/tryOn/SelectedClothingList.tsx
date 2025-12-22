@@ -1,7 +1,7 @@
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
-import { X, Sparkles, ChevronDown } from 'lucide-react';
+import { X, Sparkles, ChevronDown, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
@@ -24,6 +24,31 @@ const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: s
   { category: 'accessory', labelKey: 'slot_accessory', icon: '👜' },
 ];
 
+// Common colors with their display names
+const commonColors = [
+  { id: 'all', label: 'Tất cả', color: 'bg-gradient-to-r from-primary to-accent' },
+  { id: 'white', label: 'Trắng', color: 'bg-white border border-border' },
+  { id: 'black', label: 'Đen', color: 'bg-gray-900' },
+  { id: 'red', label: 'Đỏ', color: 'bg-red-500' },
+  { id: 'blue', label: 'Xanh dương', color: 'bg-blue-500' },
+  { id: 'green', label: 'Xanh lá', color: 'bg-green-500' },
+  { id: 'yellow', label: 'Vàng', color: 'bg-yellow-400' },
+  { id: 'pink', label: 'Hồng', color: 'bg-pink-400' },
+  { id: 'purple', label: 'Tím', color: 'bg-purple-500' },
+  { id: 'brown', label: 'Nâu', color: 'bg-amber-700' },
+  { id: 'gray', label: 'Xám', color: 'bg-gray-400' },
+];
+
+// Common styles
+const commonStyles = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'casual', label: 'Casual' },
+  { id: 'formal', label: 'Formal' },
+  { id: 'sporty', label: 'Sporty' },
+  { id: 'elegant', label: 'Elegant' },
+  { id: 'streetwear', label: 'Streetwear' },
+];
+
 export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingListProps>(({ 
   items, 
   onRemove,
@@ -40,29 +65,76 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   const prevCompleteRef = useRef(false);
   const [expandedCategory, setExpandedCategory] = useState<OutfitCategory | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Filter states
+  const [selectedColor, setSelectedColor] = useState<string>('all');
+  const [selectedStyle, setSelectedStyle] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setExpandedCategory(null);
+        setShowFilters(false);
+        setSelectedColor('all');
+        setSelectedStyle('all');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get clothing items for a specific category
+  // Get clothing items for a specific category with filters
   const getClothingForCategory = (category: OutfitCategory): ClothingItem[] => {
     const allClothing = [...savedClothing, ...sampleClothing];
-    return allClothing.filter(item => item.category === category);
+    let filtered = allClothing.filter(item => item.category === category);
+    
+    // Apply color filter
+    if (selectedColor !== 'all') {
+      filtered = filtered.filter(item => {
+        const itemColor = item.color?.toLowerCase() || '';
+        return itemColor.includes(selectedColor);
+      });
+    }
+    
+    // Apply style filter
+    if (selectedStyle !== 'all') {
+      filtered = filtered.filter(item => {
+        const itemStyle = item.style?.toLowerCase() || '';
+        return itemStyle.includes(selectedStyle);
+      });
+    }
+    
+    return filtered;
+  };
+
+  // Get unique colors and styles from clothing
+  const getAvailableFilters = (category: OutfitCategory) => {
+    const allClothing = [...savedClothing, ...sampleClothing];
+    const categoryClothing = allClothing.filter(item => item.category === category);
+    
+    const colors = new Set<string>();
+    const styles = new Set<string>();
+    
+    categoryClothing.forEach(item => {
+      if (item.color) colors.add(item.color.toLowerCase());
+      if (item.style) styles.add(item.style.toLowerCase());
+    });
+    
+    return { colors: Array.from(colors), styles: Array.from(styles) };
   };
 
   const handleSlotClick = (category: OutfitCategory) => {
     if (expandedCategory === category) {
       setExpandedCategory(null);
+      setShowFilters(false);
+      setSelectedColor('all');
+      setSelectedStyle('all');
     } else {
       setExpandedCategory(category);
+      setSelectedColor('all');
+      setSelectedStyle('all');
     }
   };
 
@@ -71,7 +143,12 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
       onSelectItem(item);
     }
     setExpandedCategory(null);
+    setShowFilters(false);
+    setSelectedColor('all');
+    setSelectedStyle('all');
   };
+
+  const activeFiltersCount = (selectedColor !== 'all' ? 1 : 0) + (selectedStyle !== 'all' ? 1 : 0);
 
   // Group items by category
   const itemsByCategory = items.reduce((acc, item) => {
@@ -250,15 +327,120 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
 
               {/* Dropdown panel */}
               {isExpanded && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-48 max-h-56 bg-card border border-border rounded-xl shadow-medium overflow-hidden animate-scale-in">
-                  <div className="p-2 border-b border-border">
-                    <p className="text-xs font-medium text-foreground text-center">{t(slot.labelKey)}</p>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-56 max-h-72 bg-card border border-border rounded-xl shadow-medium overflow-hidden animate-scale-in">
+                  {/* Header with filter toggle */}
+                  <div className="p-2 border-b border-border flex items-center justify-between">
+                    <p className="text-xs font-medium text-foreground">{t(slot.labelKey)}</p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowFilters(!showFilters);
+                      }}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors",
+                        showFilters || activeFiltersCount > 0
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      )}
+                    >
+                      <Filter size={10} />
+                      {activeFiltersCount > 0 && (
+                        <span className="w-4 h-4 rounded-full bg-background text-foreground text-[9px] flex items-center justify-center">
+                          {activeFiltersCount}
+                        </span>
+                      )}
+                    </button>
                   </div>
+                  
+                  {/* Filters panel */}
+                  {showFilters && (
+                    <div className="p-2 border-b border-border space-y-2 bg-muted/30">
+                      {/* Color filter */}
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Màu sắc</p>
+                        <div className="flex flex-wrap gap-1">
+                          {commonColors.slice(0, 8).map((color) => (
+                            <button
+                              key={color.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedColor(color.id);
+                              }}
+                              className={cn(
+                                "w-5 h-5 rounded-full transition-all",
+                                color.color,
+                                selectedColor === color.id 
+                                  ? "ring-2 ring-primary ring-offset-1 ring-offset-card scale-110" 
+                                  : "hover:scale-110"
+                              )}
+                              title={color.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Style filter */}
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Phong cách</p>
+                        <div className="flex flex-wrap gap-1">
+                          {commonStyles.map((style) => (
+                            <button
+                              key={style.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStyle(style.id);
+                              }}
+                              className={cn(
+                                "px-2 py-0.5 rounded-full text-[9px] font-medium transition-all",
+                                selectedStyle === style.id 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              )}
+                            >
+                              {style.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Clear filters */}
+                      {activeFiltersCount > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedColor('all');
+                            setSelectedStyle('all');
+                          }}
+                          className="w-full text-[10px] text-destructive hover:underline"
+                        >
+                          Xóa bộ lọc
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Clothing grid */}
                   <div className="max-h-44 overflow-y-auto p-2">
                     {categoryClothing.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        {t('no_saved_clothing')}
-                      </p>
+                      <div className="text-center py-4">
+                        <p className="text-xs text-muted-foreground">
+                          {activeFiltersCount > 0 
+                            ? 'Không tìm thấy quần áo phù hợp' 
+                            : t('no_saved_clothing')}
+                        </p>
+                        {activeFiltersCount > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedColor('all');
+                              setSelectedStyle('all');
+                            }}
+                            className="text-[10px] text-primary hover:underline mt-1"
+                          >
+                            Xóa bộ lọc
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-1.5">
                         {categoryClothing.map((clothingItem) => (
@@ -266,7 +448,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                             key={clothingItem.id}
                             onClick={() => handleSelectFromDropdown(clothingItem)}
                             className={cn(
-                              "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
+                              "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 relative group",
                               items.some(i => i.id === clothingItem.id) 
                                 ? "border-primary ring-1 ring-primary" 
                                 : "border-transparent hover:border-primary/50"
@@ -277,6 +459,14 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                               alt={clothingItem.name}
                               className="w-full h-full object-cover"
                             />
+                            {/* Color/style indicator */}
+                            {(clothingItem.color || clothingItem.style) && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/70 to-transparent p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[7px] text-background truncate text-center">
+                                  {clothingItem.color || clothingItem.style}
+                                </p>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
