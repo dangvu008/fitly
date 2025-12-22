@@ -39,16 +39,16 @@ export const Header = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border">
-      <div className="flex items-center justify-between px-4 py-2 max-w-md mx-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border safe-top">
+      <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
+        {/* Logo - Instagram style */}
+        <div className="flex items-center gap-2.5">
           <img 
             src={logoImage} 
             alt="TryOn Logo" 
-            className="w-9 h-9 object-contain"
+            className="w-8 h-8 object-contain"
           />
-          <span className="font-display font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <span className="font-display font-bold text-xl text-foreground">
             TryOn
           </span>
         </div>
@@ -57,22 +57,34 @@ export const Header = ({
         <div className="flex items-center gap-1">
           {showLanguageSwitcher && <LanguageSwitcher />}
           {showNotification && (
-            <Button variant="ghost" size="iconSm">
-              <Bell size={18} />
+            <Button variant="ghost" size="iconSm" className="text-foreground">
+              <Bell size={22} strokeWidth={1.5} />
             </Button>
           )}
           
-          {/* User Avatar */}
+          {/* User Avatar - Instagram style with story ring for logged in users */}
           <button 
             onClick={onAvatarClick}
             className="ml-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
           >
-            <Avatar className="h-8 w-8 border-2 border-primary/20 hover:border-primary/50 transition-colors">
-              <AvatarImage src={user?.user_metadata?.avatar_url} alt="User avatar" />
-              <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                {user ? getInitials() : <User size={16} />}
-              </AvatarFallback>
-            </Avatar>
+            {user ? (
+              <div className="story-ring">
+                <div className="story-ring-inner">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} alt="User avatar" />
+                    <AvatarFallback className="bg-secondary text-foreground text-xs font-semibold">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              </div>
+            ) : (
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarFallback className="bg-secondary text-muted-foreground">
+                  <User size={16} />
+                </AvatarFallback>
+              </Avatar>
+            )}
           </button>
         </div>
       </div>

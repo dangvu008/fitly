@@ -2,100 +2,117 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
+/* Instagram-style font - Clean and modern */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 10%;
+    /* Instagram Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary: 187 85% 43%;
+    /* Instagram Blue */
+    --primary: 214 100% 59%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 220 20% 20%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 210 15% 94%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 350 80% 60%;
+    /* Instagram Pink/Coral */
+    --accent: 340 82% 52%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 187 85% 43%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 214 100% 59%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(187 85% 43%) 0%, hsl(187 85% 53%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(350 80% 60%) 0%, hsl(330 80% 55%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(30 90% 55%) 0%, hsl(350 80% 60%) 100%);
-    --gradient-fashion: linear-gradient(180deg, hsl(30 50% 95%) 0%, hsl(30 30% 85%) 100%);
+    /* Instagram Gradient Colors */
+    --ig-yellow: 45 100% 51%;
+    --ig-orange: 28 100% 54%;
+    --ig-pink: 340 82% 52%;
+    --ig-purple: 280 87% 50%;
+    --ig-blue: 214 100% 59%;
+
+    /* Instagram Gradients */
+    --gradient-instagram: linear-gradient(45deg, hsl(45 100% 51%), hsl(28 100% 54%), hsl(340 82% 52%), hsl(280 87% 50%));
+    --gradient-primary: linear-gradient(135deg, hsl(214 100% 59%) 0%, hsl(280 87% 50%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(340 82% 52%) 0%, hsl(28 100% 54%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(340 82% 52%) 100%);
+    --gradient-story: linear-gradient(45deg, hsl(45 100% 51%), hsl(28 100% 54%), hsl(340 82% 52%), hsl(280 87% 50%), hsl(214 100% 59%));
     
-    --shadow-soft: 0 4px 20px -4px hsl(220 20% 10% / 0.1);
-    --shadow-medium: 0 8px 30px -8px hsl(220 20% 10% / 0.15);
-    --shadow-glow: 0 0 30px hsl(187 85% 43% / 0.3);
+    /* Shadows */
+    --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.08);
+    --shadow-medium: 0 4px 12px hsl(0 0% 0% / 0.1);
+    --shadow-glow: 0 0 20px hsl(340 82% 52% / 0.3);
     
-    --font-display: 'Montserrat', sans-serif;
-    --font-body: 'Quicksand', sans-serif;
+    /* Typography */
+    --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 7%;
+    --sidebar-primary: 214 100% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 0 0% 7%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 214 100% 59%;
   }
 
   .dark {
-    --background: 220 20% 8%;
-    --foreground: 210 20% 98%;
+    /* Instagram Dark Theme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 220 20% 12%;
-    --card-foreground: 210 20% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 187 85% 50%;
-    --primary-foreground: 220 20% 8%;
+    --primary: 214 100% 59%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 210 15% 60%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
 
-    --accent: 350 80% 55%;
+    --accent: 340 82% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 40%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 187 85% 50%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 214 100% 59%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Sidebar Dark */
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 214 100% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 214 100% 59%;
   }
 }
 
@@ -105,16 +122,91 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Instagram-style button */
+  .btn-instagram {
+    @apply relative overflow-hidden font-semibold text-white transition-all duration-200;
+    background: var(--gradient-instagram);
+    background-size: 200% 200%;
+  }
+  
+  .btn-instagram:hover {
+    background-position: 100% 0;
+    @apply shadow-lg;
+  }
+
+  /* Instagram-style card */
+  .card-instagram {
+    @apply bg-card rounded-lg border border-border;
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Story ring gradient */
+  .story-ring {
+    background: var(--gradient-story);
+    @apply p-[2px] rounded-full;
+  }
+
+  .story-ring-inner {
+    @apply bg-background rounded-full p-[2px];
+  }
+
+  /* Instagram-style input */
+  .input-instagram {
+    @apply bg-secondary border-none rounded-lg px-4 py-3 text-sm;
+    @apply focus:ring-2 focus:ring-primary/20 focus:outline-none;
+    @apply placeholder:text-muted-foreground;
+  }
+
+  /* Instagram icon button */
+  .icon-btn {
+    @apply p-2 rounded-lg transition-all duration-200;
+    @apply hover:bg-secondary active:scale-95;
+  }
+
+  /* Instagram nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200;
+    @apply hover:bg-secondary text-foreground;
+  }
+
+  .nav-item.active {
+    @apply font-semibold;
+  }
+
+  /* Avatar with story ring */
+  .avatar-ring {
+    @apply relative;
+  }
+
+  .avatar-ring::before {
+    content: '';
+    @apply absolute -inset-[3px] rounded-full;
+    background: var(--gradient-story);
+  }
+
+  .avatar-ring img {
+    @apply relative rounded-full border-2 border-background;
   }
 }
 
 @layer utilities {
+  /* Gradients */
+  .gradient-instagram {
+    background: var(--gradient-instagram);
+  }
+  
   .gradient-primary {
     background: var(--gradient-primary);
   }
@@ -126,11 +218,12 @@
   .gradient-warm {
     background: var(--gradient-warm);
   }
-  
-  .gradient-fashion {
-    background: var(--gradient-fashion);
+
+  .gradient-story {
+    background: var(--gradient-story);
   }
   
+  /* Shadows */
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
@@ -143,15 +236,29 @@
     box-shadow: var(--shadow-glow);
   }
   
+  /* Text gradient */
   .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background: var(--gradient-instagram);
+  }
+
+  .text-gradient-primary {
     @apply bg-clip-text text-transparent;
     background: var(--gradient-primary);
   }
   
+  /* Glass effect */
   .glass {
-    @apply backdrop-blur-xl bg-card/80;
+    @apply backdrop-blur-xl;
+    background: hsl(var(--card) / 0.8);
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-xl;
+    background: hsl(0 0% 0% / 0.7);
   }
   
+  /* Animations */
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
@@ -166,6 +273,40 @@
   
   .animate-scale-in {
     animation: scale-in 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-0.5;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-scale:hover {
+    @apply scale-105;
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Press effect */
+  .press-effect {
+    @apply transition-transform duration-100 active:scale-95;
   }
 }
 
@@ -201,22 +342,44 @@
   }
 }
 
-/* Custom scrollbar */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounce-in {
+  0% { 
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% { 
+    transform: scale(1.05);
+  }
+  70% { 
+    transform: scale(0.9);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom scrollbar - Instagram style */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted rounded-full;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary/30 rounded-full;
+  @apply bg-border rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary/50;
+  @apply bg-muted-foreground/30;
 }
 
 /* Hide scrollbar utility */
@@ -232,4 +395,13 @@
 /* Mobile viewport fix */
 .mobile-viewport {
   min-height: 100dvh;
+}
+
+/* Safe area insets for mobile */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
