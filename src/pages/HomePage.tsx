@@ -244,9 +244,9 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
       </section>
 
       {/* Instagram-style Grid */}
-      <section className="animate-fade-in">
+      <section className="animate-fade-in px-4">
         {/* Shared Outfits Header */}
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-3 py-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
             <Users size={16} className="text-primary-foreground" />
           </div>
@@ -257,9 +257,9 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
         </div>
 
         {loadingSharedOutfits ? (
-          <SkeletonGrid count={9} />
+          <SkeletonGrid count={9} className="rounded-xl overflow-hidden" />
         ) : (
-          <div className="grid grid-cols-3 gap-0.5">
+          <div className="grid grid-cols-3 gap-1 rounded-xl overflow-hidden">
             {/* Shared Outfits */}
             {sharedOutfits.slice(0, 6).map((outfit, index) => (
               <div
