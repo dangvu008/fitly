@@ -125,6 +125,7 @@ export const translations = {
     clothing_tags_hint: 'Nhập tag và nhấn Enter',
     clothing_updated: 'Đã cập nhật quần áo!',
     suggested_tags: 'Gợi ý:',
+    search_clothing: 'Tìm theo tên hoặc tag...',
     
     // Settings
     language: 'Ngôn ngữ',
@@ -254,6 +255,7 @@ export const translations = {
     clothing_tags_hint: 'Type tag and press Enter',
     clothing_updated: 'Clothing updated!',
     suggested_tags: 'Suggestions:',
+    search_clothing: 'Search by name or tag...',
     
     // Settings
     language: 'Language',

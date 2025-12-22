@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal } from 'lucide-react';
+import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 // Category definitions
 const categories: { id: ClothingCategory; icon: React.ElementType; label: string }[] = [
@@ -54,6 +55,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   const [pendingClothingToSave, setPendingClothingToSave] = useState<ClothingItem | null>(null);
   const [editingClothing, setEditingClothing] = useState<ClothingItem | null>(null);
   const [showClothingPanel, setShowClothingPanel] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
@@ -82,11 +84,21 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
     }
   }, [bodyImage]);
 
-  // Get clothing based on source
+  // Get clothing based on source and filter by search
   const displayedClothing = clothingSource === 'saved' ? userClothing : clothing;
-  const filteredClothing = activeCategory === 'all'
+  const filteredByCategory = activeCategory === 'all'
     ? displayedClothing 
     : displayedClothing.filter(c => c.category === activeCategory);
+  
+  // Filter by search query (name or tags)
+  const filteredClothing = searchQuery.trim() 
+    ? filteredByCategory.filter(item => {
+        const query = searchQuery.toLowerCase().trim();
+        const nameMatch = item.name.toLowerCase().includes(query);
+        const tagMatch = item.tags?.some(tag => tag.toLowerCase().includes(query));
+        return nameMatch || tagMatch;
+      })
+    : filteredByCategory;
 
   const handleAddBodyImage = () => {
     fileInputRef.current?.click();
@@ -519,6 +531,28 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
             >
               <X size={18} />
             </Button>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="px-4 py-2 border-b border-border">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t('search_clothing')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
           
           {/* Clothing Grid */}
