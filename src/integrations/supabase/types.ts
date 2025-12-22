@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      hidden_outfits: {
+        Row: {
+          created_at: string
+          id: string
+          outfit_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          outfit_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          outfit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_outfits_outfit_id_fkey"
+            columns: ["outfit_id"]
+            isOneToOne: false
+            referencedRelation: "shared_outfits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outfit_comments: {
         Row: {
           content: string
@@ -101,6 +130,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      saved_outfits: {
+        Row: {
+          created_at: string
+          id: string
+          outfit_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          outfit_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          outfit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_outfits_outfit_id_fkey"
+            columns: ["outfit_id"]
+            isOneToOne: false
+            referencedRelation: "shared_outfits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shared_outfits: {
         Row: {
