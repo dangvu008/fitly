@@ -1,1 +1,10 @@
 project_id = "nvnmypunnvgtakiyqhvn"
+
+[functions.analyze-clothing-image]
+verify_jwt = false
+
+[functions.analyze-body-image]
+verify_jwt = false
+
+[functions.virtual-try-on]
+verify_jwt = false
