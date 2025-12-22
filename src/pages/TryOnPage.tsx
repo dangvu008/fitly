@@ -85,7 +85,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       subcategory?: string;
     };
   } | null>(null);
-  const { processVirtualTryOn, isProcessing, clearResult, progress: aiProgress, updateProgress, resetProgress } = useAITryOn();
+  const { processVirtualTryOn, isProcessing, clearResult, progress: aiProgress, updateProgress, resetProgress, cancelProcessing } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
   const { userClothing, saveClothingItem, updateClothingItem, deleteClothingItem, isSaving: isSavingClothing } = useUserClothing();
   const { user } = useAuth();
@@ -473,7 +473,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   return (
     <div className="pt-14 pb-24 max-w-md mx-auto bg-background min-h-screen">
       {/* AI Processing Progress Bar */}
-      <AIProgressBar progress={aiProgress} isVisible={isProcessing} />
+      <AIProgressBar progress={aiProgress} isVisible={isProcessing} onCancel={cancelProcessing} />
 
       {/* Clothing Validation Overlay */}
       {isValidatingClothing && clothingProgress && (
@@ -553,20 +553,31 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 className="flex-1"
                 onClick={() => {
                   handleCloseResult();
+                  handleAITryOn();
+                }}
+              >
+                <Sparkles size={18} />
+                Thử lại
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  handleCloseResult();
                   handleAddBodyImage();
                 }}
               >
                 <Camera size={18} />
                 {t('tryon_change_photo')}
               </Button>
-              <Button
-                variant="instagram"
-                className="flex-1"
-                onClick={handleShareToPublic}
-              >
-                Đăng lên
-              </Button>
             </div>
+            <Button
+              variant="instagram"
+              className="w-full"
+              onClick={handleShareToPublic}
+            >
+              Đăng lên
+            </Button>
           </div>
         </div>
       )}
