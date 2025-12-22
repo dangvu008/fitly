@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Share2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ClothingItem } from '@/types/clothing';
 import { useOutfitFeed } from '@/hooks/useOutfitFeed';
-import { OutfitFeedCard } from '@/components/feed/OutfitFeedCard';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
+import { TrendingOutfitsSection } from '@/components/home/TrendingOutfitsSection';
+import { TryOnHistorySection } from '@/components/home/TryOnHistorySection';
+import { SuggestedClothingSection } from '@/components/home/SuggestedClothingSection';
+import { FeedSection } from '@/components/home/FeedSection';
 import { toast } from 'sonner';
 
 interface HomePageProps {
@@ -15,7 +16,7 @@ interface HomePageProps {
   onSelectItem: (item: ClothingItem) => void;
 }
 
-export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => {
+export const HomePage = ({ onNavigateToTryOn, onNavigateToHistory, onSelectItem }: HomePageProps) => {
   const navigate = useNavigate();
   const { outfits, isLoading, isLoadingMore, hasMore, loadMore, refresh, hideOutfit, saveOutfit, unsaveOutfit } = useOutfitFeed();
   
@@ -59,7 +60,6 @@ export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => 
           url,
         });
       } catch (error) {
-        // User cancelled or error
         if ((error as Error).name !== 'AbortError') {
           await navigator.clipboard.writeText(url);
           toast.success('Đã copy link!');
@@ -71,79 +71,45 @@ export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => 
     }
   };
 
+  // Get top trending outfits (sorted by likes)
+  const trendingOutfits = [...outfits]
+    .sort((a, b) => b.likes_count - a.likes_count)
+    .slice(0, 10);
+
   return (
     <div className="pb-24 pt-16 max-w-lg mx-auto">
-      {/* Instagram-style Feed */}
-      <div className="animate-fade-in">
-        {isLoading ? (
-          // Loading skeleton
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card border-b border-border">
-                <div className="flex items-center gap-3 p-3">
-                  <Skeleton className="w-8 h-8 rounded-full" />
-                  <div className="space-y-1">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-2 w-16" />
-                  </div>
-                </div>
-                <Skeleton className="aspect-[4/5] w-full" />
-                <div className="p-3 space-y-2">
-                  <div className="flex gap-3">
-                    <Skeleton className="w-6 h-6" />
-                    <Skeleton className="w-6 h-6" />
-                    <Skeleton className="w-6 h-6" />
-                  </div>
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-3 w-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : outfits.length === 0 ? (
-          // Empty state
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-            <Share2 size={48} className="text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Chưa có outfit nào</h3>
-            <p className="text-muted-foreground text-sm mb-4">
-              Hãy là người đầu tiên chia sẻ outfit của bạn!
-            </p>
-          </div>
-        ) : (
-          // Feed
-          <div className="space-y-0">
-            {outfits.map((outfit) => (
-              <OutfitFeedCard
-                key={outfit.id}
-                outfit={outfit}
-                userProfile={outfit.user_profile}
-                isLiked={outfit.isLiked}
-                isSaved={outfit.isSaved}
-                onOpenComments={handleOpenComments}
-                onShare={handleShare}
-                onViewDetail={handleViewOutfitDetail}
-                onLikeChange={refresh}
-                onSave={saveOutfit}
-                onUnsave={unsaveOutfit}
-                onHide={hideOutfit}
-              />
-            ))}
-          </div>
-        )}
-        
-        {/* Infinite scroll trigger */}
-        <div ref={loadMoreRef} className="py-6 text-center">
-          {isLoadingMore ? (
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Đang tải thêm...</span>
-            </div>
-          ) : hasMore && outfits.length > 0 ? (
-            <p className="text-sm text-muted-foreground">Cuộn để xem thêm</p>
-          ) : outfits.length > 0 ? (
-            <p className="text-sm text-muted-foreground">Đã hiển thị tất cả</p>
-          ) : null}
-        </div>
+      <div className="animate-fade-in space-y-6">
+        {/* Trending Outfits Section */}
+        <TrendingOutfitsSection
+          outfits={trendingOutfits}
+          isLoading={isLoading}
+          onViewOutfit={handleViewOutfitDetail}
+        />
+
+        {/* Try-On History Section */}
+        <TryOnHistorySection
+          onNavigateToTryOn={onNavigateToTryOn}
+          onNavigateToHistory={onNavigateToHistory}
+        />
+
+        {/* Suggested Clothing Section */}
+        <SuggestedClothingSection onSelectItem={onSelectItem} />
+
+        {/* Community Feed Section */}
+        <FeedSection
+          outfits={outfits}
+          isLoading={isLoading}
+          isLoadingMore={isLoadingMore}
+          hasMore={hasMore}
+          onOpenComments={handleOpenComments}
+          onShare={handleShare}
+          onViewOutfit={handleViewOutfitDetail}
+          onRefresh={refresh}
+          onSave={saveOutfit}
+          onUnsave={unsaveOutfit}
+          onHide={hideOutfit}
+          loadMoreRef={loadMoreRef}
+        />
       </div>
 
       {/* Comments Sheet */}
