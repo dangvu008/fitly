@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { History, Trash2, Share2, Download, Loader2, ImageOff, Scale, Check, X } from 'lucide-react';
+import { History, Trash2, Share2, Download, Loader2, ImageOff, Scale, Check, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompare, SavedOutfit } from '@/contexts/CompareContext';
@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { ClothingItem } from '@/types/clothing';
 
 interface ClothingItemData {
   name: string;
@@ -23,9 +24,11 @@ interface TryOnHistoryItem {
 
 interface HistoryPageProps {
   onNavigateToCompare?: () => void;
+  onNavigateToTryOn?: () => void;
+  onReuseHistory?: (bodyImageUrl: string, clothingItems: ClothingItem[]) => void;
 }
 
-export const HistoryPage = ({ onNavigateToCompare }: HistoryPageProps) => {
+export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHistory }: HistoryPageProps) => {
   const { user, loading: authLoading } = useAuth();
   const { addToCompare, outfitsToCompare, isInCompare, clearCompare } = useCompare();
   const navigate = useNavigate();
@@ -119,6 +122,31 @@ export const HistoryPage = ({ onNavigateToCompare }: HistoryPageProps) => {
     link.target = '_blank';
     link.click();
     toast.success('Đang tải xuống...');
+  };
+
+  const handleReuse = async (item: TryOnHistoryItem) => {
+    if (!onReuseHistory || !onNavigateToTryOn) {
+      toast.error('Không thể sử dụng lại');
+      return;
+    }
+
+    try {
+      // Convert clothing items to ClothingItem format
+      const clothingItems: ClothingItem[] = item.clothing_items.map((ci, idx) => ({
+        id: `history-${item.id}-${idx}`,
+        name: ci.name,
+        category: 'top' as const, // Default category
+        imageUrl: ci.imageUrl,
+      }));
+
+      // Call the reuse handler with body image URL and clothing items
+      onReuseHistory(item.body_image_url, clothingItems);
+      onNavigateToTryOn();
+      toast.success('Đã tải lại outfit - bạn có thể thay đổi từng món đồ');
+    } catch (error) {
+      console.error('Error reusing history:', error);
+      toast.error('Không thể tải lại outfit');
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -353,6 +381,15 @@ export const HistoryPage = ({ onNavigateToCompare }: HistoryPageProps) => {
                 {/* Actions - hide in compare mode */}
                 {!compareMode && (
                   <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="iconSm"
+                      onClick={() => handleReuse(item)}
+                      className="flex-1 h-8 text-primary hover:text-primary hover:bg-primary/10"
+                      title="Thử lại với outfit này"
+                    >
+                      <RefreshCw size={14} />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="iconSm"
