@@ -18,6 +18,7 @@ import { useUserClothing } from '@/hooks/useUserClothing';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useClothingValidation } from '@/hooks/useClothingValidation';
+import { useCategoryCorrections } from '@/hooks/useCategoryCorrections';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -74,6 +75,13 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [pendingUnknownItem, setPendingUnknownItem] = useState<{
     item: Omit<ClothingItem, 'category'>;
     imageUrl: string;
+    aiPredictedCategory?: string;
+    imageFeatures?: {
+      color?: string;
+      pattern?: string;
+      style?: string;
+      subcategory?: string;
+    };
   } | null>(null);
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
@@ -87,6 +95,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     mapToAppCategory,
     issueTranslationMap
   } = useClothingValidation();
+  const { saveCorrection } = useCategoryCorrections();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
@@ -217,7 +226,17 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       
       // If category is unknown, show dialog for user to select
       if (appCategory === 'unknown' || appCategory === 'all') {
-        setPendingUnknownItem({ item: baseItem, imageUrl: result.processedImageUrl || imageDataUrl });
+        setPendingUnknownItem({ 
+          item: baseItem, 
+          imageUrl: result.processedImageUrl || imageDataUrl,
+          aiPredictedCategory: aiCategory,
+          imageFeatures: {
+            color: result.analysis?.color,
+            pattern: result.analysis?.pattern,
+            style: result.analysis?.style,
+            subcategory: result.analysis?.subcategory,
+          }
+        });
         setShowCategoryDialog(true);
         return;
       }
@@ -263,7 +282,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     toast.success(`${t('msg_item_selected')} ${item.name}`);
   };
 
-  const handleCategorySelect = (category: ClothingCategory) => {
+  const handleCategorySelect = async (category: ClothingCategory) => {
     if (pendingUnknownItem) {
       const newItem: ClothingItem = {
         ...pendingUnknownItem.item,
@@ -274,6 +293,14 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       
       if (user) {
         setPendingClothingToSave(newItem);
+        
+        // Save correction for AI learning
+        await saveCorrection(
+          pendingUnknownItem.imageUrl,
+          pendingUnknownItem.aiPredictedCategory || null,
+          category,
+          pendingUnknownItem.imageFeatures
+        );
       }
       
       const categoryLabel = t(`msg_clothing_category_${category}` as any) || category;
