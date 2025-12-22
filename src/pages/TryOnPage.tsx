@@ -651,6 +651,9 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
         <SelectedClothingList 
           items={selectedItems} 
           onRemove={handleRemoveClothing}
+          savedClothing={userClothing}
+          sampleClothing={clothing}
+          onSelectItem={handleAddClothing}
         />
       </div>
 

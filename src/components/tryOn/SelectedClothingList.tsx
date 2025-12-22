@@ -1,5 +1,5 @@
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import confetti from 'canvas-confetti';
@@ -9,6 +9,9 @@ import { TranslationKey } from '@/i18n/translations';
 interface SelectedClothingListProps {
   items: ClothingItem[];
   onRemove: (id: string) => void;
+  savedClothing?: ClothingItem[];
+  sampleClothing?: ClothingItem[];
+  onSelectItem?: (item: ClothingItem) => void;
 }
 
 type OutfitCategory = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory';
@@ -21,7 +24,13 @@ const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: s
   { category: 'accessory', labelKey: 'slot_accessory', icon: '👜' },
 ];
 
-export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingListProps>(({ items, onRemove }, ref) => {
+export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingListProps>(({ 
+  items, 
+  onRemove,
+  savedClothing = [],
+  sampleClothing = [],
+  onSelectItem
+}, ref) => {
   const { t } = useLanguage();
   
   // Track newly added items for animation
@@ -29,6 +38,40 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
   const [isOutfitComplete, setIsOutfitComplete] = useState(false);
   const prevCompleteRef = useRef(false);
+  const [expandedCategory, setExpandedCategory] = useState<OutfitCategory | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setExpandedCategory(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Get clothing items for a specific category
+  const getClothingForCategory = (category: OutfitCategory): ClothingItem[] => {
+    const allClothing = [...savedClothing, ...sampleClothing];
+    return allClothing.filter(item => item.category === category);
+  };
+
+  const handleSlotClick = (category: OutfitCategory) => {
+    if (expandedCategory === category) {
+      setExpandedCategory(null);
+    } else {
+      setExpandedCategory(category);
+    }
+  };
+
+  const handleSelectFromDropdown = (item: ClothingItem) => {
+    if (onSelectItem) {
+      onSelectItem(item);
+    }
+    setExpandedCategory(null);
+  };
 
   // Group items by category
   const itemsByCategory = items.reduce((acc, item) => {
@@ -139,23 +182,28 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
         </div>
       </div>
       
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-2 relative" ref={dropdownRef}>
         {outfitSlots.map((slot) => {
           const item = itemsByCategory[slot.category];
           const isAnimating = item && animatingItems.has(item.id);
           const isRemoving = item && removingItems.has(item.id);
+          const isExpanded = expandedCategory === slot.category;
+          const categoryClothing = getClothingForCategory(slot.category);
           
           return (
-            <div key={slot.category} className="flex flex-col items-center gap-1">
+            <div key={slot.category} className="flex flex-col items-center gap-1 relative">
               {/* Slot container */}
-              <div
+              <button
+                type="button"
+                onClick={() => handleSlotClick(slot.category)}
                 className={cn(
-                  "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300",
+                  "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300 cursor-pointer",
                   item 
                     ? "ring-2 ring-primary shadow-glow" 
                     : "border-2 border-dashed border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-primary/5",
                   isAnimating && "animate-scale-in",
-                  isRemoving && "animate-scale-out opacity-0"
+                  isRemoving && "animate-scale-out opacity-0",
+                  isExpanded && "ring-2 ring-primary"
                 )}
               >
                 {item ? (
@@ -169,8 +217,11 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                       className="w-full h-full object-cover"
                     />
                     <button
-                      onClick={() => handleRemove(item.id)}
-                      className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-125 active:scale-95 transition-transform duration-150"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(item.id);
+                      }}
+                      className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-125 active:scale-95 transition-transform duration-150 z-10"
                     >
                       <X size={10} />
                     </button>
@@ -182,11 +233,12 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xl opacity-40 transition-all duration-200 hover:opacity-60 hover:scale-110">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-xl opacity-40 transition-all duration-200 hover:opacity-60 hover:scale-110">
                     {slot.icon}
+                    <ChevronDown size={10} className="mt-0.5" />
                   </div>
                 )}
-              </div>
+              </button>
               
               {/* Label */}
               <span className={cn(
@@ -195,6 +247,43 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
               )}>
                 {t(slot.labelKey)}
               </span>
+
+              {/* Dropdown panel */}
+              {isExpanded && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-48 max-h-56 bg-card border border-border rounded-xl shadow-medium overflow-hidden animate-scale-in">
+                  <div className="p-2 border-b border-border">
+                    <p className="text-xs font-medium text-foreground text-center">{t(slot.labelKey)}</p>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto p-2">
+                    {categoryClothing.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-4">
+                        {t('no_saved_clothing')}
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {categoryClothing.map((clothingItem) => (
+                          <button
+                            key={clothingItem.id}
+                            onClick={() => handleSelectFromDropdown(clothingItem)}
+                            className={cn(
+                              "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
+                              items.some(i => i.id === clothingItem.id) 
+                                ? "border-primary ring-1 ring-primary" 
+                                : "border-transparent hover:border-primary/50"
+                            )}
+                          >
+                            <img 
+                              src={clothingItem.imageUrl} 
+                              alt={clothingItem.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
