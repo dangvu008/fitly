@@ -22,12 +22,30 @@ export interface SharedOutfit {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
+  isLiked?: boolean;
 }
 
 export const useSharedOutfits = () => {
   const { user } = useAuth();
   const [sharedOutfits, setSharedOutfits] = useState<SharedOutfit[]>([]);
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUserLikes = useCallback(async () => {
+    if (!user) {
+      setUserLikes(new Set());
+      return;
+    }
+
+    const { data } = await supabase
+      .from('outfit_likes')
+      .select('outfit_id')
+      .eq('user_id', user.id);
+
+    if (data) {
+      setUserLikes(new Set(data.map(like => like.outfit_id)));
+    }
+  }, [user]);
 
   const fetchSharedOutfits = useCallback(async () => {
     setIsLoading(true);
@@ -41,11 +59,71 @@ export const useSharedOutfits = () => {
       const typedData = data.map(item => ({
         ...item,
         clothing_items: (item.clothing_items || []) as unknown as ClothingItemData[],
+        isLiked: userLikes.has(item.id),
       }));
       setSharedOutfits(typedData);
     }
     setIsLoading(false);
-  }, []);
+  }, [userLikes]);
+
+  const toggleLike = async (outfitId: string) => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để thích outfit');
+      return false;
+    }
+
+    const isCurrentlyLiked = userLikes.has(outfitId);
+
+    if (isCurrentlyLiked) {
+      // Unlike
+      const { error } = await supabase
+        .from('outfit_likes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('outfit_id', outfitId);
+
+      if (error) {
+        toast.error('Không thể bỏ thích');
+        return false;
+      }
+
+      setUserLikes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(outfitId);
+        return newSet;
+      });
+
+      setSharedOutfits(prev =>
+        prev.map(o =>
+          o.id === outfitId
+            ? { ...o, likes_count: Math.max(0, o.likes_count - 1), isLiked: false }
+            : o
+        )
+      );
+    } else {
+      // Like
+      const { error } = await supabase
+        .from('outfit_likes')
+        .insert({ user_id: user.id, outfit_id: outfitId });
+
+      if (error) {
+        toast.error('Không thể thích outfit');
+        return false;
+      }
+
+      setUserLikes(prev => new Set(prev).add(outfitId));
+
+      setSharedOutfits(prev =>
+        prev.map(o =>
+          o.id === outfitId
+            ? { ...o, likes_count: o.likes_count + 1, isLiked: true }
+            : o
+        )
+      );
+    }
+
+    return true;
+  };
 
   const shareOutfit = async (
     title: string,
@@ -96,6 +174,10 @@ export const useSharedOutfits = () => {
   };
 
   useEffect(() => {
+    fetchUserLikes();
+  }, [fetchUserLikes]);
+
+  useEffect(() => {
     fetchSharedOutfits();
   }, [fetchSharedOutfits]);
 
@@ -104,6 +186,8 @@ export const useSharedOutfits = () => {
     isLoading,
     shareOutfit,
     deleteOutfit,
+    toggleLike,
+    userLikes,
     refetch: fetchSharedOutfits,
   };
 };
