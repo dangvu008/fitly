@@ -8,6 +8,7 @@ import { EditClothingDialog } from '@/components/clothing/EditClothingDialog';
 import { AddClothingDialog } from '@/components/clothing/AddClothingDialog';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
 import { ShareToPublicDialog } from '@/components/outfit/ShareToPublicDialog';
+import { LoginRequiredDialog } from '@/components/auth/LoginRequiredDialog';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAITryOn } from '@/hooks/useAITryOn';
@@ -67,6 +68,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [searchQuery, setSearchQuery] = useState('');
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showShareToPublicDialog, setShowShareToPublicDialog] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
   const { userClothing, saveClothingItem, updateClothingItem, deleteClothingItem, isSaving: isSavingClothing } = useUserClothing();
@@ -274,12 +276,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const handleAITryOn = async () => {
     // Check login first
     if (!user) {
-      toast.error(t('msg_login_to_try_on'), {
-        action: {
-          label: t('btn_login'),
-          onClick: () => window.location.href = '/auth',
-        },
-      });
+      setShowLoginDialog(true);
       return;
     }
 
@@ -338,7 +335,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
   const handleSave = async () => {
     if (!user) {
-      toast.error(t('msg_login_required'));
+      setShowLoginDialog(true);
       return;
     }
     
@@ -373,7 +370,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
   const handleShareToPublic = () => {
     if (!user) {
-      toast.error(t('msg_login_required'));
+      setShowLoginDialog(true);
       return;
     }
     if (aiResultImage) {
@@ -772,6 +769,12 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         onClose={() => setShowAddClothingDialog(false)}
         onAddClothing={handleClothingFromDialog}
         onSaveToCollection={handleSaveClothingFromDialog}
+      />
+
+      {/* Login Required Dialog */}
+      <LoginRequiredDialog
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
       />
     </div>
   );

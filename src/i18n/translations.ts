@@ -133,6 +133,11 @@ export const translations = {
     // Settings
     language: 'Ngôn ngữ',
     theme: 'Giao diện',
+    
+    // Login required dialog
+    login_required_title: 'Yêu cầu đăng nhập',
+    login_required_desc: 'Bạn cần đăng nhập để sử dụng tính năng này. Đăng nhập để lưu kết quả thử đồ, tạo bộ sưu tập và chia sẻ với cộng đồng.',
+    login_required_benefits: 'Đăng ký miễn phí và bắt đầu trải nghiệm thử đồ AI!',
   },
   en: {
     // Common
@@ -266,6 +271,11 @@ export const translations = {
     // Settings
     language: 'Language',
     theme: 'Theme',
+    
+    // Login required dialog
+    login_required_title: 'Login Required',
+    login_required_desc: 'You need to login to use this feature. Login to save try-on results, create collections and share with the community.',
+    login_required_benefits: 'Sign up for free and start your AI try-on experience!',
   },
 } as const;
 
