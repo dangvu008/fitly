@@ -1,17 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Users, History, Share2, Clock, Loader2, ImageOff, ChevronDown } from 'lucide-react';
+import { Users, History, Share2, Loader2, ImageOff, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ClothingCard } from '@/components/clothing/ClothingCard';
-import { SharedOutfitCard } from '@/components/outfit/SharedOutfitCard';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAuth } from '@/contexts/AuthContext';
@@ -142,17 +132,14 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
     : clothing.filter(item => item.category === selectedFilter);
 
   return (
-    <div className="pb-24 pt-16 px-4 space-y-6 max-w-md mx-auto">
+    <div className="pb-24 pt-16 max-w-lg mx-auto">
 
-      {/* Recent History Section */}
-      <section className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-            <Clock size={20} className="text-primary" />
-            Thử đồ gần đây
-          </h3>
+      {/* Stories-style Recent History */}
+      <section className="animate-fade-in border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h3 className="font-semibold text-foreground">Thử đồ gần đây</h3>
           {recentHistory.length > 0 && onNavigateToHistory && (
-            <Button variant="link" size="sm" className="text-primary" onClick={onNavigateToHistory}>
+            <Button variant="link" size="sm" className="text-primary p-0 h-auto" onClick={onNavigateToHistory}>
               Xem tất cả
             </Button>
           )}
@@ -163,165 +150,187 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : !user ? (
-          <div className="bg-card rounded-2xl p-6 text-center border border-border">
-            <History size={32} className="mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground text-sm mb-3">
-              Đăng nhập để xem lịch sử thử đồ
-            </p>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = '/auth'}>
-              Đăng nhập
-            </Button>
+          <div className="px-4 pb-4">
+            <div className="bg-secondary/50 rounded-2xl p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-accent mx-auto mb-3 flex items-center justify-center">
+                <History size={24} className="text-primary-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm mb-3">
+                Đăng nhập để xem lịch sử
+              </p>
+              <Button variant="instagram" size="sm" onClick={() => window.location.href = '/auth'}>
+                Đăng nhập
+              </Button>
+            </div>
           </div>
         ) : recentHistory.length === 0 ? (
-          <div className="bg-card rounded-2xl p-6 text-center border border-border">
-            <ImageOff size={32} className="mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground text-sm mb-3">
-              Chưa có lịch sử thử đồ
-            </p>
-            <Button variant="outline" size="sm" onClick={onNavigateToTryOn}>
-              Thử đồ ngay
-            </Button>
+          <div className="px-4 pb-4">
+            <div className="bg-secondary/50 rounded-2xl p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-accent mx-auto mb-3 flex items-center justify-center">
+                <ImageOff size={24} className="text-primary-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm mb-3">
+                Chưa có lịch sử thử đồ
+              </p>
+              <Button variant="instagram" size="sm" onClick={onNavigateToTryOn}>
+                Thử đồ ngay
+              </Button>
+            </div>
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            {recentHistory.map((item) => (
+          <div className="flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide">
+            {recentHistory.map((item, index) => (
               <div
                 key={item.id}
-                className="flex-shrink-0 w-32 group relative bg-card rounded-xl overflow-hidden shadow-soft border border-border"
+                className="flex-shrink-0 flex flex-col items-center gap-1.5 animate-scale-in"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className="aspect-[3/4] bg-secondary">
-                  <img
-                    src={item.result_image_url}
-                    alt="Try-on result"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                {/* Story ring */}
+                <div className="relative">
+                  <div className="w-[72px] h-[72px] rounded-full p-[3px] bg-gradient-to-tr from-primary via-accent to-pink-500">
+                    <div className="w-full h-full rounded-full bg-background p-[2px]">
+                      <img
+                        src={item.result_image_url}
+                        alt="Try-on"
+                        className="w-full h-full rounded-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleShareOutfit(item)}
+                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg"
+                  >
+                    <Share2 size={12} />
+                  </button>
                 </div>
-                
-                {/* Time badge */}
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-card/90 backdrop-blur-sm text-[9px] font-medium text-foreground">
+                <span className="text-[11px] text-muted-foreground max-w-[72px] truncate text-center">
                   {formatTimeAgo(item.created_at)}
-                </div>
+                </span>
+              </div>
+            ))}
+            
+            {/* Add new story button */}
+            <div 
+              className="flex-shrink-0 flex flex-col items-center gap-1.5 cursor-pointer"
+              onClick={onNavigateToTryOn}
+            >
+              <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary transition-colors">
+                <span className="text-2xl text-muted-foreground">+</span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">Thử mới</span>
+            </div>
+          </div>
+        )}
+      </section>
 
-                {/* Share button */}
-                <button
-                  onClick={() => handleShareOutfit(item)}
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  <Share2 size={12} />
-                </button>
+      {/* Filter Chips */}
+      <section className="px-4 py-3 border-b border-border">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {filterOptions.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => setSelectedFilter(filter.value)}
+              className={cn(
+                "flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+                selectedFilter === filter.value
+                  ? "bg-foreground text-background"
+                  : "bg-secondary text-foreground hover:bg-secondary/80"
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
-                {/* Bottom info */}
-                <div className="p-2">
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {item.clothing_items?.length || 0} món đồ
-                  </p>
+      {/* Instagram-style Grid */}
+      <section className="animate-fade-in">
+        {/* Shared Outfits Header */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
+            <Users size={16} className="text-primary-foreground" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm text-foreground">Khám phá</h3>
+            <p className="text-xs text-muted-foreground">Outfit & gợi ý phong cách</p>
+          </div>
+        </div>
+
+        {loadingSharedOutfits ? (
+          <div className="grid grid-cols-3 gap-0.5">
+            {[...Array(9)].map((_, i) => (
+              <div key={i} className="aspect-square bg-secondary animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-0.5">
+            {/* Shared Outfits */}
+            {sharedOutfits.slice(0, 6).map((outfit, index) => (
+              <div
+                key={outfit.id}
+                onClick={() => handleViewOutfitDetail(outfit.id)}
+                className="aspect-square relative cursor-pointer group overflow-hidden animate-scale-in"
+                style={{ animationDelay: `${index * 0.03}s` }}
+              >
+                <img
+                  src={outfit.result_image_url}
+                  alt={outfit.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="flex items-center gap-4 text-white">
+                    <span className="flex items-center gap-1 text-sm font-semibold">
+                      ❤️ {outfit.likes_count}
+                    </span>
+                  </div>
                 </div>
+                {/* Featured badge */}
+                {outfit.is_featured && (
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium">
+                    Featured
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {/* Suggestions Grid */}
+            {filteredItems.slice(0, Math.max(0, 12 - sharedOutfits.length)).map((item, index) => (
+              <div
+                key={item.id}
+                onClick={() => onSelectItem(item)}
+                className="aspect-square relative cursor-pointer group overflow-hidden animate-scale-in"
+                style={{ animationDelay: `${(sharedOutfits.length + index) * 0.03}s` }}
+              >
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+                {/* Category badge */}
+                <div className="absolute bottom-2 left-2 right-2">
+                  <span className="inline-block px-2 py-0.5 rounded bg-background/80 backdrop-blur-sm text-[10px] font-medium text-foreground truncate max-w-full">
+                    {item.name}
+                  </span>
+                </div>
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
               </div>
             ))}
           </div>
         )}
-      </section>
-
-      {/* Shared Outfits Section */}
-      <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-            <Users size={20} className="text-primary" />
-            Outfit được chia sẻ
-          </h3>
-        </div>
-
-        {loadingSharedOutfits ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : sharedOutfits.length === 0 ? (
-          <div className="bg-card rounded-2xl p-6 text-center border border-border">
-            <Users size={32} className="mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground text-sm">
-              Chưa có outfit nào được chia sẻ
+        
+        {/* Load more hint */}
+        {(sharedOutfits.length > 0 || filteredItems.length > 0) && (
+          <div className="py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Kéo xuống để xem thêm
             </p>
+            <ChevronDown className="w-5 h-5 mx-auto mt-1 text-muted-foreground animate-bounce" />
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {sharedOutfits.slice(0, 4).map((outfit) => (
-              <SharedOutfitCard
-                key={outfit.id}
-                outfit={outfit}
-                onClick={() => handleViewOutfitDetail(outfit.id)}
-                onToggleLike={toggleLike}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Suggestions Section with Carousel */}
-      <section className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-            <TrendingUp size={20} className="text-primary" />
-            Gợi ý cho bạn
-          </h3>
-          <Select
-            value={selectedFilter}
-            onValueChange={(value) => setSelectedFilter(value as ClothingCategory | 'all')}
-          >
-            <SelectTrigger className="w-[120px] h-8 text-xs bg-secondary border-0">
-              <SelectValue placeholder="Lọc theo" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border z-50">
-              {filterOptions.map((filter) => (
-                <SelectItem 
-                  key={filter.id} 
-                  value={filter.value}
-                  className="text-xs"
-                >
-                  {filter.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Carousel */}
-        {filteredItems.length === 0 ? (
-          <div className="bg-card rounded-2xl p-6 text-center border border-border">
-            <ImageOff size={32} className="mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground text-sm">
-              Không tìm thấy sản phẩm phù hợp
-            </p>
-          </div>
-        ) : (
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-              dragFree: true,
-            }}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-3">
-              {filteredItems.map((item) => (
-                <CarouselItem key={item.id} className="pl-3 basis-[45%]">
-                  <ClothingCard
-                    item={item}
-                    size="lg"
-                    onSelect={() => onSelectItem(item)}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
-        )}
-
-        {/* Swipe hint */}
-        {filteredItems.length > 2 && (
-          <p className="text-center text-[10px] text-muted-foreground mt-2">
-            ← Kéo để xem thêm →
-          </p>
         )}
       </section>
     </div>
