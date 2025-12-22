@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, ExternalLink, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface ClothingItemData {
   id?: string;
@@ -27,14 +30,21 @@ interface SharedOutfitDetail {
 export const SharedOutfitDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [outfit, setOutfit] = useState<SharedOutfitDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
     if (id) {
       fetchOutfitDetail(id);
+      if (user) {
+        checkIfLiked(id);
+      }
     }
-  }, [id]);
+  }, [id, user]);
 
   const fetchOutfitDetail = async (outfitId: string) => {
     setLoading(true);
@@ -54,24 +64,49 @@ export const SharedOutfitDetailPage = () => {
       ...data,
       clothing_items: (data.clothing_items || []) as unknown as ClothingItemData[],
     });
+    setLikesCount(data.likes_count);
     setLoading(false);
   };
 
-  const handleShare = async () => {
-    if (!outfit) return;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: outfit.title,
-          text: outfit.description || 'Xem outfit này!',
-          url: window.location.href,
-        });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success('Đã sao chép link!');
+  const checkIfLiked = async (outfitId: string) => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('outfit_likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('outfit_id', outfitId)
+      .single();
+    
+    setIsLiked(!!data);
+  };
+
+  const handleToggleLike = async () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để thích outfit');
+      return;
+    }
+    if (!id) return;
+
+    if (isLiked) {
+      const { error } = await supabase
+        .from('outfit_likes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('outfit_id', id);
+
+      if (!error) {
+        setIsLiked(false);
+        setLikesCount(prev => Math.max(0, prev - 1));
       }
-    } catch (error) {
-      // User cancelled
+    } else {
+      const { error } = await supabase
+        .from('outfit_likes')
+        .insert({ user_id: user.id, outfit_id: id });
+
+      if (!error) {
+        setIsLiked(true);
+        setLikesCount(prev => prev + 1);
+      }
     }
   };
 
@@ -106,7 +141,7 @@ export const SharedOutfitDetailPage = () => {
           <h1 className="font-display font-bold text-base truncate max-w-[200px]">
             {outfit.title}
           </h1>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
+          <Button variant="ghost" size="icon" onClick={() => setShareOpen(true)}>
             <Share2 size={20} />
           </Button>
         </div>
@@ -122,11 +157,19 @@ export const SharedOutfitDetailPage = () => {
               className="w-full h-full object-cover"
             />
             
-            {/* Likes badge */}
-            <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm flex items-center gap-2">
-              <Heart size={16} className="text-destructive fill-destructive" />
-              <span className="text-sm font-medium text-foreground">{outfit.likes_count}</span>
-            </div>
+            {/* Like button */}
+            <button
+              onClick={handleToggleLike}
+              className={cn(
+                "absolute top-4 right-4 px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 transition-all",
+                isLiked 
+                  ? "bg-destructive/90 text-destructive-foreground" 
+                  : "bg-card/90 text-foreground hover:bg-destructive/80 hover:text-destructive-foreground"
+              )}
+            >
+              <Heart size={16} className={cn(isLiked && "fill-current")} />
+              <span className="text-sm font-medium">{likesCount}</span>
+            </button>
 
             {outfit.is_featured && (
               <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
@@ -134,6 +177,25 @@ export const SharedOutfitDetailPage = () => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Share buttons */}
+        <div className="flex gap-3">
+          <Button 
+            className="flex-1 gap-2" 
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 size={16} />
+            Chia sẻ outfit
+          </Button>
+          <Button 
+            variant={isLiked ? "default" : "outline"}
+            className="gap-2"
+            onClick={handleToggleLike}
+          >
+            <Heart size={16} className={cn(isLiked && "fill-current")} />
+            {isLiked ? 'Đã thích' : 'Thích'}
+          </Button>
         </div>
 
         {/* Description */}
@@ -201,6 +263,15 @@ export const SharedOutfitDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ShareOutfitDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        imageUrl={outfit.result_image_url}
+        title={outfit.title}
+        shareUrl={window.location.href}
+      />
     </div>
   );
 };
