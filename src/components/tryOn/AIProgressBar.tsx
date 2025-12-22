@@ -1,11 +1,13 @@
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Upload, Brain, Sparkles, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Upload, Brain, Sparkles, CheckCircle, XCircle, X } from 'lucide-react';
 import { TryOnProgress } from '@/hooks/useAITryOn';
 import { cn } from '@/lib/utils';
 
 interface AIProgressBarProps {
   progress: TryOnProgress;
   isVisible: boolean;
+  onCancel?: () => void;
 }
 
 const stageConfig = {
@@ -16,13 +18,15 @@ const stageConfig = {
   generating: { icon: Sparkles, color: 'text-amber-500' },
   complete: { icon: CheckCircle, color: 'text-green-500' },
   error: { icon: XCircle, color: 'text-destructive' },
+  cancelled: { icon: XCircle, color: 'text-muted-foreground' },
 };
 
-export const AIProgressBar = ({ progress, isVisible }: AIProgressBarProps) => {
-  if (!isVisible || progress.stage === 'idle') return null;
+export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarProps) => {
+  if (!isVisible || progress.stage === 'idle' || progress.stage === 'cancelled') return null;
 
   const config = stageConfig[progress.stage];
   const Icon = config.icon;
+  const canCancel = !['complete', 'error', 'cancelled'].includes(progress.stage);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -76,6 +80,18 @@ export const AIProgressBar = ({ progress, isVisible }: AIProgressBarProps) => {
             isComplete={false}
           />
         </div>
+
+        {/* Cancel button */}
+        {canCancel && onCancel && (
+          <Button 
+            variant="outline" 
+            className="w-full gap-2"
+            onClick={onCancel}
+          >
+            <X className="w-4 h-4" />
+            Hủy xử lý
+          </Button>
+        )}
       </div>
     </div>
   );

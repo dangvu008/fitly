@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -10,7 +10,7 @@ interface TryOnResult {
 }
 
 export interface TryOnProgress {
-  stage: 'idle' | 'compressing' | 'uploading' | 'processing' | 'generating' | 'complete' | 'error';
+  stage: 'idle' | 'compressing' | 'uploading' | 'processing' | 'generating' | 'complete' | 'error' | 'cancelled';
   progress: number;
   message: string;
 }
@@ -23,15 +23,35 @@ export const useAITryOn = () => {
     progress: 0,
     message: ''
   });
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateProgress = useCallback((stage: TryOnProgress['stage'], progressValue: number, message: string) => {
     setProgress({ stage, progress: progressValue, message });
   }, []);
 
+  const cancelProcessing = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    setIsProcessing(false);
+    updateProgress('cancelled', 0, 'Đã hủy xử lý');
+    toast.info('Đã hủy xử lý thử đồ');
+  }, [updateProgress]);
+
   const processVirtualTryOn = async (
     bodyImage: string,
     clothingItems: Array<{ imageUrl: string; name: string }>
   ): Promise<TryOnResult | null> => {
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     setIsProcessing(true);
     setResult(null);
     updateProgress('uploading', 10, 'Đang gửi dữ liệu...');
@@ -42,7 +62,7 @@ export const useAITryOn = () => {
       updateProgress('processing', 30, 'Đang kết nối AI...');
       
       // Simulate progress during API call
-      const progressInterval = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         setProgress(prev => {
           if (prev.stage === 'processing' && prev.progress < 70) {
             return { ...prev, progress: prev.progress + 5, message: 'AI đang phân tích hình ảnh...' };
@@ -63,7 +83,16 @@ export const useAITryOn = () => {
         },
       });
 
-      clearInterval(progressInterval);
+      // Clear progress interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+
+      // Check if cancelled
+      if (abortControllerRef.current?.signal.aborted) {
+        return null;
+      }
 
       if (error) {
         console.error('Function error:', error);
@@ -92,6 +121,17 @@ export const useAITryOn = () => {
       return tryOnResult;
 
     } catch (error) {
+      // Clear progress interval on error
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      // Don't show error if cancelled
+      if (abortControllerRef.current?.signal.aborted) {
+        return null;
+      }
+      
       console.error('Error processing virtual try-on:', error);
       const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi';
       updateProgress('error', 0, errorMessage);
@@ -99,6 +139,7 @@ export const useAITryOn = () => {
       return { success: false, error: errorMessage };
     } finally {
       setIsProcessing(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -119,5 +160,6 @@ export const useAITryOn = () => {
     updateProgress,
     clearResult,
     resetProgress,
+    cancelProcessing,
   };
 };
