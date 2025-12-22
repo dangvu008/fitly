@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import logoImage from '@/assets/logo.png';
 
 interface HeaderProps {
@@ -14,6 +13,7 @@ interface HeaderProps {
   showLanguageSwitcher?: boolean;
   onBack?: () => void;
   onShare?: () => void;
+  onAvatarClick?: () => void;
 }
 
 export const Header = ({ 
@@ -23,14 +23,10 @@ export const Header = ({
   showNotification,
   showLanguageSwitcher = true,
   onBack,
-  onShare 
+  onShare,
+  onAvatarClick 
 }: HeaderProps) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleAvatarClick = () => {
-    navigate('/profile');
-  };
 
   const getInitials = () => {
     if (user?.user_metadata?.display_name) {
@@ -73,7 +69,7 @@ export const Header = ({
           
           {/* User Avatar */}
           <button 
-            onClick={handleAvatarClick}
+            onClick={onAvatarClick}
             className="ml-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
           >
             <Avatar className="h-8 w-8 border-2 border-primary/20 hover:border-primary/50 transition-colors">

@@ -1,4 +1,4 @@
-import { Home, Shirt, User, Scale, ShoppingBag } from 'lucide-react';
+import { Home, Shirt, Scale, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCompare } from '@/contexts/CompareContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,7 +14,6 @@ const navItems: { id: string; icon: typeof Home; labelKey: TranslationKey }[] = 
   { id: 'tryOn', icon: Shirt, labelKey: 'nav_tryon' },
   { id: 'closet', icon: ShoppingBag, labelKey: 'nav_wardrobe' },
   { id: 'compare', icon: Scale, labelKey: 'nav_compare' },
-  { id: 'profile', icon: User, labelKey: 'nav_profile' },
 ];
 
 export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {

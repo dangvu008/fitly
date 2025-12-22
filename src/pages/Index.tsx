@@ -109,6 +109,7 @@ const MainApp = () => {
         showNotification={activeTab === 'home'}
         onBack={() => setActiveTab('home')}
         onShare={handleShare}
+        onAvatarClick={() => setActiveTab('profile')}
       />
 
       <main className="min-h-screen">
