@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search } from 'lucide-react';
+import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
 import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
 import { AIProgressBar } from '@/components/tryOn/AIProgressBar';
+import { EditResultDialog } from '@/components/tryOn/EditResultDialog';
 import { EditClothingDialog } from '@/components/clothing/EditClothingDialog';
 import { AddClothingDialog } from '@/components/clothing/AddClothingDialog';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
@@ -21,6 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { useCategoryCorrections } from '@/hooks/useCategoryCorrections';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -74,6 +76,8 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [showShareToPublicDialog, setShowShareToPublicDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showEditResultDialog, setShowEditResultDialog] = useState(false);
+  const [isEditingResult, setIsEditingResult] = useState(false);
   const [pendingUnknownItem, setPendingUnknownItem] = useState<{
     item: Omit<ClothingItem, 'category'>;
     imageUrl: string;
@@ -458,6 +462,59 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     clearResult();
   };
 
+  const handleEditResult = async (instruction: string) => {
+    if (!aiResultImage) return;
+    
+    setIsEditingResult(true);
+    
+    try {
+      // Compress clothing images for reference
+      const { fetchAndCompressImage } = await import('@/utils/imageCompression');
+      
+      const compressedClothingItems = await Promise.all(
+        selectedItems.map(async (item) => {
+          try {
+            const compressedUrl = await fetchAndCompressImage(item.imageUrl, 400, 400, 0.7);
+            return { imageUrl: compressedUrl, name: item.name };
+          } catch {
+            return { imageUrl: item.imageUrl, name: item.name };
+          }
+        })
+      );
+
+      const { data, error } = await supabase.functions.invoke('edit-try-on-result', {
+        body: {
+          currentImage: aiResultImage,
+          instruction,
+          clothingItems: compressedClothingItems,
+        },
+      });
+
+      if (error) {
+        console.error('Edit function error:', error);
+        toast.error('Không thể chỉnh sửa hình ảnh');
+        return;
+      }
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data.success && data.editedImage) {
+        setAiResultImage(data.editedImage);
+        setIsResultSaved(false);
+        setShowEditResultDialog(false);
+        toast.success('Đã chỉnh sửa thành công!');
+      }
+    } catch (error) {
+      console.error('Error editing result:', error);
+      toast.error('Đã xảy ra lỗi khi chỉnh sửa');
+    } finally {
+      setIsEditingResult(false);
+    }
+  };
+
   const getClothingProgressMessage = () => {
     if (!clothingProgress) return '';
     switch (clothingProgress.stage) {
@@ -551,6 +608,14 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
               <Button
                 variant="outline"
                 className="flex-1"
+                onClick={() => setShowEditResultDialog(true)}
+              >
+                <Wand2 size={18} />
+                Chỉnh sửa
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
                 onClick={() => {
                   handleCloseResult();
                   handleAITryOn();
@@ -559,6 +624,8 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 <Sparkles size={18} />
                 Thử lại
               </Button>
+            </div>
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -570,14 +637,14 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 <Camera size={18} />
                 {t('tryon_change_photo')}
               </Button>
+              <Button
+                variant="instagram"
+                className="flex-1"
+                onClick={handleShareToPublic}
+              >
+                Đăng lên
+              </Button>
             </div>
-            <Button
-              variant="instagram"
-              className="w-full"
-              onClick={handleShareToPublic}
-            >
-              Đăng lên
-            </Button>
           </div>
         </div>
       )}
@@ -879,6 +946,17 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         onSelect={handleCategorySelect}
         imageUrl={pendingUnknownItem?.imageUrl}
       />
+
+      {/* Edit Result Dialog */}
+      {aiResultImage && (
+        <EditResultDialog
+          open={showEditResultDialog}
+          onOpenChange={setShowEditResultDialog}
+          currentImage={aiResultImage}
+          onEdit={handleEditResult}
+          isProcessing={isEditingResult}
+        />
+      )}
     </div>
   );
 };
