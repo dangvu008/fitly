@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
 import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
+import { AIProgressBar } from '@/components/tryOn/AIProgressBar';
 import { EditClothingDialog } from '@/components/clothing/EditClothingDialog';
 import { AddClothingDialog } from '@/components/clothing/AddClothingDialog';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
@@ -84,7 +85,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       subcategory?: string;
     };
   } | null>(null);
-  const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
+  const { processVirtualTryOn, isProcessing, clearResult, progress: aiProgress, updateProgress, resetProgress } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
   const { userClothing, saveClothingItem, updateClothingItem, deleteClothingItem, isSaving: isSavingClothing } = useUserClothing();
   const { user } = useAuth();
@@ -361,10 +362,13 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       return;
     }
 
-    toast.info('Đang tối ưu hình ảnh...');
+    // Start progress tracking
+    updateProgress('compressing', 5, 'Đang nén hình ảnh...');
 
     // Import compression utilities
     const { compressImageForAI, fetchAndCompressImage } = await import('@/utils/imageCompression');
+
+    updateProgress('compressing', 15, `Đang xử lý ${selectedItems.length + 1} hình ảnh...`);
 
     // Process all images in parallel for speed
     const [compressedBodyImage, ...compressedClothingResults] = await Promise.all([
@@ -468,6 +472,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
   return (
     <div className="pt-14 pb-24 max-w-md mx-auto bg-background min-h-screen">
+      {/* AI Processing Progress Bar */}
+      <AIProgressBar progress={aiProgress} isVisible={isProcessing} />
+
       {/* Clothing Validation Overlay */}
       {isValidatingClothing && clothingProgress && (
         <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
