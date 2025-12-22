@@ -1,5 +1,5 @@
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
-import { X, Sparkles, ChevronDown, Filter } from 'lucide-react';
+import { X, Sparkles, ChevronDown, Filter, Plus, Shirt, Square, Crown, Footprints, Glasses } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef, forwardRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
@@ -12,16 +12,17 @@ interface SelectedClothingListProps {
   savedClothing?: ClothingItem[];
   sampleClothing?: ClothingItem[];
   onSelectItem?: (item: ClothingItem) => void;
+  onAddClothing?: () => void;
 }
 
 type OutfitCategory = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory';
 
-const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: string }[] = [
-  { category: 'top', labelKey: 'slot_top', icon: '👕' },
-  { category: 'bottom', labelKey: 'slot_bottom', icon: '👖' },
-  { category: 'dress', labelKey: 'slot_dress', icon: '👗' },
-  { category: 'shoes', labelKey: 'slot_shoes', icon: '👟' },
-  { category: 'accessory', labelKey: 'slot_accessory', icon: '👜' },
+const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: React.ElementType }[] = [
+  { category: 'top', labelKey: 'slot_top', icon: Shirt },
+  { category: 'bottom', labelKey: 'slot_bottom', icon: Square },
+  { category: 'dress', labelKey: 'slot_dress', icon: Crown },
+  { category: 'shoes', labelKey: 'slot_shoes', icon: Footprints },
+  { category: 'accessory', labelKey: 'slot_accessory', icon: Glasses },
 ];
 
 // Common colors with their display names
@@ -54,7 +55,8 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   onRemove,
   savedClothing = [],
   sampleClothing = [],
-  onSelectItem
+  onSelectItem,
+  onAddClothing
 }, ref) => {
   const { t } = useLanguage();
   
@@ -238,92 +240,80 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
 
   return (
     <div ref={ref} className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground font-medium">
-          {t('outfit_selected')}
-        </p>
-        <div className="flex items-center gap-1.5">
-          {isOutfitComplete && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-primary animate-scale-in">
-              <Sparkles size={12} className="animate-pulse" />
-              {t('outfit_complete')}
-            </span>
-          )}
-          <span className={cn(
-            "text-xs font-bold transition-all duration-300",
-            selectedCount > 0 ? "text-primary" : "text-muted-foreground",
-            isOutfitComplete && "scale-110"
-          )}>
-            {selectedCount}/{outfitSlots.length}
-          </span>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-5 gap-2 relative" ref={dropdownRef}>
-        {outfitSlots.map((slot) => {
-          const item = itemsByCategory[slot.category];
-          const isAnimating = item && animatingItems.has(item.id);
-          const isRemoving = item && removingItems.has(item.id);
-          const isExpanded = expandedCategory === slot.category;
-          const categoryClothing = getClothingForCategory(slot.category);
-          
-          return (
-            <div key={slot.category} className="flex flex-col items-center gap-1 relative">
-              {/* Slot container */}
-              <button
-                type="button"
-                onClick={() => handleSlotClick(slot.category)}
-                className={cn(
-                  "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300 cursor-pointer",
-                  item 
-                    ? "ring-2 ring-primary shadow-glow" 
-                    : "border-2 border-dashed border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-primary/5",
-                  isAnimating && "animate-scale-in",
-                  isRemoving && "animate-scale-out opacity-0",
-                  isExpanded && "ring-2 ring-primary"
-                )}
-              >
-                {item ? (
-                  <div className={cn(
-                    "w-full h-full",
-                    isAnimating && "animate-scale-in"
-                  )}>
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove(item.id);
-                      }}
-                      className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-125 active:scale-95 transition-transform duration-150 z-10"
-                    >
-                      <X size={10} />
-                    </button>
-                    {/* Overlay with name */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/80 to-transparent p-1">
-                      <p className="text-[8px] text-background truncate font-medium text-center">
-                        {item.name}
-                      </p>
+      {/* Horizontal scrollable outfit slots */}
+      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4" ref={dropdownRef}>
+        <div className="flex gap-3 min-w-max py-1">
+          {/* Add button */}
+          <div className="flex flex-col items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onAddClothing}
+              className="w-16 h-16 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 flex flex-col items-center justify-center hover:border-primary hover:bg-primary/10 transition-all duration-200"
+            >
+              <Plus size={20} className="text-primary" />
+            </button>
+            <span className="text-[10px] font-medium text-primary">Thêm</span>
+          </div>
+
+          {/* Category slots */}
+          {outfitSlots.map((slot) => {
+            const item = itemsByCategory[slot.category];
+            const isAnimating = item && animatingItems.has(item.id);
+            const isRemoving = item && removingItems.has(item.id);
+            const isExpanded = expandedCategory === slot.category;
+            const categoryClothing = getClothingForCategory(slot.category);
+            const IconComponent = slot.icon;
+            
+            return (
+              <div key={slot.category} className="flex flex-col items-center gap-1.5 relative">
+                {/* Slot container */}
+                <button
+                  type="button"
+                  onClick={() => handleSlotClick(slot.category)}
+                  className={cn(
+                    "relative w-16 h-16 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer",
+                    item 
+                      ? "ring-2 ring-primary shadow-glow" 
+                      : "border border-border bg-card hover:border-primary/50 hover:bg-primary/5",
+                    isAnimating && "animate-scale-in",
+                    isRemoving && "animate-scale-out opacity-0",
+                    isExpanded && "ring-2 ring-primary"
+                  )}
+                >
+                  {item ? (
+                    <div className={cn(
+                      "w-full h-full relative",
+                      isAnimating && "animate-scale-in"
+                    )}>
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(item.id);
+                        }}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-125 active:scale-95 transition-transform duration-150 z-10"
+                      >
+                        <X size={10} />
+                      </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-xl opacity-40 transition-all duration-200 hover:opacity-60 hover:scale-110">
-                    {slot.icon}
-                    <ChevronDown size={10} className="mt-0.5" />
-                  </div>
-                )}
-              </button>
-              
-              {/* Label */}
-              <span className={cn(
-                "text-[10px] font-medium transition-colors duration-200",
-                item ? "text-primary" : "text-muted-foreground"
-              )}>
-                {t(slot.labelKey)}
-              </span>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center transition-all duration-200 hover:opacity-80">
+                      <IconComponent size={24} className="text-muted-foreground/60" strokeWidth={1.5} />
+                    </div>
+                  )}
+                </button>
+                
+                {/* Label */}
+                <span className={cn(
+                  "text-[10px] font-medium transition-colors duration-200",
+                  item ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {t(slot.labelKey)}
+                </span>
 
               {/* Dropdown panel */}
               {isExpanded && (
@@ -474,15 +464,29 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                   </div>
                 </div>
               )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {selectedCount === 0 && (
-        <p className="text-center text-xs text-muted-foreground py-2 animate-fade-in">
-          {t('outfit_hint')}
-        </p>
+      {/* Selected count indicator */}
+      {selectedCount > 0 && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          {isOutfitComplete && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-primary animate-scale-in">
+              <Sparkles size={12} className="animate-pulse" />
+              {t('outfit_complete')}
+            </span>
+          )}
+          <span className={cn(
+            "text-xs font-bold transition-all duration-300",
+            selectedCount > 0 ? "text-primary" : "text-muted-foreground",
+            isOutfitComplete && "scale-110"
+          )}>
+            {selectedCount}/{outfitSlots.length}
+          </span>
+        </div>
       )}
     </div>
   );
