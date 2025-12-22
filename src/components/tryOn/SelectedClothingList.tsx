@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, forwardRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface SelectedClothingListProps {
   items: ClothingItem[];
@@ -73,19 +74,14 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   const [selectedStyle, setSelectedStyle] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Close dropdown when clicking outside
+  // Reset filters when category changes
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setExpandedCategory(null);
-        setShowFilters(false);
-        setSelectedColor('all');
-        setSelectedStyle('all');
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (expandedCategory === null) {
+      setShowFilters(false);
+      setSelectedColor('all');
+      setSelectedStyle('all');
+    }
+  }, [expandedCategory]);
 
   // Get clothing items for a specific category with filters
   const getClothingForCategory = (category: OutfitCategory): ClothingItem[] => {
@@ -244,72 +240,72 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
             const IconComponent = slot.icon;
             
             return (
-              <div key={slot.category} className="flex flex-col items-center gap-1 relative">
-                {/* Slot container */}
-                <div
-                  className={cn(
-                    "relative w-[72px] h-[72px] rounded-xl overflow-hidden transition-all duration-300",
-                    item 
-                      ? "ring-2 ring-primary shadow-glow" 
-                      : "border-2 border-dashed border-border bg-card",
-                    isAnimating && "animate-scale-in",
-                    isRemoving && "animate-scale-out opacity-0",
-                    isExpanded && "ring-2 ring-primary"
-                  )}
+              <div key={slot.category} className="flex flex-col items-center gap-1">
+                <Popover 
+                  open={isExpanded} 
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setExpandedCategory(slot.category);
+                    } else {
+                      setExpandedCategory(null);
+                    }
+                  }}
                 >
-                  {item ? (
-                    <div className={cn(
-                      "w-full h-full relative group",
-                      isAnimating && "animate-scale-in"
-                    )}>
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => handleSlotClick(slot.category)}
-                      />
-                      {/* Remove button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemove(item.id);
-                        }}
-                        className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-150 z-10 shadow-sm"
-                      >
-                        <X size={12} />
-                      </button>
-                      {/* Change button overlay */}
-                      <div 
-                        className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                        onClick={() => handleSlotClick(slot.category)}
-                      >
-                        <span className="text-[10px] font-medium text-background">Đổi</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div 
-                      className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
-                      onClick={() => handleSlotClick(slot.category)}
+                  <PopoverTrigger asChild>
+                    {/* Slot container */}
+                    <button
+                      className={cn(
+                        "relative w-[72px] h-[72px] rounded-xl overflow-hidden transition-all duration-300",
+                        item 
+                          ? "ring-2 ring-primary shadow-glow" 
+                          : "border-2 border-dashed border-border bg-card",
+                        isAnimating && "animate-scale-in",
+                        isRemoving && "animate-scale-out opacity-0",
+                        isExpanded && "ring-2 ring-primary"
+                      )}
                     >
-                      <IconComponent size={22} className="text-muted-foreground/60 mb-1" strokeWidth={1.5} />
-                      <Plus size={14} className="text-primary" />
-                    </div>
-                  )}
-                </div>
-                
-                {/* Label */}
-                <span className={cn(
-                  "text-[10px] font-medium transition-colors duration-200",
-                  item ? "text-primary" : "text-muted-foreground"
-                )}>
-                  {t(slot.labelKey)}
-                </span>
-
-                {/* Dropdown panel */}
-                {isExpanded && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 bg-card border border-border rounded-xl shadow-medium overflow-hidden animate-scale-in">
+                      {item ? (
+                        <div className={cn(
+                          "w-full h-full relative group",
+                          isAnimating && "animate-scale-in"
+                        )}>
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Remove button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove(item.id);
+                            }}
+                            className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-150 z-10 shadow-sm"
+                          >
+                            <X size={12} />
+                          </button>
+                          {/* Change button overlay */}
+                          <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="text-[10px] font-medium text-background">Đổi</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center hover:bg-primary/5 transition-colors">
+                          <IconComponent size={22} className="text-muted-foreground/60 mb-1" strokeWidth={1.5} />
+                          <Plus size={14} className="text-primary" />
+                        </div>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  
+                  <PopoverContent 
+                    side="top" 
+                    sideOffset={8}
+                    align="center"
+                    className="w-72 p-0 z-50 bg-card border border-border rounded-xl shadow-lg"
+                  >
                     {/* Header with upload button */}
-                    <div className="p-3 border-b border-border flex items-center justify-between bg-muted/30">
+                    <div className="p-3 border-b border-border flex items-center justify-between bg-muted/30 rounded-t-xl">
                       <p className="text-sm font-semibold text-foreground">{t(slot.labelKey)}</p>
                       <div className="flex items-center gap-2">
                         <button
@@ -404,7 +400,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                     )}
                     
                     {/* Clothing grid */}
-                    <div className="max-h-52 overflow-y-auto p-3">
+                    <div className="max-h-60 overflow-y-auto p-3">
                       {categoryClothing.length === 0 ? (
                         <div className="text-center py-6">
                           <IconComponent size={32} className="text-muted-foreground/40 mx-auto mb-2" strokeWidth={1} />
@@ -452,8 +448,16 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Label */}
+                <span className={cn(
+                  "text-[10px] font-medium transition-colors duration-200",
+                  item ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {t(slot.labelKey)}
+                </span>
               </div>
             );
           })}
