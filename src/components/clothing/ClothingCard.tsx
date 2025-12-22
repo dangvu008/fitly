@@ -2,6 +2,7 @@ import { Heart, ExternalLink } from 'lucide-react';
 import { ClothingItem } from '@/types/clothing';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { forwardRef } from 'react';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -11,13 +12,13 @@ interface ClothingCardProps {
   isSelected?: boolean;
 }
 
-export const ClothingCard = ({ 
+export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({ 
   item, 
   onSelect, 
   onToggleFavorite,
   size = 'md',
   isSelected = false,
-}: ClothingCardProps) => {
+}, ref) => {
   const sizeClasses = {
     sm: 'w-16 h-16',
     md: 'w-24 h-24',
@@ -26,6 +27,7 @@ export const ClothingCard = ({
 
   return (
     <div 
+      ref={ref}
       className={cn(
         "relative group animate-scale-in",
         size === 'lg' && "w-full"
@@ -97,4 +99,6 @@ export const ClothingCard = ({
       )}
     </div>
   );
-};
+});
+
+ClothingCard.displayName = 'ClothingCard';

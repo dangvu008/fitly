@@ -1,7 +1,7 @@
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
@@ -21,7 +21,7 @@ const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: s
   { category: 'accessory', labelKey: 'slot_accessory', icon: '👜' },
 ];
 
-export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListProps) => {
+export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingListProps>(({ items, onRemove }, ref) => {
   const { t } = useLanguage();
   
   // Track newly added items for animation
@@ -117,7 +117,7 @@ export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListPr
   };
 
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground font-medium">
           {t('outfit_selected')}
@@ -207,4 +207,6 @@ export const SelectedClothingList = ({ items, onRemove }: SelectedClothingListPr
       )}
     </div>
   );
-};
+});
+
+SelectedClothingList.displayName = 'SelectedClothingList';
