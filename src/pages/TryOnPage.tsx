@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Globe } from 'lucide-react';
+import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
@@ -42,7 +42,6 @@ interface TryOnPageProps {
 
 export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = [] }: TryOnPageProps) => {
   const [bodyImage, setBodyImage] = useState<string | undefined>(() => {
-    // Priority: reuseBodyImage > localStorage
     if (reuseBodyImage) return reuseBodyImage;
     try {
       return localStorage.getItem(BODY_IMAGE_STORAGE_KEY) || undefined;
@@ -114,7 +113,6 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     ? displayedClothing 
     : displayedClothing.filter(c => c.category === activeCategory);
   
-  // Filter by search query (name or tags)
   const filteredClothing = searchQuery.trim() 
     ? filteredByCategory.filter(item => {
         const query = searchQuery.toLowerCase().trim();
@@ -160,19 +158,16 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Convert file to base64
     const reader = new FileReader();
     reader.onload = async (event) => {
       const imageDataUrl = event.target?.result as string;
       
-      // Validate clothing image with AI
       const result = await validateAndProcessClothing(imageDataUrl, { 
         removeBackground: true, 
         language 
       });
       
       if (!result.isValid) {
-        // Show errors with suggestions
         const errorMessages = result.errors.map(err => {
           const translationKey = issueTranslationMap[err];
           if (translationKey && t(translationKey as any) !== translationKey) {
@@ -199,11 +194,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         return;
       }
       
-      // Get category from AI analysis
       const aiCategory = result.analysis?.category || 'top';
       const appCategory = mapToAppCategory(aiCategory);
       
-      // Create clothing item with AI-detected info
       const newItem: ClothingItem = {
         id: Date.now().toString(),
         name: result.analysis?.subcategory || file.name.replace(/\.[^/.]+$/, ''),
@@ -217,12 +210,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       
       handleAddClothing(newItem);
       
-      // Store pending item and ask if user wants to save
       if (user) {
         setPendingClothingToSave(newItem);
       }
       
-      // Show success toast with detected info
       const genderLabel = result.analysis?.gender === 'male' 
         ? t('msg_gender_male') 
         : result.analysis?.gender === 'female' 
@@ -242,13 +233,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       );
     };
     reader.readAsDataURL(file);
-    
-    // Clear input for re-upload
     e.target.value = '';
   };
 
   const handleAddClothing = (item: ClothingItem) => {
-    // Replace item of same category or add new
     setSelectedItems(prev => {
       const filtered = prev.filter(i => i.category !== item.category);
       return [...filtered, item];
@@ -305,7 +293,6 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       return;
     }
 
-    // Convert all selected items to base64 if needed
     const clothingItemsData: Array<{ imageUrl: string; name: string }> = [];
     
     for (const item of selectedItems) {
@@ -336,7 +323,6 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       setAiResultImage(result.generatedImage);
       setIsResultSaved(false);
       
-      // Auto-save to history if user is logged in
       if (user) {
         const clothingForHistory = selectedItems.map(item => ({
           name: item.name,
@@ -395,16 +381,6 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     }
   };
 
-  const handleDownloadResult = () => {
-    if (aiResultImage) {
-      const link = document.createElement('a');
-      link.href = aiResultImage;
-      link.download = 'virtual-try-on-result.png';
-      link.click();
-      toast.success(t('msg_downloaded'));
-    }
-  };
-
   const handleCloseResult = () => {
     setAiResultImage(null);
     setIsResultSaved(false);
@@ -424,11 +400,11 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   };
 
   return (
-    <div className="pb-24 pt-16 max-w-md mx-auto">
+    <div className="pt-14 pb-24 max-w-md mx-auto bg-background min-h-screen">
       {/* Clothing Validation Overlay */}
       {isValidatingClothing && clothingProgress && (
-        <div className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl p-6 max-w-xs w-full shadow-medium space-y-4">
+        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-xl p-6 max-w-xs w-full shadow-medium space-y-4 border border-border">
             <div className="flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
@@ -458,74 +434,64 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
       {/* AI Result Modal */}
       {aiResultImage && (
-        <div className="fixed inset-0 z-50 bg-foreground/90 backdrop-blur-md flex items-center justify-center p-4 animate-scale-in">
-          <div className="relative max-w-sm w-full max-h-[85vh]">
-            {/* Close button */}
-            <button
-              onClick={handleCloseResult}
-              className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-card/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-card/40 transition-colors z-10"
-            >
-              <X size={20} />
+        <div className="fixed inset-0 z-50 bg-background flex flex-col animate-fade-in">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between px-4 h-14 border-b border-border">
+            <button onClick={handleCloseResult} className="text-foreground press-effect">
+              <X size={24} />
             </button>
+            <span className="font-semibold text-foreground">{t('tryon_result_title')}</span>
+            <button onClick={handleShare} className="text-primary press-effect">
+              <Share2 size={22} />
+            </button>
+          </div>
 
-            {/* Image container */}
-            <div className="relative rounded-2xl overflow-hidden shadow-lg">
-              <img 
-                src={aiResultImage} 
-                alt="AI Try-On Result" 
-                className="w-full max-h-[75vh] object-contain bg-card"
-              />
-              
-              {/* Floating action buttons - bottom right corner with glass morphism */}
-              <div className="absolute bottom-4 right-4 flex flex-col items-center gap-2.5 animate-fade-in">
-                {/* Camera - change photo */}
-                <button
-                  onClick={() => {
-                    handleCloseResult();
-                    handleAddBodyImage();
-                  }}
-                  className="group w-10 h-10 rounded-full bg-white/80 dark:bg-card/80 backdrop-blur-md shadow-lg border border-white/20 dark:border-white/10 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:bg-primary hover:border-primary active:scale-95"
-                  title={t('tryon_change_photo')}
-                >
-                  <Camera size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
-                </button>
+          {/* Result Image */}
+          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+            <img 
+              src={aiResultImage} 
+              alt="AI Try-On Result" 
+              className="max-w-full max-h-full object-contain rounded-xl"
+            />
+          </div>
 
-                {/* Save */}
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving || isResultSaved}
-                  className={cn(
-                    "group w-10 h-10 rounded-full backdrop-blur-md shadow-lg border flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 disabled:opacity-60 disabled:hover:scale-100",
-                    isResultSaved 
-                      ? "bg-emerald-500/90 border-emerald-400/30 text-white" 
-                      : "bg-white/80 dark:bg-card/80 border-white/20 dark:border-white/10 hover:bg-primary hover:border-primary"
-                  )}
-                  title={isResultSaved ? t('msg_already_saved') : t('save')}
-                >
-                  {isSaving ? (
-                    <Loader2 size={16} className="animate-spin text-muted-foreground" />
-                  ) : isResultSaved ? (
-                    <Heart size={16} className="fill-current" />
-                  ) : (
-                    <Save size={16} className="text-muted-foreground group-hover:text-primary-foreground transition-colors" />
-                  )}
-                </button>
-
-                {/* Share */}
-                <button
-                  onClick={handleShare}
-                  className="group w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/25 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-rose-500/40 active:scale-95"
-                  title={t('share')}
-                >
-                  <Share2 size={16} className="text-white" />
-                </button>
-              </div>
-
-              {/* Success indicator */}
-              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-primary/90 backdrop-blur-sm text-primary-foreground text-xs font-medium flex items-center gap-1.5">
-                <Sparkles size={12} />
-                {t('tryon_result_title')}
-              </div>
+          {/* Action Bar - Instagram style */}
+          <div className="border-t border-border p-4 space-y-4 safe-bottom">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleSave}
+                disabled={isSaving || isResultSaved}
+                className="press-effect"
+              >
+                <Heart 
+                  size={26} 
+                  strokeWidth={1.5}
+                  className={cn(isResultSaved && "fill-accent text-accent")} 
+                />
+              </button>
+              <button onClick={handleShare} className="press-effect">
+                <Share2 size={24} strokeWidth={1.5} />
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  handleCloseResult();
+                  handleAddBodyImage();
+                }}
+              >
+                <Camera size={18} />
+                {t('tryon_change_photo')}
+              </Button>
+              <Button
+                variant="instagram"
+                className="flex-1"
+                onClick={handleShareToPublic}
+              >
+                Đăng lên
+              </Button>
             </div>
           </div>
         </div>
@@ -562,10 +528,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
       {/* Save Clothing Dialog */}
       {pendingClothingToSave && (
-        <div className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl p-5 max-w-xs w-full shadow-medium space-y-4">
+        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-xl p-5 max-w-xs w-full shadow-medium space-y-4 border border-border">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
                 <img 
                   src={pendingClothingToSave.imageUrl} 
                   alt={pendingClothingToSave.name}
@@ -595,7 +561,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 {t('cancel')}
               </Button>
               <Button
-                variant="default"
+                variant="instagram"
                 className="flex-1"
                 onClick={handleSaveClothingToCollection}
                 disabled={isSavingClothing}
@@ -612,9 +578,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         </div>
       )}
 
-      {/* Main content - Full width body image */}
-      <div className="px-4">
-        <div className="w-full aspect-[3/4] max-h-[60vh]">
+      {/* Main Content */}
+      <div className="px-4 space-y-4">
+        {/* Body Image Section - Compact */}
+        <div className="relative w-full aspect-[3/4] max-h-[45vh] rounded-xl overflow-hidden bg-secondary border border-border">
           <TryOnCanvas
             bodyImageUrl={bodyImage}
             onBodyImageChange={(imageUrl) => {
@@ -625,129 +592,23 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
             }}
           />
         </div>
-      </div>
 
-      {/* Clothing Panel - Shows when category is selected */}
-      {showClothingPanel && (
-        <div className="fixed inset-x-0 bottom-0 z-40 bg-card border-t border-border rounded-t-2xl shadow-medium animate-slide-up max-h-[50vh] flex flex-col">
-          {/* Panel Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">
-                {categories.find(c => c.id === activeCategory)?.label || t('clothing_sample')}
-              </span>
-              {user && (
-                <Tabs value={clothingSource} onValueChange={(v) => setClothingSource(v as 'sample' | 'saved')} className="ml-2">
-                  <TabsList className="h-7 p-0.5">
-                    <TabsTrigger value="sample" className="text-[10px] h-6 px-2">
-                      {t('clothing_sample')}
-                    </TabsTrigger>
-                    <TabsTrigger value="saved" className="text-[10px] h-6 px-2">
-                      {t('clothing_saved')} ({userClothing.length})
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="iconSm"
-              onClick={() => setShowClothingPanel(false)}
-            >
-              <X size={18} />
-            </Button>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="px-4 py-2 border-b border-border">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder={t('search_clothing')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {/* Clothing Grid */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {filteredClothing.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">
-                  {clothingSource === 'saved' ? t('no_saved_clothing') : t('no_clothing')}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                {filteredClothing.map((item) => (
-                  <div key={item.id} className="relative group">
-                    <ClothingCard
-                      item={item}
-                      size="md"
-                      onSelect={(item) => {
-                        handleAddClothing(item);
-                        setShowClothingPanel(false);
-                      }}
-                      isSelected={selectedItems.some(i => i.id === item.id)}
-                    />
-                    {/* Action buttons for saved clothing */}
-                    {clothingSource === 'saved' && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditClothing(item);
-                          }}
-                          className="absolute top-1 left-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSavedClothing(item.id);
-                          }}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Category Bar */}
-      <div className="px-4 mt-4">
+        {/* Selected Items Preview - Horizontal scroll */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {/* Add clothing button */}
+          {/* Add button */}
           <button
             onClick={handleAddClothingFromDevice}
-            className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl border-2 border-dashed border-primary text-primary hover:bg-primary/10 transition-colors"
+            className="flex-shrink-0 w-16 h-16 rounded-xl border-2 border-dashed border-primary/50 flex flex-col items-center justify-center text-primary hover:bg-primary/5 transition-colors press-effect"
           >
             <ImagePlus size={20} />
-            <span className="text-[9px] mt-1">Thêm đồ</span>
+            <span className="text-2xs mt-0.5">Thêm</span>
           </button>
           
           {/* Category buttons */}
           {categories.map((cat) => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id && showClothingPanel;
+            const hasSelected = selectedItems.some(item => item.category === cat.id);
             
             return (
               <button
@@ -757,22 +618,27 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                   setShowClothingPanel(true);
                 }}
                 className={cn(
-                  "flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all",
+                  "flex-shrink-0 relative w-16 h-16 rounded-xl flex flex-col items-center justify-center transition-all press-effect",
                   isActive 
-                    ? "gradient-primary text-primary-foreground shadow-soft scale-105" 
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-foreground text-background" 
+                    : hasSelected
+                      ? "bg-primary/10 text-primary border border-primary/30"
+                      : "bg-secondary text-muted-foreground"
                 )}
               >
-                <Icon size={20} />
-                <span className="text-[9px] mt-1">{cat.label}</span>
+                <Icon size={18} />
+                <span className="text-2xs mt-0.5">{cat.label}</span>
+                {hasSelected && !isActive && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                    <span className="text-2xs text-primary-foreground">✓</span>
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Selected Clothing List */}
-      <div className="px-4 mt-3">
+        {/* Selected Clothing List */}
         <SelectedClothingList 
           items={selectedItems} 
           onRemove={handleRemoveClothing}
@@ -780,13 +646,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           sampleClothing={clothing}
           onSelectItem={handleAddClothing}
         />
-      </div>
 
-      {/* Action buttons */}
-      <div className="px-4 mt-4 space-y-4">
         {/* AI Try-On Button */}
         <Button
-          variant="default"
+          variant="instagram"
           className="w-full h-12 text-base"
           onClick={handleAITryOn}
           disabled={isProcessing || !bodyImage || selectedItems.length === 0}
@@ -804,33 +667,137 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           )}
         </Button>
 
-        {/* Action buttons */}
+        {/* Secondary Actions */}
         <div className="flex gap-3">
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 h-11"
             onClick={handleAddBodyImage}
           >
             <Camera size={18} />
             {bodyImage ? t('tryon_change_photo') : t('tryon_upload_photo')}
           </Button>
-          <Button
-            variant="secondary"
-            className="flex-1"
-            onClick={handleSave}
-          >
-            <Save size={18} />
-            {t('save')}
-          </Button>
-          <Button
-            variant="accent"
-            size="icon"
-            onClick={handleShare}
-          >
-            <Share2 size={18} />
-          </Button>
+          {aiResultImage && (
+            <Button
+              variant="secondary"
+              className="flex-1 h-11"
+              onClick={handleShare}
+            >
+              <Share2 size={18} />
+              {t('share')}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Clothing Panel - Bottom Sheet */}
+      {showClothingPanel && (
+        <div className="fixed inset-0 z-40 animate-fade-in">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+            onClick={() => setShowClothingPanel(false)}
+          />
+          
+          {/* Panel */}
+          <div className="absolute inset-x-0 bottom-0 bg-card border-t border-border rounded-t-2xl max-h-[60vh] flex flex-col animate-slide-in-up safe-bottom">
+            {/* Handle */}
+            <div className="flex justify-center py-2">
+              <div className="w-10 h-1 rounded-full bg-border" />
+            </div>
+            
+            {/* Panel Header */}
+            <div className="flex items-center justify-between px-4 pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground">
+                  {categories.find(c => c.id === activeCategory)?.label || t('clothing_sample')}
+                </span>
+                {user && (
+                  <Tabs value={clothingSource} onValueChange={(v) => setClothingSource(v as 'sample' | 'saved')}>
+                    <TabsList className="h-7 p-0.5">
+                      <TabsTrigger value="sample" className="text-xs h-6 px-2">
+                        {t('clothing_sample')}
+                      </TabsTrigger>
+                      <TabsTrigger value="saved" className="text-xs h-6 px-2">
+                        {t('clothing_saved')} ({userClothing.length})
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                )}
+              </div>
+              <button
+                onClick={() => setShowClothingPanel(false)}
+                className="p-2 text-muted-foreground hover:text-foreground"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="px-4 py-3">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder={t('search_clothing')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-10"
+                />
+              </div>
+            </div>
+            
+            {/* Clothing Grid */}
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+              {filteredClothing.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">
+                    {clothingSource === 'saved' ? t('no_saved_clothing') : t('no_clothing')}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {filteredClothing.map((item) => (
+                    <div key={item.id} className="relative group">
+                      <ClothingCard
+                        item={item}
+                        size="md"
+                        onSelect={(item) => {
+                          handleAddClothing(item);
+                          setShowClothingPanel(false);
+                        }}
+                        isSelected={selectedItems.some(i => i.id === item.id)}
+                      />
+                      {clothingSource === 'saved' && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClothing(item);
+                            }}
+                            className="absolute top-1 left-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSavedClothing(item.id);
+                            }}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Clothing Dialog */}
       {editingClothing && (
