@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { MobileNav } from '@/components/layout/MobileNav';
+import { HomePage } from './HomePage';
 import { TryOnPage } from './TryOnPage';
 import { ComparePage } from './ComparePage';
 import { FavoritesPage } from './FavoritesPage';
@@ -15,6 +16,7 @@ import { ClothingItem } from '@/types/clothing';
 import { toast } from 'sonner';
 
 const pageTitles: Record<string, string> = {
+  home: 'Virtual Try-On',
   tryOn: 'Phòng thử đồ',
   compare: 'So sánh Outfit',
   favorites: 'Yêu thích',
@@ -24,7 +26,7 @@ const pageTitles: Record<string, string> = {
 };
 
 const MainApp = () => {
-  const [activeTab, setActiveTab] = useState('tryOn');
+  const [activeTab, setActiveTab] = useState('home');
   const [selectedItem, setSelectedItem] = useState<ClothingItem | undefined>();
 
   const handleSelectItem = (item: ClothingItem) => {
@@ -39,10 +41,19 @@ const MainApp = () => {
 
   const renderPage = () => {
     switch (activeTab) {
+      case 'home':
+        return (
+          <HomePage 
+            onNavigateToTryOn={() => setActiveTab('tryOn')}
+            onNavigateToCompare={() => setActiveTab('compare')}
+            onNavigateToHistory={() => setActiveTab('history')}
+            onSelectItem={handleSelectItem}
+          />
+        );
       case 'tryOn':
         return <TryOnPage initialItem={selectedItem} />;
       case 'compare':
-        return <ComparePage onBack={() => setActiveTab('tryOn')} />;
+        return <ComparePage onBack={() => setActiveTab('home')} />;
       case 'favorites':
         return <FavoritesPage onSelectItem={handleSelectItem} />;
       case 'profile':
@@ -52,18 +63,25 @@ const MainApp = () => {
       case 'wardrobe':
         return <WardrobePage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
       default:
-        return <TryOnPage initialItem={selectedItem} />;
+        return (
+          <HomePage 
+            onNavigateToTryOn={() => setActiveTab('tryOn')}
+            onNavigateToCompare={() => setActiveTab('compare')}
+            onNavigateToHistory={() => setActiveTab('history')}
+            onSelectItem={handleSelectItem}
+          />
+        );
     }
   };
 
   return (
     <div className="mobile-viewport bg-background">
       <Header
-        title={pageTitles[activeTab] || 'Phòng thử đồ'}
-        showBack={activeTab !== 'tryOn'}
+        title={pageTitles[activeTab] || 'Virtual Try-On'}
+        showBack={activeTab !== 'home'}
         showShare={activeTab === 'tryOn' || activeTab === 'compare'}
-        showNotification={false}
-        onBack={() => setActiveTab('tryOn')}
+        showNotification={activeTab === 'home'}
+        onBack={() => setActiveTab('home')}
         onShare={handleShare}
       />
 
