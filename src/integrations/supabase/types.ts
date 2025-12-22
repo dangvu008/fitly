@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      outfit_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          outfit_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          outfit_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          outfit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outfit_comments_outfit_id_fkey"
+            columns: ["outfit_id"]
+            isOneToOne: false
+            referencedRelation: "shared_outfits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outfit_likes: {
         Row: {
           created_at: string
@@ -73,6 +105,7 @@ export type Database = {
       shared_outfits: {
         Row: {
           clothing_items: Json
+          comments_count: number
           created_at: string
           description: string | null
           id: string
@@ -85,6 +118,7 @@ export type Database = {
         }
         Insert: {
           clothing_items?: Json
+          comments_count?: number
           created_at?: string
           description?: string | null
           id?: string
@@ -97,6 +131,7 @@ export type Database = {
         }
         Update: {
           clothing_items?: Json
+          comments_count?: number
           created_at?: string
           description?: string | null
           id?: string
