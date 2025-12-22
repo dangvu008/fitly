@@ -38,11 +38,7 @@ const sampleOutfits: SavedOutfit[] = [
   },
 ];
 
-interface ComparePageProps {
-  onBack?: () => void;
-}
-
-export const ComparePage = ({ onBack }: ComparePageProps) => {
+export const ComparePage = () => {
   const { outfitsToCompare, addToCompare, removeFromCompare, clearCompare, isInCompare } = useCompare();
   const [showAddSheet, setShowAddSheet] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);

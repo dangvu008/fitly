@@ -17,17 +17,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ClothingItem } from '@/types/clothing';
 import { toast } from 'sonner';
 
-const pageTitles: Record<string, string> = {
-  home: 'Virtual Try-On',
-  tryOn: 'Phòng thử đồ',
-  compare: 'So sánh Outfit',
-  favorites: 'Yêu thích',
-  profile: 'Tài khoản',
-  history: 'Lịch sử thử đồ',
-  wardrobe: 'Tủ quần áo',
-  closet: 'Tủ đồ của tôi',
-};
-
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedItem, setSelectedItem] = useState<ClothingItem | undefined>();
@@ -40,10 +29,6 @@ const MainApp = () => {
     setReuseClothingItems([]);
     setActiveTab('tryOn');
     toast.success(`Đã chọn ${item.name} để thử`);
-  };
-
-  const handleShare = () => {
-    toast.success('Đã sao chép link chia sẻ!');
   };
 
   const handleReuseHistory = (bodyImageUrl: string, clothingItems: ClothingItem[]) => {
@@ -72,7 +57,7 @@ const MainApp = () => {
           />
         );
       case 'compare':
-        return <ComparePage onBack={() => setActiveTab('home')} />;
+        return <ComparePage />;
       case 'favorites':
         return <FavoritesPage onSelectItem={handleSelectItem} />;
       case 'profile':
@@ -104,12 +89,8 @@ const MainApp = () => {
   return (
     <div className="mobile-viewport bg-background">
       <Header
-        title={pageTitles[activeTab] || 'Virtual Try-On'}
-        showBack={activeTab !== 'home'}
-        showShare={activeTab === 'tryOn' || activeTab === 'compare'}
+        title="TryOn"
         showNotification={activeTab === 'home'}
-        onBack={() => setActiveTab('home')}
-        onShare={handleShare}
         onAvatarClick={() => setActiveTab('profile')}
       />
 

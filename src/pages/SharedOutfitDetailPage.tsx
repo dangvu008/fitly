@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, ExternalLink, ShoppingBag, Loader2 } from 'lucide-react';
+import { Heart, Share2, ExternalLink, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import logoImage from '@/assets/logo.png';
 
 interface ClothingItemData {
   id?: string;
@@ -118,6 +120,10 @@ export const SharedOutfitDetailPage = () => {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    navigate('/');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -131,25 +137,29 @@ export const SharedOutfitDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
+    <div className="mobile-viewport bg-background pb-20">
+      {/* Header - Instagram style */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border safe-top">
         <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="font-display font-bold text-base truncate max-w-[200px]">
-            {outfit.title}
-          </h1>
+          <div className="flex items-center gap-2">
+            <img 
+              src={logoImage} 
+              alt="TryOn Logo" 
+              className="w-8 h-8 object-contain"
+            />
+            <span className="font-display font-bold text-lg text-foreground">
+              TryOn
+            </span>
+          </div>
           <Button variant="ghost" size="icon" onClick={() => setShareOpen(true)}>
-            <Share2 size={20} />
+            <Share2 size={22} strokeWidth={1.5} />
           </Button>
         </div>
-      </div>
+      </header>
 
       <div className="pt-16 px-4 max-w-md mx-auto space-y-6">
         {/* Main outfit image */}
-        <div className="rounded-2xl overflow-hidden shadow-lg border border-border">
+        <div className="rounded-xl overflow-hidden shadow-medium border border-border">
           <div className="aspect-[3/4] relative">
             <img
               src={outfit.result_image_url}
@@ -157,58 +167,51 @@ export const SharedOutfitDetailPage = () => {
               className="w-full h-full object-cover"
             />
             
-            {/* Like button */}
-            <button
-              onClick={handleToggleLike}
-              className={cn(
-                "absolute top-4 right-4 px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 transition-all",
-                isLiked 
-                  ? "bg-destructive/90 text-destructive-foreground" 
-                  : "bg-card/90 text-foreground hover:bg-destructive/80 hover:text-destructive-foreground"
-              )}
-            >
-              <Heart size={16} className={cn(isLiked && "fill-current")} />
-              <span className="text-sm font-medium">{likesCount}</span>
-            </button>
-
             {outfit.is_featured && (
               <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
                 ⭐ Nổi bật
               </div>
             )}
           </div>
-        </div>
-
-        {/* Share buttons */}
-        <div className="flex gap-3">
-          <Button 
-            className="flex-1 gap-2" 
-            onClick={() => setShareOpen(true)}
-          >
-            <Share2 size={16} />
-            Chia sẻ outfit
-          </Button>
-          <Button 
-            variant={isLiked ? "default" : "outline"}
-            className="gap-2"
-            onClick={handleToggleLike}
-          >
-            <Heart size={16} className={cn(isLiked && "fill-current")} />
-            {isLiked ? 'Đã thích' : 'Thích'}
-          </Button>
-        </div>
-
-        {/* Description */}
-        {outfit.description && (
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <p className="text-muted-foreground text-sm">{outfit.description}</p>
+          
+          {/* Action bar - Instagram style */}
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleToggleLike}
+                className="press-effect"
+              >
+                <Heart 
+                  size={26} 
+                  strokeWidth={1.5}
+                  className={cn(
+                    "transition-colors",
+                    isLiked ? "fill-accent text-accent" : "text-foreground"
+                  )} 
+                />
+              </button>
+              <button onClick={() => setShareOpen(true)} className="press-effect">
+                <Share2 size={24} strokeWidth={1.5} />
+              </button>
+            </div>
+            
+            <div className="font-semibold text-sm">
+              {likesCount.toLocaleString()} lượt thích
+            </div>
+            
+            <div>
+              <span className="font-semibold text-sm">{outfit.title}</span>
+              {outfit.description && (
+                <span className="text-sm text-foreground ml-1">{outfit.description}</span>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Clothing items */}
         <div>
-          <h2 className="font-display font-bold text-lg text-foreground mb-4 flex items-center gap-2">
-            <ShoppingBag size={20} className="text-primary" />
+          <h2 className="font-display font-semibold text-base text-foreground mb-4 flex items-center gap-2">
+            <ShoppingBag size={18} />
             Các món đồ trong outfit ({outfit.clothing_items?.length || 0})
           </h2>
 
@@ -216,10 +219,10 @@ export const SharedOutfitDetailPage = () => {
             {outfit.clothing_items?.map((item, index) => (
               <div
                 key={item.id || index}
-                className="bg-card rounded-xl border border-border overflow-hidden flex"
+                className="bg-card rounded-xl border border-border overflow-hidden flex hover:shadow-medium transition-shadow"
               >
                 {/* Item image */}
-                <div className="w-24 h-24 flex-shrink-0 bg-secondary">
+                <div className="w-20 h-20 flex-shrink-0 bg-secondary">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
@@ -244,13 +247,13 @@ export const SharedOutfitDetailPage = () => {
                   {/* Buy button */}
                   <Button
                     size="sm"
-                    variant={item.purchaseUrl ? 'default' : 'outline'}
-                    className="w-full mt-2"
+                    variant={item.purchaseUrl ? 'instagram' : 'outline'}
+                    className="w-full mt-2 h-8 text-xs"
                     onClick={() => handleBuyItem(item)}
                   >
                     {item.purchaseUrl ? (
                       <>
-                        <ExternalLink size={14} className="mr-1" />
+                        <ExternalLink size={12} className="mr-1" />
                         Mua ngay
                       </>
                     ) : (
@@ -272,6 +275,9 @@ export const SharedOutfitDetailPage = () => {
         title={outfit.title}
         shareUrl={window.location.href}
       />
+
+      {/* Bottom Navigation */}
+      <MobileNav activeTab="home" onTabChange={handleTabChange} />
     </div>
   );
 };

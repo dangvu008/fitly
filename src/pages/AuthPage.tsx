@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { MobileNav } from '@/components/layout/MobileNav';
+import { Mail, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImage from '@/assets/logo.png';
 
@@ -97,6 +97,10 @@ export const AuthPage = () => {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    navigate('/');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -106,21 +110,9 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="p-4 safe-top">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/')}
-          className="text-foreground hover:bg-secondary"
-        >
-          <ArrowLeft size={24} />
-        </Button>
-      </header>
-
+    <div className="mobile-viewport bg-background pb-20">
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8">
         {/* Logo - Instagram style */}
         <div className="mb-10 text-center animate-fade-in">
           <img 
@@ -273,6 +265,9 @@ export const AuthPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Bottom Navigation */}
+      <MobileNav activeTab="profile" onTabChange={handleTabChange} />
     </div>
   );
 };
