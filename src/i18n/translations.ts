@@ -111,6 +111,9 @@ export const translations = {
     msg_clothing_lighting: 'Ánh sáng kém, vui lòng chụp ở nơi sáng hơn',
     msg_clothing_small: 'Ảnh quá nhỏ hoặc quần áo ở quá xa',
     msg_clothing_cluttered: 'Nền ảnh quá rối, vui lòng chụp trên nền trắng/đơn giản',
+    msg_clothing_gender_male: 'Đồ nam',
+    msg_clothing_gender_female: 'Đồ nữ',
+    msg_clothing_gender_unisex: 'Unisex',
     
     // Settings
     language: 'Ngôn ngữ',
@@ -226,6 +229,9 @@ export const translations = {
     msg_clothing_lighting: 'Poor lighting, please use better light',
     msg_clothing_small: 'Image too small or item too far away',
     msg_clothing_cluttered: 'Background too cluttered, use plain background',
+    msg_clothing_gender_male: 'Menswear',
+    msg_clothing_gender_female: 'Womenswear', 
+    msg_clothing_gender_unisex: 'Unisex',
     
     // Settings
     language: 'Language',

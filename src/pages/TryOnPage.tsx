@@ -11,7 +11,9 @@ import { useAITryOn } from '@/hooks/useAITryOn';
 import { useTryOnHistory } from '@/hooks/useTryOnHistory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { toast } from 'sonner';
+import { Progress } from '@/components/ui/progress';
 
 const BODY_IMAGE_STORAGE_KEY = 'tryon_body_image';
 
@@ -39,7 +41,14 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { 
+    validateAndProcessClothing, 
+    isValidating: isValidatingClothing, 
+    progress: clothingProgress,
+    mapToAppCategory,
+    issueTranslationMap
+  } = useClothingValidation();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
@@ -81,21 +90,88 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
     }
   };
 
-  const handleClothingFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleClothingFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const newItem: ClothingItem = {
-          id: Date.now().toString(),
-          name: file.name.replace(/\.[^/.]+$/, ''),
-          category: 'top',
-          imageUrl: event.target?.result as string,
-        };
-        handleAddClothing(newItem);
+    if (!file) return;
+    
+    // Convert file to base64
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const imageDataUrl = event.target?.result as string;
+      
+      // Validate clothing image with AI
+      const result = await validateAndProcessClothing(imageDataUrl, { 
+        removeBackground: true, 
+        language 
+      });
+      
+      if (!result.isValid) {
+        // Show errors with suggestions
+        const errorMessages = result.errors.map(err => {
+          const translationKey = issueTranslationMap[err];
+          if (translationKey && t(translationKey as any) !== translationKey) {
+            return t(translationKey as any);
+          }
+          return err;
+        });
+        
+        toast.error(
+          <div className="space-y-2">
+            <p className="font-medium">{t('msg_not_clothing')}</p>
+            <ul className="text-sm list-disc pl-4 space-y-1">
+              {errorMessages.map((msg, i) => (
+                <li key={i}>{msg}</li>
+              ))}
+            </ul>
+            {result.suggestions.length > 0 && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                {result.suggestions[0]}
+              </div>
+            )}
+          </div>
+        );
+        return;
+      }
+      
+      // Get category from AI analysis
+      const aiCategory = result.analysis?.category || 'top';
+      const appCategory = mapToAppCategory(aiCategory);
+      
+      // Create clothing item with AI-detected info
+      const newItem: ClothingItem = {
+        id: Date.now().toString(),
+        name: result.analysis?.subcategory || file.name.replace(/\.[^/.]+$/, ''),
+        category: appCategory,
+        imageUrl: result.processedImageUrl || imageDataUrl,
+        color: result.analysis?.color,
+        gender: result.analysis?.gender,
       };
-      reader.readAsDataURL(file);
-    }
+      
+      handleAddClothing(newItem);
+      
+      // Show success toast with detected info
+      const genderLabel = result.analysis?.gender === 'male' 
+        ? t('msg_gender_male') 
+        : result.analysis?.gender === 'female' 
+          ? t('msg_gender_female') 
+          : '';
+          
+      const categoryLabel = t(`msg_clothing_category_${appCategory}` as any) || appCategory;
+      
+      toast.success(
+        <div className="space-y-1">
+          <p>{t('msg_clothing_detected')} {categoryLabel}</p>
+          <p className="text-xs text-muted-foreground">
+            {result.analysis?.color && `${t('msg_clothing_color')} ${result.analysis.color}`}
+            {genderLabel && ` • ${genderLabel}`}
+          </p>
+        </div>
+      );
+    };
+    reader.readAsDataURL(file);
+    
+    // Clear input for re-upload
+    e.target.value = '';
   };
 
   const handleAddClothing = (item: ClothingItem) => {
@@ -195,8 +271,36 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
     clearResult();
   };
 
+  const getClothingProgressMessage = () => {
+    if (!clothingProgress) return '';
+    switch (clothingProgress.stage) {
+      case 'checking_size': return t('msg_checking_size');
+      case 'analyzing': return t('msg_analyzing_clothing');
+      case 'removing_background': return t('msg_removing_background');
+      case 'complete': return t('msg_validation_complete');
+      case 'error': return '';
+      default: return t('msg_validating_image');
+    }
+  };
+
   return (
     <div className="pb-24 pt-16 max-w-md mx-auto">
+      {/* Clothing Validation Overlay */}
+      {isValidatingClothing && clothingProgress && (
+        <div className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl p-6 max-w-xs w-full shadow-medium space-y-4">
+            <div className="flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+            <div className="text-center space-y-2">
+              <p className="font-medium text-foreground">{t('msg_analyzing_clothing')}</p>
+              <p className="text-sm text-muted-foreground">{getClothingProgressMessage()}</p>
+            </div>
+            <Progress value={clothingProgress.progress} className="h-2" />
+          </div>
+        </div>
+      )}
+
       <input
         ref={fileInputRef}
         type="file"
