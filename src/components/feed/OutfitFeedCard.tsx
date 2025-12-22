@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ExternalLink, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -63,6 +64,7 @@ export const OutfitFeedCard = ({
   onUnsave,
   onHide,
 }: OutfitFeedCardProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [liked, setLiked] = useState(isLiked);
   const [likesCount, setLikesCount] = useState(outfit.likes_count);
@@ -153,6 +155,10 @@ export const OutfitFeedCard = ({
     }
   };
 
+  const handleViewProfile = () => {
+    navigate(`/user/${outfit.user_id}`);
+  };
+
   const timeAgo = formatDistanceToNow(new Date(outfit.created_at), { 
     addSuffix: true, 
     locale: vi 
@@ -162,20 +168,23 @@ export const OutfitFeedCard = ({
     <div className="bg-card border-b border-border">
       {/* Header */}
       <div className="flex items-center justify-between p-3">
-        <div className="flex items-center gap-3">
+        <button 
+          onClick={handleViewProfile}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
           <Avatar className="w-8 h-8 ring-2 ring-primary/20">
             <AvatarImage src={userProfile?.avatar_url} />
             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs">
               {userProfile?.display_name?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          <div>
+          <div className="text-left">
             <p className="text-sm font-semibold text-foreground">
               {userProfile?.display_name || 'Người dùng'}
             </p>
             <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
           </div>
-        </div>
+        </button>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
