@@ -65,29 +65,45 @@ serve(async (req) => {
     const clothingList = items.map((item, idx) => `${idx + 1}. ${item.name}`).join('\n');
 
     // Use Lovable AI Gateway (try multiple prompt/model variants for robustness)
-    const basePrompt = `Virtual try-on task.
+    const basePrompt = `VIRTUAL FASHION TRY-ON - STRICT IDENTITY PRESERVATION
 
-IMPORTANT INSTRUCTIONS:
-- IMAGE A is the person to dress. KEEP the same person, face, pose, body proportions, and background EXACTLY.
-- The following images are clothing references ONLY: ${clothingNames}
+CRITICAL RULES (MUST FOLLOW EXACTLY):
+
+1. FACE & IDENTITY PRESERVATION (HIGHEST PRIORITY):
+   - The FIRST IMAGE below is the TARGET PERSON. You MUST preserve their EXACT face, facial features, skin tone, hair, and expression.
+   - Do NOT change, blend, or modify the face in any way.
+   - The final image must show the SAME PERSON identifiable as in the first image.
+
+2. BODY & POSE PRESERVATION:
+   - Keep the EXACT same body pose, proportions, and positioning as the target person.
+   - Keep the EXACT same background and lighting environment.
+
+3. CLOTHING REPLACEMENT:
+   - The subsequent images after the target person are CLOTHING ITEMS ONLY: ${clothingNames}
+   - Extract ONLY the clothing/shoes/accessories from these reference images.
+   - If a clothing image shows a mannequin or another person wearing it, IGNORE that body completely - extract ONLY the garment itself.
+   - Dress the TARGET PERSON with these EXACT clothing items:
 ${clothingList}
-- If any clothing image contains a person/mannequin, IGNORE their body/face entirely - only use the clothing item itself.
-- Transfer ALL the clothing items onto the person in IMAGE A as a complete outfit.
-- Make it photorealistic with natural fabric drape, wrinkles, and realistic shadows/light.
-- The result should look like a real photo of the person wearing all these items together.
+   - Each clothing item must match its reference image exactly: same color, pattern, design, and style.
 
-Return ONE final image showing the person wearing the complete outfit.`;
+4. REALISTIC RENDERING:
+   - Apply natural fabric physics: proper draping, wrinkles, folds based on body pose.
+   - Match lighting and shadows to the original photo environment.
+   - The result must look like a genuine photograph, not a composite.
 
-    // Build content array with body image first, then all clothing images
+OUTPUT: Generate ONE photorealistic image of the TARGET PERSON wearing ALL the specified clothing items.`;
+
+    // Build content array with body image first (emphasized as target), then all clothing images
     const contentArray: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
       { type: "text", text: basePrompt },
-      { type: "text", text: "IMAGE A (person to dress - KEEP THIS PERSON):" },
+      { type: "text", text: "=== TARGET PERSON (PRESERVE THIS FACE AND BODY EXACTLY) ===" },
       { type: "image_url", image_url: { url: bodyImage } },
+      { type: "text", text: "=== CLOTHING ITEMS TO APPLY (EXTRACT GARMENTS ONLY) ===" },
     ];
 
-    // Add each clothing item
+    // Add each clothing item with clear labeling
     items.forEach((item, idx) => {
-      contentArray.push({ type: "text", text: `CLOTHING ${idx + 1} (${item.name}):` });
+      contentArray.push({ type: "text", text: `ITEM ${idx + 1}: ${item.name} (use this exact garment)` });
       contentArray.push({ type: "image_url", image_url: { url: item.imageUrl } });
     });
 
