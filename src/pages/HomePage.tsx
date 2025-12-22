@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, History, Share2, Loader2, ImageOff, ChevronDown } from 'lucide-react';
+import { Users, History, Share2, ImageOff, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SkeletonGrid, SkeletonStories } from '@/components/ui/skeleton-grid';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAuth } from '@/contexts/AuthContext';
@@ -146,9 +147,7 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
         </div>
 
         {loadingHistory ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
+          <SkeletonStories count={4} />
         ) : !user ? (
           <div className="px-4 pb-4">
             <div className="bg-secondary/50 rounded-2xl p-6 text-center">
@@ -258,11 +257,7 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
         </div>
 
         {loadingSharedOutfits ? (
-          <div className="grid grid-cols-3 gap-0.5">
-            {[...Array(9)].map((_, i) => (
-              <div key={i} className="aspect-square bg-secondary animate-pulse" />
-            ))}
-          </div>
+          <SkeletonGrid count={9} />
         ) : (
           <div className="grid grid-cols-3 gap-0.5">
             {/* Shared Outfits */}
