@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Users, History, Share2, Clock, Loader2, ImageOff } from 'lucide-react';
+import { TrendingUp, Users, History, Share2, Clock, Loader2, ImageOff, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { SharedOutfitCard } from '@/components/outfit/SharedOutfitCard';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { sampleClothing } from '@/data/sampleClothing';
-import { ClothingItem } from '@/types/clothing';
+import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSharedOutfits } from '@/hooks/useSharedOutfits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface ClothingItemData {
   name: string;
@@ -31,12 +33,29 @@ interface HomePageProps {
   onSelectItem: (item: ClothingItem) => void;
 }
 
+type FilterOption = {
+  id: string;
+  label: string;
+  value: ClothingCategory | 'all';
+};
+
+const filterOptions: FilterOption[] = [
+  { id: 'all', label: 'Tất cả', value: 'all' },
+  { id: 'top', label: 'Áo', value: 'top' },
+  { id: 'bottom', label: 'Quần', value: 'bottom' },
+  { id: 'dress', label: 'Váy', value: 'dress' },
+  { id: 'shoes', label: 'Giày', value: 'shoes' },
+  { id: 'accessory', label: 'Phụ kiện', value: 'accessory' },
+];
+
 export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToHistory, onSelectItem }: HomePageProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [clothing, setClothing] = useState(sampleClothing);
   const [recentHistory, setRecentHistory] = useState<TryOnHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState<ClothingCategory | 'all'>('all');
+  const [showFilters, setShowFilters] = useState(false);
   const { sharedOutfits, isLoading: loadingSharedOutfits, toggleLike } = useSharedOutfits();
 
   useEffect(() => {
@@ -112,7 +131,9 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
     navigate(`/outfit/${outfitId}`);
   };
 
-  const featuredItems = clothing.slice(0, 4);
+  const filteredItems = selectedFilter === 'all' 
+    ? clothing 
+    : clothing.filter(item => item.category === selectedFilter);
 
   return (
     <div className="pb-24 pt-16 px-4 space-y-6 max-w-md mx-auto">
@@ -230,26 +251,100 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToCompare, onNavigateToH
         )}
       </section>
 
-      {/* Suggestions Section */}
+      {/* Suggestions Section with Carousel */}
       <section className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
             <TrendingUp size={20} className="text-primary" />
             Gợi ý cho bạn
           </h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={cn(
+              "gap-1.5 text-xs",
+              showFilters && "bg-primary/10 text-primary"
+            )}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={14} />
+            Lọc
+          </Button>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          {featuredItems.map((item) => (
-            <ClothingCard
-              key={item.id}
-              item={item}
-              size="lg"
-              onSelect={() => onSelectItem(item)}
-              onToggleFavorite={toggleFavorite}
-            />
-          ))}
-        </div>
+
+        {/* Filter chips */}
+        {showFilters && (
+          <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide animate-fade-in">
+            {filterOptions.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setSelectedFilter(filter.value)}
+                className={cn(
+                  "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  selectedFilter === filter.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Active filter indicator */}
+        {selectedFilter !== 'all' && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-muted-foreground">
+              Đang lọc: {filterOptions.find(f => f.value === selectedFilter)?.label}
+            </span>
+            <button
+              onClick={() => setSelectedFilter('all')}
+              className="p-0.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+            >
+              <X size={12} className="text-muted-foreground" />
+            </button>
+          </div>
+        )}
+
+        {/* Carousel */}
+        {filteredItems.length === 0 ? (
+          <div className="bg-card rounded-2xl p-6 text-center border border-border">
+            <ImageOff size={32} className="mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground text-sm">
+              Không tìm thấy sản phẩm phù hợp
+            </p>
+          </div>
+        ) : (
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+              dragFree: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-3">
+              {filteredItems.map((item) => (
+                <CarouselItem key={item.id} className="pl-3 basis-[45%]">
+                  <ClothingCard
+                    item={item}
+                    size="lg"
+                    onSelect={() => onSelectItem(item)}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        )}
+
+        {/* Swipe hint */}
+        {filteredItems.length > 2 && (
+          <p className="text-center text-[10px] text-muted-foreground mt-2">
+            ← Kéo để xem thêm →
+          </p>
+        )}
       </section>
     </div>
   );
