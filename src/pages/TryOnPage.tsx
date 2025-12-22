@@ -284,6 +284,17 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   };
 
   const handleAITryOn = async () => {
+    // Check login first
+    if (!user) {
+      toast.error(t('msg_login_to_try_on'), {
+        action: {
+          label: t('btn_login'),
+          onClick: () => window.location.href = '/auth',
+        },
+      });
+      return;
+    }
+
     if (!bodyImage) {
       toast.error(t('msg_upload_body_first'));
       return;
