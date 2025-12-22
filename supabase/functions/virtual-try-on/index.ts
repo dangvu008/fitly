@@ -166,7 +166,37 @@ OUTPUT: Generate ONE photorealistic image of the TARGET PERSON wearing ALL the s
         );
       }
 
-      const data = await response.json();
+      // Safely parse response body
+      const responseText = await response.text();
+      console.log('Raw response length:', responseText.length);
+      
+      if (!responseText || responseText.trim() === '') {
+        console.error('Empty response from AI Gateway');
+        if (i < attempts.length - 1) {
+          console.log('Retrying with fallback model due to empty response...');
+          continue;
+        }
+        return new Response(
+          JSON.stringify({ success: false, error: 'AI trả về kết quả rỗng. Vui lòng thử lại.' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError, 'Response:', responseText.substring(0, 500));
+        if (i < attempts.length - 1) {
+          console.log('Retrying with fallback model due to JSON parse error...');
+          continue;
+        }
+        return new Response(
+          JSON.stringify({ success: false, error: 'Không thể đọc kết quả từ AI. Vui lòng thử lại.' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const message = data.choices?.[0]?.message;
 
       console.log('AI response structure:', JSON.stringify({
