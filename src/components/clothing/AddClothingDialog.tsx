@@ -15,13 +15,15 @@ interface AddClothingDialogProps {
   onClose: () => void;
   onAddClothing: (item: ClothingItem) => void;
   onSaveToCollection?: (item: ClothingItem) => void;
+  targetCategory?: ClothingCategory | null;
 }
 
 export const AddClothingDialog = ({ 
   isOpen, 
   onClose, 
   onAddClothing,
-  onSaveToCollection 
+  onSaveToCollection,
+  targetCategory
 }: AddClothingDialogProps) => {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'upload' | 'url'>('upload');
@@ -74,7 +76,10 @@ export const AddClothingDialog = ({
     }
     
     const aiCategory = result.analysis?.category || 'top';
-    const appCategory = mapToAppCategory(aiCategory);
+    // Use target category if provided, otherwise use AI detected category
+    const appCategory = targetCategory && targetCategory !== 'all' && targetCategory !== 'unknown' 
+      ? targetCategory 
+      : mapToAppCategory(aiCategory);
     
     const newItem: ClothingItem = {
       id: Date.now().toString(),
@@ -162,7 +167,9 @@ export const AddClothingDialog = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-display font-bold text-lg text-foreground">
-            Thêm quần áo mới
+            {targetCategory && targetCategory !== 'all' && targetCategory !== 'unknown'
+              ? `Thêm ${targetCategory === 'top' ? 'áo' : targetCategory === 'bottom' ? 'quần' : targetCategory === 'dress' ? 'váy' : targetCategory === 'shoes' ? 'giày' : 'phụ kiện'}`
+              : 'Thêm quần áo mới'}
           </h3>
           <Button variant="ghost" size="iconSm" onClick={handleClose}>
             <X size={18} />

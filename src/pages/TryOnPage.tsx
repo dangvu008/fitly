@@ -67,6 +67,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [editingClothing, setEditingClothing] = useState<ClothingItem | null>(null);
   const [showClothingPanel, setShowClothingPanel] = useState(false);
   const [showAddClothingDialog, setShowAddClothingDialog] = useState(false);
+  const [targetCategoryForUpload, setTargetCategoryForUpload] = useState<ClothingCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showShareToPublicDialog, setShowShareToPublicDialog] = useState(false);
@@ -144,6 +145,12 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   };
 
   const handleAddClothingFromDevice = () => {
+    setTargetCategoryForUpload(null);
+    setShowAddClothingDialog(true);
+  };
+
+  const handleAddClothingForCategory = (category: ClothingCategory) => {
+    setTargetCategoryForUpload(category);
     setShowAddClothingDialog(true);
   };
 
@@ -661,7 +668,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           savedClothing={userClothing}
           sampleClothing={clothing}
           onSelectItem={handleAddClothing}
-          onAddClothing={handleAddClothingFromDevice}
+          onAddClothingForCategory={handleAddClothingForCategory}
         />
 
         {/* AI Try-On Button */}
@@ -830,9 +837,13 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       {/* Add Clothing Dialog */}
       <AddClothingDialog
         isOpen={showAddClothingDialog}
-        onClose={() => setShowAddClothingDialog(false)}
+        onClose={() => {
+          setShowAddClothingDialog(false);
+          setTargetCategoryForUpload(null);
+        }}
         onAddClothing={handleClothingFromDialog}
         onSaveToCollection={handleSaveClothingFromDialog}
+        targetCategory={targetCategoryForUpload}
       />
 
       {/* Login Required Dialog */}
