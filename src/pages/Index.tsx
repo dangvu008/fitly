@@ -9,6 +9,7 @@ import { FavoritesPage } from './FavoritesPage';
 import { ProfilePage } from './ProfilePage';
 import { HistoryPage } from './HistoryPage';
 import { WardrobePage } from './WardrobePage';
+import { ClosetPage } from './ClosetPage';
 import { AuthPage } from './AuthPage';
 import { CompareProvider } from '@/contexts/CompareContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -23,6 +24,7 @@ const pageTitles: Record<string, string> = {
   profile: 'Tài khoản',
   history: 'Lịch sử thử đồ',
   wardrobe: 'Tủ quần áo',
+  closet: 'Tủ đồ của tôi',
 };
 
 const MainApp = () => {
@@ -84,6 +86,8 @@ const MainApp = () => {
         );
       case 'wardrobe':
         return <WardrobePage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
+      case 'closet':
+        return <ClosetPage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
       default:
         return (
           <HomePage 

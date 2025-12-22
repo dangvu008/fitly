@@ -47,6 +47,7 @@ export type Database = {
           clothing_items: Json
           created_at: string
           id: string
+          is_favorite: boolean
           result_image_url: string
           user_id: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           clothing_items?: Json
           created_at?: string
           id?: string
+          is_favorite?: boolean
           result_image_url: string
           user_id: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           clothing_items?: Json
           created_at?: string
           id?: string
+          is_favorite?: boolean
           result_image_url?: string
           user_id?: string
         }
@@ -76,6 +79,7 @@ export type Database = {
           gender: string | null
           id: string
           image_url: string
+          is_purchased: boolean
           name: string
           pattern: string | null
           style: string | null
@@ -89,6 +93,7 @@ export type Database = {
           gender?: string | null
           id?: string
           image_url: string
+          is_purchased?: boolean
           name: string
           pattern?: string | null
           style?: string | null
@@ -102,6 +107,7 @@ export type Database = {
           gender?: string | null
           id?: string
           image_url?: string
+          is_purchased?: boolean
           name?: string
           pattern?: string | null
           style?: string | null
