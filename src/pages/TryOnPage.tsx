@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2 } from 'lucide-react';
+import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CategorySidebar } from '@/components/clothing/CategorySidebar';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
 import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
@@ -17,6 +16,17 @@ import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+
+// Category definitions
+const categories: { id: ClothingCategory; icon: React.ElementType; label: string }[] = [
+  { id: 'top', icon: Shirt, label: 'Áo' },
+  { id: 'bottom', icon: Square, label: 'Quần' },
+  { id: 'dress', icon: Crown, label: 'Váy' },
+  { id: 'shoes', icon: Footprints, label: 'Giày' },
+  { id: 'accessory', icon: Glasses, label: 'Phụ kiện' },
+  { id: 'all', icon: MoreHorizontal, label: 'Khác' },
+];
 
 const BODY_IMAGE_STORAGE_KEY = 'tryon_body_image';
 
@@ -43,6 +53,7 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [pendingClothingToSave, setPendingClothingToSave] = useState<ClothingItem | null>(null);
   const [editingClothing, setEditingClothing] = useState<ClothingItem | null>(null);
+  const [showClothingPanel, setShowClothingPanel] = useState(false);
   
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
@@ -464,19 +475,9 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex gap-2 px-2">
-        {/* Left sidebar - Categories */}
-        <div className="flex-shrink-0">
-          <CategorySidebar
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            onAddClothing={handleAddClothingFromDevice}
-          />
-        </div>
-
-        {/* Center - Canvas */}
-        <div className="flex-1 min-w-0">
+      {/* Main content - Full width body image */}
+      <div className="px-4">
+        <div className="w-full aspect-[3/4] max-h-[60vh]">
           <TryOnCanvas
             bodyImageUrl={bodyImage}
             onBodyImageChange={(imageUrl) => {
@@ -487,72 +488,132 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
             }}
           />
         </div>
+      </div>
 
-        {/* Right sidebar - Clothing items with tabs */}
-        <div className="flex-shrink-0 w-24 space-y-2">
-          {/* Source tabs */}
-          {user && (
-            <Tabs value={clothingSource} onValueChange={(v) => setClothingSource(v as 'sample' | 'saved')} className="w-full">
-              <TabsList className="w-full h-7 p-0.5">
-                <TabsTrigger value="sample" className="flex-1 text-[10px] h-6 px-1">
-                  {t('clothing_sample')}
-                </TabsTrigger>
-                <TabsTrigger value="saved" className="flex-1 text-[10px] h-6 px-1">
-                  {t('clothing_saved')} ({userClothing.length})
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+      {/* Clothing Panel - Shows when category is selected */}
+      {showClothingPanel && (
+        <div className="fixed inset-x-0 bottom-0 z-40 bg-card border-t border-border rounded-t-2xl shadow-medium animate-slide-up max-h-[50vh] flex flex-col">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground">
+                {categories.find(c => c.id === activeCategory)?.label || t('clothing_sample')}
+              </span>
+              {user && (
+                <Tabs value={clothingSource} onValueChange={(v) => setClothingSource(v as 'sample' | 'saved')} className="ml-2">
+                  <TabsList className="h-7 p-0.5">
+                    <TabsTrigger value="sample" className="text-[10px] h-6 px-2">
+                      {t('clothing_sample')}
+                    </TabsTrigger>
+                    <TabsTrigger value="saved" className="text-[10px] h-6 px-2">
+                      {t('clothing_saved')} ({userClothing.length})
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="iconSm"
+              onClick={() => setShowClothingPanel(false)}
+            >
+              <X size={18} />
+            </Button>
+          </div>
           
-          {/* Clothing list */}
-          <div className="space-y-2 overflow-y-auto max-h-[360px] pr-1">
+          {/* Clothing Grid */}
+          <div className="flex-1 overflow-y-auto p-4">
             {filteredClothing.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-xs text-muted-foreground">
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">
                   {clothingSource === 'saved' ? t('no_saved_clothing') : t('no_clothing')}
                 </p>
               </div>
             ) : (
-              filteredClothing.map((item) => (
-                <div key={item.id} className="relative group">
-                  <ClothingCard
-                    item={item}
-                    size="sm"
-                    onSelect={handleAddClothing}
-                    isSelected={selectedItems.some(i => i.id === item.id)}
-                  />
-                  {/* Action buttons for saved clothing */}
-                  {clothingSource === 'saved' && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditClothing(item);
-                        }}
-                        className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
-                      >
-                        <Edit2 size={10} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSavedClothing(item.id);
-                        }}
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
-                      >
-                        <Trash2 size={10} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))
+              <div className="grid grid-cols-3 gap-3">
+                {filteredClothing.map((item) => (
+                  <div key={item.id} className="relative group">
+                    <ClothingCard
+                      item={item}
+                      size="md"
+                      onSelect={(item) => {
+                        handleAddClothing(item);
+                        setShowClothingPanel(false);
+                      }}
+                      isSelected={selectedItems.some(i => i.id === item.id)}
+                    />
+                    {/* Action buttons for saved clothing */}
+                    {clothingSource === 'saved' && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClothing(item);
+                          }}
+                          className="absolute top-1 left-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSavedClothing(item.id);
+                          }}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Bottom Category Bar */}
+      <div className="px-4 mt-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Add clothing button */}
+          <button
+            onClick={handleAddClothingFromDevice}
+            className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl border-2 border-dashed border-primary text-primary hover:bg-primary/10 transition-colors"
+          >
+            <ImagePlus size={20} />
+            <span className="text-[9px] mt-1">Thêm đồ</span>
+          </button>
+          
+          {/* Category buttons */}
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = activeCategory === cat.id && showClothingPanel;
+            
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  setShowClothingPanel(true);
+                }}
+                className={cn(
+                  "flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all",
+                  isActive 
+                    ? "gradient-primary text-primary-foreground shadow-soft scale-105" 
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                <Icon size={20} />
+                <span className="text-[9px] mt-1">{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Selected Clothing List */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-3">
         <SelectedClothingList 
           items={selectedItems} 
           onRemove={handleRemoveClothing}
