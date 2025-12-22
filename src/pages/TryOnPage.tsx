@@ -60,6 +60,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [clothing] = useState(sampleClothing);
   const [aiResultImage, setAiResultImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResultSaved, setIsResultSaved] = useState(false);
   const [pendingClothingToSave, setPendingClothingToSave] = useState<ClothingItem | null>(null);
   const [editingClothing, setEditingClothing] = useState<ClothingItem | null>(null);
   const [showClothingPanel, setShowClothingPanel] = useState(false);
@@ -322,6 +323,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     
     if (result?.success && result.generatedImage) {
       setAiResultImage(result.generatedImage);
+      setIsResultSaved(false);
       
       // Auto-save to history if user is logged in
       if (user) {
@@ -329,7 +331,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           name: item.name,
           imageUrl: item.imageUrl,
         }));
-        await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
+        const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
+        if (saved) {
+          setIsResultSaved(true);
+        }
       }
     }
   };
@@ -345,13 +350,21 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       return;
     }
     
+    if (isResultSaved) {
+      toast.info(t('msg_already_saved'));
+      return;
+    }
+    
     setIsSaving(true);
     const clothingItemsData = selectedItems.map(item => ({
       name: item.name,
       imageUrl: item.imageUrl,
     }));
     
-    await saveTryOnResult(user.id, bodyImage, aiResultImage, clothingItemsData);
+    const saved = await saveTryOnResult(user.id, bodyImage, aiResultImage, clothingItemsData);
+    if (saved) {
+      setIsResultSaved(true);
+    }
     setIsSaving(false);
   };
 
@@ -383,6 +396,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
   const handleCloseResult = () => {
     setAiResultImage(null);
+    setIsResultSaved(false);
     clearResult();
   };
 
