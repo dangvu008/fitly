@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search } from 'lucide-react';
+import { Camera, Save, Share2, Sparkles, Loader2, X, Download, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
 import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
 import { EditClothingDialog } from '@/components/clothing/EditClothingDialog';
 import { AddClothingDialog } from '@/components/clothing/AddClothingDialog';
+import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
+import { ShareToPublicDialog } from '@/components/outfit/ShareToPublicDialog';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAITryOn } from '@/hooks/useAITryOn';
@@ -63,7 +65,8 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [showClothingPanel, setShowClothingPanel] = useState(false);
   const [showAddClothingDialog, setShowAddClothingDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showShareToPublicDialog, setShowShareToPublicDialog] = useState(false);
   const { processVirtualTryOn, isProcessing, clearResult } = useAITryOn();
   const { saveTryOnResult } = useTryOnHistory();
   const { userClothing, saveClothingItem, updateClothingItem, deleteClothingItem, isSaving: isSavingClothing } = useUserClothing();
@@ -353,7 +356,19 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   };
 
   const handleShare = () => {
-    toast.success(t('msg_shared'));
+    if (aiResultImage) {
+      setShowShareDialog(true);
+    }
+  };
+
+  const handleShareToPublic = () => {
+    if (!user) {
+      toast.error(t('msg_login_required'));
+      return;
+    }
+    if (aiResultImage) {
+      setShowShareToPublicDialog(true);
+    }
   };
 
   const handleDownloadResult = () => {
@@ -464,6 +479,15 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                   )}
                 </button>
 
+                {/* Share to public button */}
+                <button
+                  onClick={handleShareToPublic}
+                  className="w-11 h-11 rounded-full bg-card border border-border text-foreground flex items-center justify-center shadow-lg hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105 active:scale-95"
+                  title="Chia sẻ công khai"
+                >
+                  <Globe size={18} />
+                </button>
+
                 {/* Share button */}
                 <button
                   onClick={handleShare}
@@ -482,6 +506,35 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Dialog */}
+      {aiResultImage && (
+        <ShareOutfitDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          imageUrl={aiResultImage}
+          title="Outfit thử đồ AI"
+        />
+      )}
+
+      {/* Share to Public Dialog */}
+      {aiResultImage && (
+        <ShareToPublicDialog
+          open={showShareToPublicDialog}
+          onOpenChange={setShowShareToPublicDialog}
+          resultImageUrl={aiResultImage}
+          clothingItems={selectedItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            imageUrl: item.imageUrl,
+            category: item.category,
+            purchaseUrl: item.shopUrl,
+          }))}
+          onSuccess={() => {
+            toast.success('Đã chia sẻ outfit lên trang chủ!');
+          }}
+        />
       )}
 
       {/* Save Clothing Dialog */}
