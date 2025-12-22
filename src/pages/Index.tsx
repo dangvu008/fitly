@@ -28,15 +28,25 @@ const pageTitles: Record<string, string> = {
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedItem, setSelectedItem] = useState<ClothingItem | undefined>();
+  const [reuseBodyImage, setReuseBodyImage] = useState<string | undefined>();
+  const [reuseClothingItems, setReuseClothingItems] = useState<ClothingItem[]>([]);
 
   const handleSelectItem = (item: ClothingItem) => {
     setSelectedItem(item);
+    setReuseBodyImage(undefined);
+    setReuseClothingItems([]);
     setActiveTab('tryOn');
     toast.success(`Đã chọn ${item.name} để thử`);
   };
 
   const handleShare = () => {
     toast.success('Đã sao chép link chia sẻ!');
+  };
+
+  const handleReuseHistory = (bodyImageUrl: string, clothingItems: ClothingItem[]) => {
+    setReuseBodyImage(bodyImageUrl);
+    setReuseClothingItems(clothingItems);
+    setSelectedItem(undefined);
   };
 
   const renderPage = () => {
@@ -51,7 +61,13 @@ const MainApp = () => {
           />
         );
       case 'tryOn':
-        return <TryOnPage initialItem={selectedItem} />;
+        return (
+          <TryOnPage 
+            initialItem={selectedItem} 
+            reuseBodyImage={reuseBodyImage}
+            reuseClothingItems={reuseClothingItems}
+          />
+        );
       case 'compare':
         return <ComparePage onBack={() => setActiveTab('home')} />;
       case 'favorites':
@@ -59,7 +75,13 @@ const MainApp = () => {
       case 'profile':
         return <ProfilePage onNavigateToHistory={() => setActiveTab('history')} />;
       case 'history':
-        return <HistoryPage onNavigateToCompare={() => setActiveTab('compare')} />;
+        return (
+          <HistoryPage 
+            onNavigateToCompare={() => setActiveTab('compare')} 
+            onNavigateToTryOn={() => setActiveTab('tryOn')}
+            onReuseHistory={handleReuseHistory}
+          />
+        );
       case 'wardrobe':
         return <WardrobePage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
       default:

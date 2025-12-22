@@ -34,20 +34,25 @@ const BODY_IMAGE_STORAGE_KEY = 'tryon_body_image';
 
 interface TryOnPageProps {
   initialItem?: ClothingItem;
+  reuseBodyImage?: string;
+  reuseClothingItems?: ClothingItem[];
 }
 
-export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
+export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = [] }: TryOnPageProps) => {
   const [bodyImage, setBodyImage] = useState<string | undefined>(() => {
-    // Load saved body image from localStorage on init
+    // Priority: reuseBodyImage > localStorage
+    if (reuseBodyImage) return reuseBodyImage;
     try {
       return localStorage.getItem(BODY_IMAGE_STORAGE_KEY) || undefined;
     } catch {
       return undefined;
     }
   });
-  const [selectedItems, setSelectedItems] = useState<ClothingItem[]>(() => 
-    initialItem ? [initialItem] : []
-  );
+  const [selectedItems, setSelectedItems] = useState<ClothingItem[]>(() => {
+    if (reuseClothingItems.length > 0) return reuseClothingItems;
+    if (initialItem) return [initialItem];
+    return [];
+  });
   const [activeCategory, setActiveCategory] = useState<ClothingCategory>('top');
   const [clothingSource, setClothingSource] = useState<'sample' | 'saved'>('sample');
   const [clothing] = useState(sampleClothing);
@@ -77,14 +82,27 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
 
   // Save body image to localStorage when it changes
   useEffect(() => {
-    if (bodyImage) {
+    if (bodyImage && !reuseBodyImage) {
       try {
         localStorage.setItem(BODY_IMAGE_STORAGE_KEY, bodyImage);
       } catch (e) {
         console.warn('Could not save body image to localStorage:', e);
       }
     }
-  }, [bodyImage]);
+  }, [bodyImage, reuseBodyImage]);
+
+  // Update state when reuse props change
+  useEffect(() => {
+    if (reuseBodyImage) {
+      setBodyImage(reuseBodyImage);
+    }
+  }, [reuseBodyImage]);
+
+  useEffect(() => {
+    if (reuseClothingItems.length > 0) {
+      setSelectedItems(reuseClothingItems);
+    }
+  }, [reuseClothingItems]);
 
   // Get clothing based on source and filter by search
   const displayedClothing = clothingSource === 'saved' ? userClothing : clothing;
@@ -301,6 +319,15 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
     
     if (result?.success && result.generatedImage) {
       setAiResultImage(result.generatedImage);
+      
+      // Auto-save to history if user is logged in
+      if (user) {
+        const clothingForHistory = selectedItems.map(item => ({
+          name: item.name,
+          imageUrl: item.imageUrl,
+        }));
+        await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
+      }
     }
   };
 
