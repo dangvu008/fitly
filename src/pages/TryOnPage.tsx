@@ -593,58 +593,14 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           />
         </div>
 
-        {/* Selected Items Preview - Horizontal scroll */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {/* Add button */}
-          <button
-            onClick={handleAddClothingFromDevice}
-            className="flex-shrink-0 w-16 h-16 rounded-xl border-2 border-dashed border-primary/50 flex flex-col items-center justify-center text-primary hover:bg-primary/5 transition-colors press-effect"
-          >
-            <ImagePlus size={20} />
-            <span className="text-2xs mt-0.5">Thêm</span>
-          </button>
-          
-          {/* Category buttons */}
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isActive = activeCategory === cat.id && showClothingPanel;
-            const hasSelected = selectedItems.some(item => item.category === cat.id);
-            
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setShowClothingPanel(true);
-                }}
-                className={cn(
-                  "flex-shrink-0 relative w-16 h-16 rounded-xl flex flex-col items-center justify-center transition-all press-effect",
-                  isActive 
-                    ? "bg-foreground text-background" 
-                    : hasSelected
-                      ? "bg-primary/10 text-primary border border-primary/30"
-                      : "bg-secondary text-muted-foreground"
-                )}
-              >
-                <Icon size={18} />
-                <span className="text-2xs mt-0.5">{cat.label}</span>
-                {hasSelected && !isActive && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                    <span className="text-2xs text-primary-foreground">✓</span>
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Selected Clothing List */}
+        {/* Selected Clothing List - Outfit Slots */}
         <SelectedClothingList 
           items={selectedItems} 
           onRemove={handleRemoveClothing}
           savedClothing={userClothing}
           sampleClothing={clothing}
           onSelectItem={handleAddClothing}
+          onAddClothing={handleAddClothingFromDevice}
         />
 
         {/* AI Try-On Button */}
