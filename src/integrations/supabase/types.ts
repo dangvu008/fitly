@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      category_corrections: {
+        Row: {
+          ai_predicted_category: string | null
+          created_at: string
+          id: string
+          image_features: Json | null
+          image_hash: string
+          user_id: string
+          user_selected_category: string
+        }
+        Insert: {
+          ai_predicted_category?: string | null
+          created_at?: string
+          id?: string
+          image_features?: Json | null
+          image_hash: string
+          user_id: string
+          user_selected_category: string
+        }
+        Update: {
+          ai_predicted_category?: string | null
+          created_at?: string
+          id?: string
+          image_features?: Json | null
+          image_hash?: string
+          user_id?: string
+          user_selected_category?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string

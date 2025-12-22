@@ -6,6 +6,71 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fetch learning data from user corrections
+async function getLearningContext(): Promise<string> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return '';
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get recent corrections to learn from
+    const { data: corrections, error } = await supabase
+      .from('category_corrections')
+      .select('ai_predicted_category, user_selected_category, image_features')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error || !corrections || corrections.length === 0) {
+      return '';
+    }
+
+    // Build learning context from corrections
+    const learningPatterns: Record<string, { correct: string; features: any[] }[]> = {};
+    
+    corrections.forEach((c: any) => {
+      if (c.ai_predicted_category && c.user_selected_category && c.ai_predicted_category !== c.user_selected_category) {
+        if (!learningPatterns[c.ai_predicted_category]) {
+          learningPatterns[c.ai_predicted_category] = [];
+        }
+        learningPatterns[c.ai_predicted_category].push({
+          correct: c.user_selected_category,
+          features: c.image_features || {}
+        });
+      }
+    });
+
+    if (Object.keys(learningPatterns).length === 0) {
+      return '';
+    }
+
+    // Create learning hints for the AI
+    const hints: string[] = [];
+    
+    for (const [predicted, corrections] of Object.entries(learningPatterns)) {
+      const correctCategories = corrections.map(c => c.correct);
+      const mostCommonCorrect = correctCategories.sort((a, b) =>
+        correctCategories.filter(v => v === a).length - correctCategories.filter(v => v === b).length
+      ).pop();
+      
+      hints.push(`- When you think it's "${predicted}", double-check if it might be "${mostCommonCorrect}" instead (users corrected this ${corrections.length} times)`);
+    }
+
+    if (hints.length > 0) {
+      return `\n\nLEARNING FROM USER CORRECTIONS:\n${hints.join('\n')}\n`;
+    }
+    
+    return '';
+  } catch (error) {
+    console.error('Error fetching learning context:', error);
+    return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -27,6 +92,10 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
+
+    // Get learning context from user corrections
+    const learningContext = await getLearningContext();
+    console.log('Learning context loaded:', learningContext ? 'Yes' : 'No');
 
     const prompt = `Analyze this image and determine if it shows a clothing item or fashion accessory suitable for virtual try-on. Provide a JSON response with the following structure:
 {
@@ -76,7 +145,7 @@ Quality criteria:
 - "good": Clear image, single item fully opened/spread out, good lighting, white or clean background
 - "acceptable": Minor issues but item is clearly recognizable and mostly visible
 - "poor": Folded, blurry, bad lighting, item not clearly visible, or not clothing
-
+${learningContext}
 Only respond with the JSON object, nothing else.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
