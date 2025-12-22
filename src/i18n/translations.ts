@@ -21,6 +21,7 @@ export const translations = {
     nav_profile: 'Hồ sơ',
     nav_compare: 'So sánh',
     nav_suggest: 'Gợi ý',
+    nav_wardrobe: 'Tủ đồ',
     
     // Auth
     login: 'Đăng nhập',
@@ -135,6 +136,7 @@ export const translations = {
     nav_profile: 'Profile',
     nav_compare: 'Compare',
     nav_suggest: 'Suggest',
+    nav_wardrobe: 'Wardrobe',
     
     // Auth
     login: 'Login',
