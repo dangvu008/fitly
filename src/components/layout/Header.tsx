@@ -1,4 +1,4 @@
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ interface HeaderProps {
   onBack?: () => void;
   onShare?: () => void;
   onAvatarClick?: () => void;
+  onSavedClick?: () => void;
 }
 
 export const Header = ({ 
@@ -24,7 +25,8 @@ export const Header = ({
   showLanguageSwitcher = true,
   onBack,
   onShare,
-  onAvatarClick 
+  onAvatarClick,
+  onSavedClick,
 }: HeaderProps) => {
   const { user } = useAuth();
 
@@ -57,9 +59,19 @@ export const Header = ({
         <div className="flex items-center gap-1">
           {showLanguageSwitcher && <LanguageSwitcher />}
           {showNotification && (
-            <Button variant="ghost" size="iconSm" className="text-foreground">
-              <Bell size={22} strokeWidth={1.5} />
-            </Button>
+            <>
+              <Button 
+                variant="ghost" 
+                size="iconSm" 
+                className="text-foreground"
+                onClick={onSavedClick}
+              >
+                <Bookmark size={22} strokeWidth={1.5} />
+              </Button>
+              <Button variant="ghost" size="iconSm" className="text-foreground">
+                <Bell size={22} strokeWidth={1.5} />
+              </Button>
+            </>
           )}
           
           {/* User Avatar - Instagram style with story ring for logged in users */}

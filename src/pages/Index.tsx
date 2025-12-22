@@ -12,6 +12,7 @@ import { WardrobePage } from './WardrobePage';
 import { ClosetPage } from './ClosetPage';
 import { AuthPage } from './AuthPage';
 import { SharedOutfitDetailPage } from './SharedOutfitDetailPage';
+import { SavedOutfitsPage } from './SavedOutfitsPage';
 import { CompareProvider } from '@/contexts/CompareContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ClothingItem } from '@/types/clothing';
@@ -74,6 +75,8 @@ const MainApp = () => {
         return <WardrobePage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
       case 'closet':
         return <ClosetPage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
+      case 'saved':
+        return <SavedOutfitsPage onNavigateBack={() => setActiveTab('home')} />;
       default:
         return (
           <HomePage 
@@ -92,6 +95,7 @@ const MainApp = () => {
         title="TryOn"
         showNotification={activeTab === 'home'}
         onAvatarClick={() => setActiveTab('profile')}
+        onSavedClick={() => setActiveTab('saved')}
       />
 
       <main className="min-h-screen">
