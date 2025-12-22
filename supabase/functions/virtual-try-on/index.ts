@@ -93,7 +93,7 @@ Return ONE final image showing the person wearing the complete outfit.`;
 
     const attempts: Array<{ model: string }> = [
       { model: "google/gemini-3-pro-image-preview" },
-      { model: "google/gemini-2.5-flash-image" },
+      { model: "google/gemini-2.5-flash" },
     ];
 
     let lastTextResponse: string | undefined;
