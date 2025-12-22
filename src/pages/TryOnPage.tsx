@@ -215,12 +215,12 @@ export const TryOnPage = ({ initialItem }: TryOnPageProps) => {
       {/* AI Result Modal */}
       {aiResultImage && (
         <div className="fixed inset-0 z-50 bg-foreground/80 backdrop-blur-sm flex items-center justify-center p-4 animate-scale-in">
-          <div className="bg-card rounded-2xl shadow-medium max-w-sm w-full overflow-hidden">
-            <div className="relative">
+          <div className="bg-card rounded-2xl shadow-medium max-w-sm w-full overflow-hidden max-h-[85vh] flex flex-col">
+            <div className="relative flex-1 min-h-0 bg-muted flex items-center justify-center">
               <img 
                 src={aiResultImage} 
                 alt="AI Try-On Result" 
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full h-full max-h-[65vh] object-contain"
               />
               <Button
                 variant="ghost"
