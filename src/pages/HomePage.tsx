@@ -17,7 +17,7 @@ interface HomePageProps {
 
 export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => {
   const navigate = useNavigate();
-  const { outfits, isLoading, isLoadingMore, hasMore, loadMore, refresh } = useOutfitFeed();
+  const { outfits, isLoading, isLoadingMore, hasMore, loadMore, refresh, hideOutfit, saveOutfit, unsaveOutfit } = useOutfitFeed();
   
   const [commentsOutfitId, setCommentsOutfitId] = useState<string | null>(null);
   
@@ -118,10 +118,14 @@ export const HomePage = ({ onNavigateToTryOn, onSelectItem }: HomePageProps) => 
                 outfit={outfit}
                 userProfile={outfit.user_profile}
                 isLiked={outfit.isLiked}
+                isSaved={outfit.isSaved}
                 onOpenComments={handleOpenComments}
                 onShare={handleShare}
                 onViewDetail={handleViewOutfitDetail}
                 onLikeChange={refresh}
+                onSave={saveOutfit}
+                onUnsave={unsaveOutfit}
+                onHide={hideOutfit}
               />
             ))}
           </div>

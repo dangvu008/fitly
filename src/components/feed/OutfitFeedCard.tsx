@@ -1,7 +1,13 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ExternalLink, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +45,9 @@ interface OutfitFeedCardProps {
   onShare: (outfitId: string) => void;
   onViewDetail: (outfitId: string) => void;
   onLikeChange?: () => void;
+  onSave?: (outfitId: string) => Promise<boolean>;
+  onUnsave?: (outfitId: string) => Promise<boolean>;
+  onHide?: (outfitId: string) => Promise<boolean>;
 }
 
 export const OutfitFeedCard = ({
@@ -50,12 +59,16 @@ export const OutfitFeedCard = ({
   onShare,
   onViewDetail,
   onLikeChange,
+  onSave,
+  onUnsave,
+  onHide,
 }: OutfitFeedCardProps) => {
   const { user } = useAuth();
   const [liked, setLiked] = useState(isLiked);
   const [likesCount, setLikesCount] = useState(outfit.likes_count);
   const [saved, setSaved] = useState(isSaved);
   const [isLiking, setIsLiking] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showClothingItems, setShowClothingItems] = useState(false);
 
   const handleLike = async () => {
@@ -69,7 +82,6 @@ export const OutfitFeedCard = ({
 
     try {
       if (liked) {
-        // Unlike
         const { error } = await supabase
           .from('outfit_likes')
           .delete()
@@ -80,7 +92,6 @@ export const OutfitFeedCard = ({
         setLiked(false);
         setLikesCount(prev => Math.max(0, prev - 1));
       } else {
-        // Like
         const { error } = await supabase
           .from('outfit_likes')
           .insert({ outfit_id: outfit.id, user_id: user.id });
@@ -98,13 +109,48 @@ export const OutfitFeedCard = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!user) {
       toast.error('Vui lòng đăng nhập');
       return;
     }
-    setSaved(!saved);
-    toast.success(saved ? 'Đã bỏ lưu' : 'Đã lưu outfit');
+    
+    if (isSaving) return;
+    setIsSaving(true);
+    
+    try {
+      if (saved) {
+        const success = await onUnsave?.(outfit.id);
+        if (success) {
+          setSaved(false);
+          toast.success('Đã bỏ lưu outfit');
+        }
+      } else {
+        const success = await onSave?.(outfit.id);
+        if (success) {
+          setSaved(true);
+          toast.success('Đã lưu outfit');
+        }
+      }
+    } catch (error) {
+      toast.error('Không thể thực hiện');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleHide = async () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập');
+      return;
+    }
+    
+    const success = await onHide?.(outfit.id);
+    if (success) {
+      toast.success('Đã ẩn outfit này');
+    } else {
+      toast.error('Không thể ẩn outfit');
+    }
   };
 
   const timeAgo = formatDistanceToNow(new Date(outfit.created_at), { 
@@ -130,9 +176,20 @@ export const OutfitFeedCard = ({
             <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal size={18} />
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal size={18} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleHide} className="gap-2 text-destructive">
+              <EyeOff size={16} />
+              Ẩn outfit này
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image */}
@@ -152,8 +209,6 @@ export const OutfitFeedCard = ({
             ✨ Featured
           </div>
         )}
-        
-        {/* Double tap heart animation would go here */}
       </div>
 
       {/* Actions */}
@@ -185,9 +240,10 @@ export const OutfitFeedCard = ({
           </div>
           <button
             onClick={handleSave}
+            disabled={isSaving}
             className={cn(
-              "transition-all",
-              saved ? "text-foreground" : "text-foreground hover:text-muted-foreground"
+              "transition-all active:scale-90",
+              saved ? "text-primary" : "text-foreground hover:text-muted-foreground"
             )}
           >
             <Bookmark size={24} className={saved ? "fill-current" : ""} />
