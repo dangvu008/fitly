@@ -3,7 +3,8 @@ import { X } from 'lucide-react';
 import { TryOnProgress } from '@/hooks/useAITryOn';
 import { cn } from '@/lib/utils';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import confetti from 'canvas-confetti';
 
 interface AIProgressBarProps {
   progress: TryOnProgress;
@@ -68,6 +69,71 @@ const funnyMessages = {
 export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarProps) => {
   const [messageIndex, setMessageIndex] = useState(0);
   const [currentMessage, setCurrentMessage] = useState({ text: '', subtext: '' });
+  const hasTriggeredConfetti = useRef(false);
+
+  // Trigger confetti when complete
+  useEffect(() => {
+    if (progress.stage === 'complete' && !hasTriggeredConfetti.current) {
+      hasTriggeredConfetti.current = true;
+      
+      // Fire multiple confetti bursts for celebration effect
+      const duration = 3000;
+      const end = Date.now() + duration;
+
+      const colors = ['#ff69b4', '#00ff88', '#ffd700', '#ff6b6b', '#4ecdc4', '#a855f7'];
+
+      const frame = () => {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.7 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.7 },
+          colors: colors,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+
+      // Initial big burst
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: colors,
+      });
+
+      // Continuous side bursts
+      frame();
+
+      // Star burst
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          spread: 100,
+          origin: { y: 0.5, x: 0.5 },
+          colors: colors,
+          shapes: ['star'],
+          scalar: 1.2,
+        });
+      }, 500);
+    }
+  }, [progress.stage]);
+
+  // Reset confetti trigger when stage changes from complete
+  useEffect(() => {
+    if (progress.stage !== 'complete') {
+      hasTriggeredConfetti.current = false;
+    }
+  }, [progress.stage]);
 
   // Cycle through funny messages
   useEffect(() => {
