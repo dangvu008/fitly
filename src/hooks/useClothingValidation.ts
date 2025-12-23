@@ -122,7 +122,7 @@ export const useClothingValidation = () => {
 
   const validateAndProcessClothing = useCallback(async (
     imageDataUrl: string,
-    options: { removeBackground?: boolean; language?: 'vi' | 'en' } = { removeBackground: true, language: 'vi' }
+    options: { removeBackground?: boolean; language?: string } = { removeBackground: true, language: 'vi' }
   ): Promise<ClothingValidationResult> => {
     setIsValidating(true);
     const errors: string[] = [];

@@ -103,36 +103,38 @@ export const clothingFixSuggestions: Record<string, { vi: string; en: string }> 
 };
 
 // Get fix suggestion based on error code
-export const getBodyImageFixSuggestion = (errorCode: string, language: 'vi' | 'en'): string => {
+export const getBodyImageFixSuggestion = (errorCode: string, language: string): string => {
   // Normalize error code
   const normalizedCode = errorCode.toLowerCase().replace(/\s+/g, '_');
+  const lang = (language === 'vi' || language === 'en') ? language : 'en';
   
   // Check for partial matches
   for (const [key, suggestion] of Object.entries(bodyImageFixSuggestions)) {
     if (normalizedCode.includes(key) || key.includes(normalizedCode)) {
-      return suggestion[language];
+      return suggestion[lang];
     }
   }
   
-  return bodyImageFixSuggestions.default[language];
+  return bodyImageFixSuggestions.default[lang];
 };
 
-export const getClothingFixSuggestion = (errorCode: string, language: 'vi' | 'en'): string => {
+export const getClothingFixSuggestion = (errorCode: string, language: string): string => {
   // Normalize error code
   const normalizedCode = errorCode.toLowerCase().replace(/\s+/g, '_');
+  const lang = (language === 'vi' || language === 'en') ? language : 'en';
   
   // Check for partial matches
   for (const [key, suggestion] of Object.entries(clothingFixSuggestions)) {
     if (normalizedCode.includes(key) || key.includes(normalizedCode)) {
-      return suggestion[language];
+      return suggestion[lang];
     }
   }
   
-  return clothingFixSuggestions.default[language];
+  return clothingFixSuggestions.default[lang];
 };
 
 // Get all fix suggestions for multiple errors
-export const getBodyImageFixSuggestions = (errors: string[], language: 'vi' | 'en'): string[] => {
+export const getBodyImageFixSuggestions = (errors: string[], language: string): string[] => {
   const suggestions = new Set<string>();
   
   for (const error of errors) {
@@ -142,7 +144,7 @@ export const getBodyImageFixSuggestions = (errors: string[], language: 'vi' | 'e
   return Array.from(suggestions);
 };
 
-export const getClothingFixSuggestions = (errors: string[], language: 'vi' | 'en'): string[] => {
+export const getClothingFixSuggestions = (errors: string[], language: string): string[] => {
   const suggestions = new Set<string>();
   
   for (const error of errors) {

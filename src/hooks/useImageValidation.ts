@@ -83,7 +83,7 @@ export const useImageValidation = () => {
 
   const validateAndProcessImage = useCallback(async (
     imageDataUrl: string,
-    options: { removeBackground?: boolean; language?: 'vi' | 'en' } = { removeBackground: true, language: 'vi' }
+    options: { removeBackground?: boolean; language?: string } = { removeBackground: true, language: 'vi' }
   ): Promise<ValidationResult> => {
     setIsValidating(true);
     const errors: string[] = [];
