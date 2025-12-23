@@ -2,13 +2,17 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// Flag emoji components for better rendering
+// Circular flag components
 const VietnamFlag = () => (
-  <span className="text-base leading-none" role="img" aria-label="Vietnamese">🇻🇳</span>
+  <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-red-600 shadow-sm">
+    <span className="text-lg leading-none" role="img" aria-label="Vietnamese">🇻🇳</span>
+  </div>
 );
 
 const USFlag = () => (
-  <span className="text-base leading-none" role="img" aria-label="English">🇺🇸</span>
+  <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-blue-600 shadow-sm">
+    <span className="text-lg leading-none" role="img" aria-label="English">🇺🇸</span>
+  </div>
 );
 
 export const LanguageSwitcher = ({ className }: { className?: string }) => {
@@ -21,12 +25,12 @@ export const LanguageSwitcher = ({ className }: { className?: string }) => {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="iconSm"
       onClick={toggleLanguage}
-      className={cn("gap-1.5 text-xs font-medium", className)}
+      className={cn("p-1 hover:bg-muted/50", className)}
+      title={language === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
     >
       {language === 'vi' ? <VietnamFlag /> : <USFlag />}
-      <span className="uppercase">{language}</span>
     </Button>
   );
 };
