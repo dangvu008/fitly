@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { TryOnProgress } from '@/hooks/useAITryOn';
 import { cn } from '@/lib/utils';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useEffect, useState } from 'react';
 
 interface AIProgressBarProps {
   progress: TryOnProgress;
@@ -9,264 +11,249 @@ interface AIProgressBarProps {
   onCancel?: () => void;
 }
 
-// Cute animated character SVG components
-const UploadingCharacter = () => (
-  <svg viewBox="0 0 120 120" className="w-24 h-24">
-    {/* Cloud with upload arrow */}
-    <g className="animate-bounce" style={{ animationDuration: '1.5s' }}>
-      <ellipse cx="60" cy="70" rx="35" ry="20" fill="hsl(var(--primary) / 0.2)" />
-      <ellipse cx="45" cy="55" rx="20" ry="15" fill="hsl(var(--primary) / 0.3)" />
-      <ellipse cx="75" cy="55" rx="18" ry="14" fill="hsl(var(--primary) / 0.3)" />
-      <ellipse cx="60" cy="50" rx="25" ry="18" fill="hsl(var(--primary) / 0.4)" />
-      {/* Cute face */}
-      <circle cx="52" cy="52" r="3" fill="hsl(var(--foreground))" />
-      <circle cx="68" cy="52" r="3" fill="hsl(var(--foreground))" />
-      <path d="M55 60 Q60 65 65 60" stroke="hsl(var(--foreground))" strokeWidth="2" fill="none" strokeLinecap="round" />
-    </g>
-    {/* Upload arrow */}
-    <g className="animate-pulse">
-      <path d="M60 85 L60 95" stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round" />
-      <path d="M52 90 L60 82 L68 90" stroke="hsl(var(--primary))" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    {/* Sparkles */}
-    <circle cx="30" cy="40" r="2" fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '2s' }} />
-    <circle cx="90" cy="45" r="2" fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-  </svg>
-);
-
-const ProcessingCharacter = () => (
-  <svg viewBox="0 0 120 120" className="w-24 h-24">
-    {/* Brain/Robot character */}
-    <g>
-      {/* Body */}
-      <rect x="40" y="50" width="40" height="45" rx="8" fill="hsl(var(--primary) / 0.3)" />
-      {/* Head */}
-      <rect x="35" y="20" width="50" height="35" rx="10" fill="hsl(var(--primary) / 0.4)" />
-      {/* Antenna */}
-      <line x1="60" y1="20" x2="60" y2="10" stroke="hsl(var(--primary))" strokeWidth="3" />
-      <circle cx="60" cy="8" r="5" fill="hsl(var(--primary))" className="animate-pulse" />
-      {/* Eyes - blinking */}
-      <g className="animate-pulse" style={{ animationDuration: '1s' }}>
-        <rect x="45" y="32" width="8" height="8" rx="2" fill="hsl(var(--background))" />
-        <rect x="67" y="32" width="8" height="8" rx="2" fill="hsl(var(--background))" />
-        <circle cx="49" cy="36" r="2" fill="hsl(var(--primary))" />
-        <circle cx="71" cy="36" r="2" fill="hsl(var(--primary))" />
-      </g>
-      {/* Mouth - processing */}
-      <rect x="52" y="45" width="16" height="3" rx="1" fill="hsl(var(--foreground))" className="animate-pulse" />
-      {/* Arms moving */}
-      <g className="origin-center" style={{ animation: 'wiggle 0.5s ease-in-out infinite' }}>
-        <rect x="25" y="55" width="15" height="8" rx="4" fill="hsl(var(--primary) / 0.4)" />
-        <rect x="80" y="55" width="15" height="8" rx="4" fill="hsl(var(--primary) / 0.4)" />
-      </g>
-      {/* Processing circles around */}
-      <circle cx="25" cy="35" r="4" fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '1s' }} />
-      <circle cx="95" cy="40" r="3" fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.3s' }} />
-      <circle cx="20" cy="70" r="3" fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '2s', animationDelay: '0.6s' }} />
-    </g>
-  </svg>
-);
-
-const GeneratingCharacter = () => (
-  <svg viewBox="0 0 120 120" className="w-24 h-24">
-    {/* Magic wand character */}
-    <g>
-      {/* Cute star character */}
-      <g className="animate-bounce" style={{ animationDuration: '1s' }}>
-        <path d="M60 15 L65 35 L85 35 L70 48 L75 68 L60 55 L45 68 L50 48 L35 35 L55 35 Z" 
-              fill="hsl(var(--primary))" />
-        {/* Face on star */}
-        <circle cx="52" cy="40" r="3" fill="hsl(var(--background))" />
-        <circle cx="68" cy="40" r="3" fill="hsl(var(--background))" />
-        <path d="M55 48 Q60 53 65 48" stroke="hsl(var(--background))" strokeWidth="2" fill="none" strokeLinecap="round" />
-      </g>
-      {/* Magic wand */}
-      <g style={{ transformOrigin: '60px 90px', animation: 'wand 1s ease-in-out infinite' }}>
-        <rect x="55" y="75" width="10" height="35" rx="3" fill="hsl(var(--foreground) / 0.6)" />
-        <rect x="52" y="72" width="16" height="8" rx="2" fill="hsl(var(--primary))" />
-      </g>
-      {/* Magic sparkles */}
-      <g className="animate-pulse">
-        <circle cx="30" cy="50" r="3" fill="hsl(var(--primary) / 0.8)" />
-        <circle cx="90" cy="45" r="4" fill="hsl(var(--primary) / 0.6)" />
-        <circle cx="25" cy="80" r="2" fill="hsl(var(--primary) / 0.7)" />
-        <circle cx="95" cy="75" r="3" fill="hsl(var(--primary) / 0.5)" />
-      </g>
-      {/* Floating stars */}
-      <path d="M20 30 L22 35 L27 35 L23 38 L25 43 L20 40 L15 43 L17 38 L13 35 L18 35 Z" 
-            fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '2s' }} />
-      <path d="M100 55 L101 58 L104 58 L102 60 L103 63 L100 61 L97 63 L98 60 L96 58 L99 58 Z" 
-            fill="hsl(var(--primary))" className="animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-    </g>
-  </svg>
-);
-
-const CompleteCharacter = () => (
-  <svg viewBox="0 0 120 120" className="w-24 h-24">
-    {/* Happy celebrating character */}
-    <g>
-      {/* Body */}
-      <ellipse cx="60" cy="85" rx="25" ry="20" fill="hsl(142.1 76.2% 36.3% / 0.3)" />
-      {/* Head */}
-      <circle cx="60" cy="50" r="28" fill="hsl(142.1 76.2% 36.3% / 0.4)" />
-      {/* Happy eyes */}
-      <path d="M48 45 Q52 40 56 45" stroke="hsl(var(--foreground))" strokeWidth="3" fill="none" strokeLinecap="round" />
-      <path d="M64 45 Q68 40 72 45" stroke="hsl(var(--foreground))" strokeWidth="3" fill="none" strokeLinecap="round" />
-      {/* Big smile */}
-      <path d="M45 58 Q60 75 75 58" stroke="hsl(var(--foreground))" strokeWidth="3" fill="none" strokeLinecap="round" />
-      {/* Blush */}
-      <ellipse cx="40" cy="55" rx="6" ry="4" fill="hsl(0 80% 80% / 0.5)" />
-      <ellipse cx="80" cy="55" rx="6" ry="4" fill="hsl(0 80% 80% / 0.5)" />
-      {/* Arms up celebrating */}
-      <g className="animate-bounce" style={{ animationDuration: '0.5s' }}>
-        <path d="M35 70 Q20 50 25 35" stroke="hsl(142.1 76.2% 36.3% / 0.5)" strokeWidth="8" fill="none" strokeLinecap="round" />
-        <path d="M85 70 Q100 50 95 35" stroke="hsl(142.1 76.2% 36.3% / 0.5)" strokeWidth="8" fill="none" strokeLinecap="round" />
-      </g>
-      {/* Confetti */}
-      <circle cx="20" cy="30" r="4" fill="hsl(var(--primary))" className="animate-ping" />
-      <circle cx="100" cy="25" r="3" fill="#f59e0b" className="animate-ping" style={{ animationDelay: '0.2s' }} />
-      <circle cx="30" cy="15" r="3" fill="#ec4899" className="animate-ping" style={{ animationDelay: '0.4s' }} />
-      <circle cx="90" cy="40" r="4" fill="#8b5cf6" className="animate-ping" style={{ animationDelay: '0.6s' }} />
-      {/* Check mark */}
-      <circle cx="60" cy="50" r="12" fill="hsl(142.1 76.2% 36.3%)" className="animate-scale-in" />
-      <path d="M54 50 L58 54 L66 46" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-  </svg>
-);
-
-const ErrorCharacter = () => (
-  <svg viewBox="0 0 120 120" className="w-24 h-24">
-    {/* Sad character */}
-    <g>
-      {/* Body */}
-      <ellipse cx="60" cy="85" rx="25" ry="20" fill="hsl(var(--destructive) / 0.2)" />
-      {/* Head */}
-      <circle cx="60" cy="50" r="28" fill="hsl(var(--destructive) / 0.3)" />
-      {/* Sad eyes */}
-      <circle cx="50" cy="45" r="5" fill="hsl(var(--foreground))" />
-      <circle cx="70" cy="45" r="5" fill="hsl(var(--foreground))" />
-      {/* Tears */}
-      <ellipse cx="45" cy="55" rx="3" ry="5" fill="hsl(200 80% 70%)" className="animate-pulse" />
-      <ellipse cx="75" cy="55" rx="3" ry="5" fill="hsl(200 80% 70%)" className="animate-pulse" style={{ animationDelay: '0.3s' }} />
-      {/* Sad mouth */}
-      <path d="M48 65 Q60 55 72 65" stroke="hsl(var(--foreground))" strokeWidth="3" fill="none" strokeLinecap="round" />
-      {/* X marks */}
-      <g className="animate-pulse">
-        <path d="M20 25 L30 35 M30 25 L20 35" stroke="hsl(var(--destructive))" strokeWidth="3" strokeLinecap="round" />
-        <path d="M90 30 L100 40 M100 30 L90 40" stroke="hsl(var(--destructive))" strokeWidth="3" strokeLinecap="round" />
-      </g>
-    </g>
-  </svg>
-);
-
-const stageCharacters = {
-  idle: null,
-  compressing: UploadingCharacter,
-  uploading: UploadingCharacter,
-  processing: ProcessingCharacter,
-  generating: GeneratingCharacter,
-  complete: CompleteCharacter,
-  error: ErrorCharacter,
-  cancelled: ErrorCharacter,
+// Lottie animation URLs for each stage
+const lottieAnimations = {
+  compressing: 'https://lottie.host/0c5e8c0a-6af5-4b32-bdbd-25d0d04f7980/W8dWzCXoD9.lottie', // clothes hanger
+  uploading: 'https://lottie.host/1d9c8fa8-1f07-4e26-a906-46a6f76c1c54/qGQNKNuMJM.lottie', // cloud upload
+  processing: 'https://lottie.host/c2e8b9fc-c7ae-4eab-9b54-5f0f67e9c548/GWEqPF1Tza.lottie', // washing machine
+  generating: 'https://lottie.host/d10e8b97-a4d3-4f9e-b0f8-7e9cdef05ec8/5EF3wJWe17.lottie', // magic wand / sparkles
+  complete: 'https://lottie.host/5be1e31c-5cb4-4c8e-bc69-ff456b4cc7c0/YmWTlWOYdM.lottie', // celebration
+  error: 'https://lottie.host/77bd4b33-f8d0-4c08-9e4d-4a45d4e9e556/T5lmKhJlLP.lottie', // sad face
+  cancelled: 'https://lottie.host/77bd4b33-f8d0-4c08-9e4d-4a45d4e9e556/T5lmKhJlLP.lottie',
 };
 
-const stageMessages = {
-  compressing: '🗜️ Đang nén ảnh...',
-  uploading: '☁️ Đang tải lên...',
-  processing: '🧠 AI đang phân tích...',
-  generating: '✨ Đang tạo phép màu...',
-  complete: '🎉 Hoàn thành rồi!',
-  error: '😢 Có lỗi xảy ra',
-  cancelled: '⏹️ Đã hủy',
+// Funny messages that change over time for each stage
+const funnyMessages = {
+  compressing: [
+    { text: '🗜️ Đang nén ảnh cho gọn gàng...', subtext: 'Ép cho vừa túi thôi!' },
+    { text: '📦 Đóng gói hành lý thời trang...', subtext: 'Quần áo đang xếp vali!' },
+    { text: '🎁 Gói quà xong chưa nhỉ...', subtext: 'Sắp xong rồi đó!' },
+  ],
+  uploading: [
+    { text: '☁️ Đang gửi lên cloud...', subtext: 'Bay lên trời nào!' },
+    { text: '🚀 Phóng tên lửa thời trang!', subtext: 'Đợi tí, sắp tới đích rồi!' },
+    { text: '📨 Gửi thư bồ câu đi...', subtext: 'Bồ câu đang bay thật nhanh!' },
+    { text: '🎈 Thả bóng bay lên trời...', subtext: 'Bay cao, bay xa!' },
+  ],
+  processing: [
+    { text: '🧠 AI đang suy nghĩ...', subtext: 'Hmm, để xem nào...' },
+    { text: '👀 Đang ngắm nghía bạn...', subtext: 'Ôi, đẹp thế này cơ à!' },
+    { text: '🔍 Phân tích style của bạn...', subtext: 'Fashionista đây rồi!' },
+    { text: '💭 AI đang mơ mộng...', subtext: 'Mơ về bộ đồ hoàn hảo!' },
+    { text: '🧹 Đang giặt ủi đồ cho bạn...', subtext: 'Thơm tho, sạch sẽ!' },
+    { text: '🎨 Họa sĩ AI đang vẽ...', subtext: 'Nghệ thuật cần thời gian!' },
+  ],
+  generating: [
+    { text: '✨ Phép màu đang diễn ra...', subtext: 'Bibbidi Bobbidi Boo!' },
+    { text: '🪄 Gậy thần đang làm việc!', subtext: 'Abracadabra!' },
+    { text: '🌟 Sao sáng đang lấp lánh...', subtext: 'Bạn sẽ tỏa sáng!' },
+    { text: '🎭 Đang biến hình...', subtext: 'Sailor Moon biến hình!' },
+    { text: '💫 Ma thuật thời trang!', subtext: 'Expecto Patronum!' },
+    { text: '🦋 Đang hóa bướm...', subtext: 'Từ kén bước ra!' },
+  ],
+  complete: [
+    { text: '🎉 Hoàn thành rồi nè!', subtext: 'Woohooo! Đẹp quá đi!' },
+    { text: '🎊 Xong xuôi cả rồi!', subtext: 'Fashionista đích thực!' },
+    { text: '🌈 Tuyệt vời ông mặt trời!', subtext: 'Bạn thật lung linh!' },
+  ],
+  error: [
+    { text: '😢 Ối, có lỗi rồi...', subtext: 'Đừng buồn, thử lại nhé!' },
+    { text: '🙈 Úi, xin lỗi bạn...', subtext: 'AI bị đơ một chút!' },
+  ],
+  cancelled: [
+    { text: '⏹️ Đã dừng lại rồi!', subtext: 'Khi nào sẵn sàng, quay lại nhé!' },
+  ],
 };
 
 export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarProps) => {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [currentMessage, setCurrentMessage] = useState({ text: '', subtext: '' });
+
+  // Cycle through funny messages
+  useEffect(() => {
+    if (!isVisible || progress.stage === 'idle') return;
+
+    const messages = funnyMessages[progress.stage as keyof typeof funnyMessages] || [];
+    if (messages.length === 0) return;
+
+    // Set initial message
+    setCurrentMessage(messages[0]);
+    setMessageIndex(0);
+
+    // Cycle through messages every 3 seconds
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => {
+        const nextIndex = (prev + 1) % messages.length;
+        setCurrentMessage(messages[nextIndex]);
+        return nextIndex;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [progress.stage, isVisible]);
+
+  // Reset message when stage changes
+  useEffect(() => {
+    const messages = funnyMessages[progress.stage as keyof typeof funnyMessages] || [];
+    if (messages.length > 0) {
+      setCurrentMessage(messages[0]);
+      setMessageIndex(0);
+    }
+  }, [progress.stage]);
+
   if (!isVisible || progress.stage === 'idle' || progress.stage === 'cancelled') return null;
 
-  const Character = stageCharacters[progress.stage];
+  const lottieUrl = lottieAnimations[progress.stage as keyof typeof lottieAnimations];
   const canCancel = !['complete', 'error', 'cancelled'].includes(progress.stage);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <style>{`
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(-5deg); }
-          50% { transform: rotate(5deg); }
-        }
-        @keyframes wand {
-          0%, 100% { transform: rotate(-10deg); }
-          50% { transform: rotate(10deg); }
-        }
-      `}</style>
       <div className="w-full max-w-sm mx-4 p-6 bg-card rounded-2xl border shadow-lg space-y-4">
-        {/* Animated Character */}
+        {/* Lottie Animation */}
         <div className="flex justify-center">
-          {Character && <Character />}
+          <div className="w-32 h-32 relative">
+            {lottieUrl ? (
+              <DotLottieReact
+                src={lottieUrl}
+                loop
+                autoplay
+                style={{ width: '100%', height: '100%' }}
+              />
+            ) : (
+              // Fallback animated icon
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-primary/20 animate-pulse flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-primary animate-ping" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Message */}
-        <div className="text-center space-y-1">
-          <h3 className="font-semibold text-lg text-foreground">
-            {stageMessages[progress.stage as keyof typeof stageMessages] || progress.message}
+        {/* Animated Message */}
+        <div className="text-center space-y-1 min-h-[60px]">
+          <h3 
+            key={`${progress.stage}-${messageIndex}`}
+            className="font-semibold text-lg text-foreground animate-fade-in"
+          >
+            {currentMessage.text || progress.message}
           </h3>
-          <p className="text-sm text-muted-foreground">{progress.message}</p>
+          <p 
+            key={`sub-${progress.stage}-${messageIndex}`}
+            className="text-sm text-muted-foreground animate-fade-in"
+            style={{ animationDelay: '0.1s' }}
+          >
+            {currentMessage.subtext}
+          </p>
         </div>
 
-        {/* Cute progress indicator */}
-        <div className="relative">
-          {/* Background track */}
-          <div className="h-4 bg-muted rounded-full overflow-hidden">
-            {/* Progress fill with gradient */}
+        {/* Progress bar with cute styling */}
+        <div className="relative pt-2">
+          {/* Background track with pattern */}
+          <div className="h-5 bg-muted rounded-full overflow-hidden relative">
+            {/* Striped pattern background */}
             <div 
-              className="h-full rounded-full transition-all duration-300 ease-out relative overflow-hidden"
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 12px)',
+              }}
+            />
+            
+            {/* Progress fill with gradient and animation */}
+            <div 
+              className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
               style={{ 
                 width: `${progress.progress}%`,
                 background: progress.stage === 'error' 
                   ? 'hsl(var(--destructive))' 
                   : progress.stage === 'complete'
-                  ? 'hsl(142.1 76.2% 36.3%)'
-                  : 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))'
+                  ? 'linear-gradient(90deg, #10b981, #34d399)'
+                  : 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7), hsl(var(--primary)))'
               }}
             >
-              {/* Shimmer effect */}
+              {/* Moving shimmer effect */}
               {!['complete', 'error'].includes(progress.stage) && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                <div 
+                  className="absolute inset-0 animate-pulse"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                    animation: 'shimmer 2s infinite',
+                  }}
+                />
+              )}
+              
+              {/* Cute moving dots inside progress */}
+              {!['complete', 'error'].includes(progress.stage) && (
+                <div className="absolute inset-0 flex items-center justify-end pr-2 gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div 
+                      key={i}
+                      className="w-2 h-2 rounded-full bg-white/60"
+                      style={{
+                        animation: 'bounce 1s infinite',
+                        animationDelay: `${i * 0.2}s`,
+                      }}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>
-          {/* Percentage badge */}
+          
+          {/* Cute floating percentage badge */}
           <div 
             className={cn(
-              "absolute -top-1 transform -translate-x-1/2 bg-card border-2 rounded-full px-2 py-0.5 text-xs font-bold shadow-sm transition-all duration-300",
+              "absolute -top-1 transform -translate-x-1/2 bg-card border-2 rounded-full px-3 py-1 text-xs font-bold shadow-md transition-all duration-300",
               progress.stage === 'complete' ? 'border-green-500 text-green-500' :
               progress.stage === 'error' ? 'border-destructive text-destructive' :
               'border-primary text-primary'
             )}
-            style={{ left: `${Math.max(10, Math.min(90, progress.progress))}%` }}
+            style={{ left: `${Math.max(12, Math.min(88, progress.progress))}%` }}
           >
             {progress.progress}%
           </div>
         </div>
 
-        {/* Stage dots */}
-        <div className="flex justify-center gap-2 pt-2">
-          {['uploading', 'processing', 'generating', 'complete'].map((stage, index) => {
+        {/* Stage indicator with cute icons */}
+        <div className="flex justify-center gap-1 pt-3">
+          {[
+            { stage: 'uploading', icon: '☁️', label: 'Tải' },
+            { stage: 'processing', icon: '🧠', label: 'Xử lý' },
+            { stage: 'generating', icon: '✨', label: 'Tạo' },
+            { stage: 'complete', icon: '🎉', label: 'Xong' },
+          ].map((item, index) => {
             const stages = ['uploading', 'processing', 'generating', 'complete'];
             const currentIndex = stages.indexOf(progress.stage);
-            const isActive = progress.stage === stage;
+            const isActive = progress.stage === item.stage || 
+                            (progress.stage === 'compressing' && item.stage === 'uploading');
             const isComplete = currentIndex > index || progress.stage === 'complete';
             
             return (
-              <div key={stage} className="flex items-center">
+              <div key={item.stage} className="flex items-center">
                 <div className={cn(
-                  "w-3 h-3 rounded-full transition-all duration-300",
-                  isActive && "bg-primary scale-125 animate-pulse",
-                  isComplete && "bg-green-500",
-                  !isActive && !isComplete && "bg-muted"
-                )} />
+                  "flex flex-col items-center transition-all duration-300",
+                  isActive && "scale-110",
+                )}>
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all duration-300",
+                    isActive && "bg-primary/20 animate-pulse",
+                    isComplete && "bg-green-500/20",
+                    !isActive && !isComplete && "bg-muted"
+                  )}>
+                    {item.icon}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] mt-0.5 transition-colors",
+                    isActive && "text-primary font-semibold",
+                    isComplete && "text-green-500",
+                    !isActive && !isComplete && "text-muted-foreground"
+                  )}>
+                    {item.label}
+                  </span>
+                </div>
                 {index < 3 && (
                   <div className={cn(
-                    "w-6 h-0.5 mx-1",
+                    "w-4 h-0.5 mx-0.5 mt-[-12px]",
                     isComplete ? "bg-green-500" : "bg-muted"
                   )} />
                 )}
@@ -275,11 +262,20 @@ export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarPr
           })}
         </div>
 
+        {/* Fun facts while waiting */}
+        {!['complete', 'error', 'cancelled'].includes(progress.stage) && (
+          <div className="text-center pt-2">
+            <p className="text-xs text-muted-foreground/70 italic">
+              💡 Bạn có biết: AI của chúng tôi đã thử hàng triệu bộ đồ!
+            </p>
+          </div>
+        )}
+
         {/* Cancel button */}
         {canCancel && onCancel && (
           <Button 
             variant="outline" 
-            className="w-full gap-2 mt-2"
+            className="w-full gap-2 mt-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive transition-colors"
             onClick={onCancel}
           >
             <X className="w-4 h-4" />
@@ -287,6 +283,14 @@ export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarPr
           </Button>
         )}
       </div>
+
+      {/* Custom keyframes */}
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 };
