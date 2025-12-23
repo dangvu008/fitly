@@ -268,7 +268,12 @@ export const useOutfitFeed = () => {
 
       if (!outfitsData || outfitsData.length === 0) {
         setHasMore(false);
-        if (isInitial) setOutfits([]);
+        // Show sample outfits when no real data
+        if (isInitial) {
+          setOutfits(sampleCommunityOutfits);
+        }
+        setIsLoading(false);
+        setIsLoadingMore(false);
         return;
       }
 
@@ -325,12 +330,10 @@ export const useOutfitFeed = () => {
       if (isInitial && formattedOutfits.length === 0) {
         setOutfits(sampleCommunityOutfits);
       } else if (isInitial) {
-        // Combine real outfits with sample outfits
-        const combinedOutfits = [...formattedOutfits];
-        if (combinedOutfits.length < 3) {
-          const samplesToAdd = sampleCommunityOutfits.slice(0, 3 - combinedOutfits.length);
-          combinedOutfits.push(...samplesToAdd);
-        }
+        // Always combine real outfits with sample outfits for richer content
+        const realOutfitIds = new Set(formattedOutfits.map(o => o.id));
+        const samplesToAdd = sampleCommunityOutfits.filter(s => !realOutfitIds.has(s.id));
+        const combinedOutfits = [...formattedOutfits, ...samplesToAdd];
         setOutfits(combinedOutfits);
       } else {
         setOutfits(prev => [...prev, ...formattedOutfits]);

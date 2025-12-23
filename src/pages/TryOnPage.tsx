@@ -847,27 +847,17 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           )}
         </Button>
 
-        {/* Secondary Actions */}
-        <div className="flex gap-3">
+        {/* Share Button - only show when result exists */}
+        {aiResultImage && (
           <Button
-            variant="outline"
-            className="flex-1 h-11"
-            onClick={handleAddBodyImage}
+            variant="secondary"
+            className="w-full h-11"
+            onClick={handleShare}
           >
-            <Camera size={18} />
-            {bodyImage ? t('tryon_change_photo') : t('tryon_upload_photo')}
+            <Share2 size={18} />
+            {t('share')}
           </Button>
-          {aiResultImage && (
-            <Button
-              variant="secondary"
-              className="flex-1 h-11"
-              onClick={handleShare}
-            >
-              <Share2 size={18} />
-              {t('share')}
-            </Button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Clothing Panel - Bottom Sheet */}
