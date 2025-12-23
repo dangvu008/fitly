@@ -572,9 +572,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
               <X size={24} />
             </button>
             <span className="font-semibold text-foreground">{t('tryon_result_title')}</span>
-            <button onClick={handleShare} className="text-primary press-effect">
-              <Share2 size={22} />
-            </button>
+            <div className="w-6" />
           </div>
 
           {/* Result Image */}
