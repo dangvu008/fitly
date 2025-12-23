@@ -1,6 +1,7 @@
 import { Loader2, Share2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OutfitFeedCard } from '@/components/feed/OutfitFeedCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ClothingItemInfo {
   name: string;
@@ -57,12 +58,14 @@ export const FeedSection = ({
   onHide,
   loadMoreRef,
 }: FeedSectionProps) => {
+  const { t } = useLanguage();
+
   if (isLoading) {
     return (
       <div className="space-y-4 px-4">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <Share2 className="w-4 h-4 text-primary" />
-          Cộng đồng chia sẻ
+          {t('community_share')}
         </h2>
         {[1, 2, 3].map((i) => (
           <div key={i} className="bg-card border border-border rounded-xl overflow-hidden">
@@ -94,13 +97,13 @@ export const FeedSection = ({
       <div className="px-4">
         <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
           <Share2 className="w-4 h-4 text-primary" />
-          Cộng đồng chia sẻ
+          {t('community_share')}
         </h2>
         <div className="flex flex-col items-center justify-center py-12 text-center bg-card border border-border rounded-xl">
           <Share2 size={48} className="text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Chưa có outfit nào</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('no_outfit_yet')}</h3>
           <p className="text-muted-foreground text-sm">
-            Hãy là người đầu tiên chia sẻ outfit của bạn!
+            {t('be_first_to_share')}
           </p>
         </div>
       </div>
@@ -111,7 +114,7 @@ export const FeedSection = ({
     <div className="px-4">
       <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
         <Share2 className="w-4 h-4 text-primary" />
-        Cộng đồng chia sẻ
+        {t('community_share')}
       </h2>
       <div className="space-y-4">
         {outfits.map((outfit) => (
@@ -138,12 +141,12 @@ export const FeedSection = ({
         {isLoadingMore ? (
           <div className="flex items-center justify-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Đang tải thêm...</span>
+            <span className="text-sm text-muted-foreground">{t('loading_more')}</span>
           </div>
         ) : hasMore && outfits.length > 0 ? (
-          <p className="text-sm text-muted-foreground">Cuộn để xem thêm</p>
+          <p className="text-sm text-muted-foreground">{t('scroll_for_more')}</p>
         ) : outfits.length > 0 ? (
-          <p className="text-sm text-muted-foreground">Đã hiển thị tất cả</p>
+          <p className="text-sm text-muted-foreground">{t('shown_all')}</p>
         ) : null}
       </div>
     </div>

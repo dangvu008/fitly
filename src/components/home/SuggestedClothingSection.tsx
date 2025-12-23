@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
-import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SuggestedClothingSectionProps {
   onSelectItem: (item: ClothingItem) => void;
@@ -90,6 +90,7 @@ export const SuggestedClothingSection = ({
   onSelectItem,
 }: SuggestedClothingSectionProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
   const [clothing, setClothing] = useState<ClothingItem[]>(sampleClothingData);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -169,7 +170,7 @@ export const SuggestedClothingSection = ({
       <section className="py-4">
         <div className="flex items-center gap-2 px-4 mb-2">
           <Sparkles className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold">Gợi ý cho bạn</h2>
+          <h2 className="text-sm font-semibold">{t('suggestions_for_you')}</h2>
         </div>
         <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -186,9 +187,9 @@ export const SuggestedClothingSection = ({
     <section className="py-4 relative group">
       <div className="flex items-center gap-2 px-4 mb-2">
         <Sparkles className="w-4 h-4 text-primary" />
-        <h2 className="text-sm font-semibold">Gợi ý cho bạn</h2>
+        <h2 className="text-sm font-semibold">{t('suggestions_for_you')}</h2>
         <span className="text-[10px] text-primary ml-auto hover:underline cursor-pointer">
-          Xem thêm
+          {t('view_more')}
         </span>
       </div>
 
@@ -255,7 +256,7 @@ export const SuggestedClothingSection = ({
                 onClick={(e) => e.stopPropagation()}
               >
                 <ExternalLink className="w-2 h-2" />
-                {item.shopName || 'Mua ngay'}
+                {item.shopName || t('buy_now')}
               </a>
             )}
           </div>

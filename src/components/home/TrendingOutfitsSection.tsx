@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TrendingOutfit {
   id: string;
@@ -26,6 +27,7 @@ export const TrendingOutfitsSection = ({
   onViewOutfit,
 }: TrendingOutfitsSectionProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -42,7 +44,7 @@ export const TrendingOutfitsSection = ({
       <section className="py-4">
         <div className="flex items-center gap-2 px-4 mb-2">
           <TrendingUp className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold">Trending Outfits</h2>
+          <h2 className="text-sm font-semibold">{t('trending_outfits')}</h2>
         </div>
         <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide">
           {[1, 2, 3, 4].map((i) => (
@@ -59,9 +61,9 @@ export const TrendingOutfitsSection = ({
     <section className="py-4 relative group">
       <div className="flex items-center gap-2 px-4 mb-2">
         <TrendingUp className="w-4 h-4 text-primary" />
-        <h2 className="text-sm font-semibold">Trending Outfits</h2>
+        <h2 className="text-sm font-semibold">{t('trending_outfits')}</h2>
         <span className="text-[10px] text-muted-foreground ml-auto">
-          {outfits.length} outfit được yêu thích
+          {outfits.length} {t('outfits_loved')}
         </span>
       </div>
       
@@ -109,7 +111,7 @@ export const TrendingOutfitsSection = ({
                     ❤️ {outfit.likes_count}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    • {outfit.user_profile?.display_name || 'Người dùng'}
+                    • {outfit.user_profile?.display_name || t('user')}
                   </span>
                 </div>
               </div>

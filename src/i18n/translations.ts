@@ -5,6 +5,9 @@ export const translations = {
     // Common
     app_name: 'Thử Đồ AI',
     loading: 'Đang tải...',
+    loading_more: 'Đang tải thêm...',
+    scroll_for_more: 'Cuộn để xem thêm',
+    shown_all: 'Đã hiển thị tất cả',
     save: 'Lưu',
     cancel: 'Hủy',
     delete: 'Xóa',
@@ -12,6 +15,23 @@ export const translations = {
     download: 'Tải xuống',
     close: 'Đóng',
     retry: 'Thử lại',
+    view_all: 'Xem tất cả',
+    view_more: 'Xem thêm',
+    buy_now: 'Mua ngay',
+    try_now: 'Thử ngay',
+    user: 'Người dùng',
+    copied_link: 'Đã copy link!',
+    
+    // Home sections
+    trending_outfits: 'Trending Outfits',
+    outfits_loved: 'outfit được yêu thích',
+    tryon_history: 'Lịch sử thử đồ',
+    login_to_view_history: 'Đăng nhập để xem lịch sử thử đồ của bạn',
+    no_tryon_yet: 'Bạn chưa thử outfit nào',
+    suggestions_for_you: 'Gợi ý cho bạn',
+    community_share: 'Cộng đồng chia sẻ',
+    no_outfit_yet: 'Chưa có outfit nào',
+    be_first_to_share: 'Hãy là người đầu tiên chia sẻ outfit của bạn!',
     
     // Navigation
     nav_home: 'Trang chủ',
@@ -143,6 +163,9 @@ export const translations = {
     // Common
     app_name: 'AI Try-On',
     loading: 'Loading...',
+    loading_more: 'Loading more...',
+    scroll_for_more: 'Scroll for more',
+    shown_all: 'All shown',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -150,6 +173,23 @@ export const translations = {
     download: 'Download',
     close: 'Close',
     retry: 'Retry',
+    view_all: 'View all',
+    view_more: 'View more',
+    buy_now: 'Buy now',
+    try_now: 'Try now',
+    user: 'User',
+    copied_link: 'Link copied!',
+    
+    // Home sections
+    trending_outfits: 'Trending Outfits',
+    outfits_loved: 'outfits loved',
+    tryon_history: 'Try-On History',
+    login_to_view_history: 'Login to view your try-on history',
+    no_tryon_yet: 'You haven\'t tried any outfits yet',
+    suggestions_for_you: 'Suggestions for you',
+    community_share: 'Community Share',
+    no_outfit_yet: 'No outfits yet',
+    be_first_to_share: 'Be the first to share your outfit!',
     
     // Navigation
     nav_home: 'Home',
@@ -281,6 +321,9 @@ export const translations = {
     // Common
     app_name: 'AI试衣',
     loading: '加载中...',
+    loading_more: '加载更多...',
+    scroll_for_more: '滚动查看更多',
+    shown_all: '已全部显示',
     save: '保存',
     cancel: '取消',
     delete: '删除',
@@ -288,6 +331,23 @@ export const translations = {
     download: '下载',
     close: '关闭',
     retry: '重试',
+    view_all: '查看全部',
+    view_more: '查看更多',
+    buy_now: '立即购买',
+    try_now: '立即试穿',
+    user: '用户',
+    copied_link: '链接已复制!',
+    
+    // Home sections
+    trending_outfits: '热门搭配',
+    outfits_loved: '人气搭配',
+    tryon_history: '试衣历史',
+    login_to_view_history: '登录查看您的试衣历史',
+    no_tryon_yet: '您还没有试过任何搭配',
+    suggestions_for_you: '为您推荐',
+    community_share: '社区分享',
+    no_outfit_yet: '暂无搭配',
+    be_first_to_share: '成为第一个分享搭配的人!',
     
     // Navigation
     nav_home: '首页',
@@ -419,6 +479,9 @@ export const translations = {
     // Common
     app_name: 'AI 가상피팅',
     loading: '로딩 중...',
+    loading_more: '더 불러오는 중...',
+    scroll_for_more: '스크롤하여 더 보기',
+    shown_all: '모두 표시됨',
     save: '저장',
     cancel: '취소',
     delete: '삭제',
@@ -426,6 +489,23 @@ export const translations = {
     download: '다운로드',
     close: '닫기',
     retry: '다시 시도',
+    view_all: '모두 보기',
+    view_more: '더 보기',
+    buy_now: '구매하기',
+    try_now: '지금 시도',
+    user: '사용자',
+    copied_link: '링크 복사됨!',
+    
+    // Home sections
+    trending_outfits: '인기 코디',
+    outfits_loved: '인기 코디',
+    tryon_history: '피팅 기록',
+    login_to_view_history: '피팅 기록을 보려면 로그인하세요',
+    no_tryon_yet: '아직 시도한 코디가 없습니다',
+    suggestions_for_you: '추천 아이템',
+    community_share: '커뮤니티 공유',
+    no_outfit_yet: '아직 코디가 없습니다',
+    be_first_to_share: '첫 번째로 코디를 공유해 보세요!',
     
     // Navigation
     nav_home: '홈',
@@ -557,6 +637,9 @@ export const translations = {
     // Common
     app_name: 'AI試着',
     loading: '読み込み中...',
+    loading_more: 'さらに読み込み中...',
+    scroll_for_more: 'スクロールして続きを見る',
+    shown_all: 'すべて表示済み',
     save: '保存',
     cancel: 'キャンセル',
     delete: '削除',
@@ -564,6 +647,23 @@ export const translations = {
     download: 'ダウンロード',
     close: '閉じる',
     retry: '再試行',
+    view_all: 'すべて見る',
+    view_more: 'もっと見る',
+    buy_now: '今すぐ購入',
+    try_now: '今すぐ試す',
+    user: 'ユーザー',
+    copied_link: 'リンクをコピーしました!',
+    
+    // Home sections
+    trending_outfits: '人気コーデ',
+    outfits_loved: '人気コーデ',
+    tryon_history: '試着履歴',
+    login_to_view_history: 'ログインして試着履歴を見る',
+    no_tryon_yet: 'まだ試したコーデがありません',
+    suggestions_for_you: 'おすすめ',
+    community_share: 'コミュニティ',
+    no_outfit_yet: 'まだコーデがありません',
+    be_first_to_share: '最初にコーデを共有しましょう!',
     
     // Navigation
     nav_home: 'ホーム',
@@ -695,6 +795,9 @@ export const translations = {
     // Common
     app_name: 'AI ลองเสื้อผ้า',
     loading: 'กำลังโหลด...',
+    loading_more: 'กำลังโหลดเพิ่มเติม...',
+    scroll_for_more: 'เลื่อนเพื่อดูเพิ่มเติม',
+    shown_all: 'แสดงทั้งหมดแล้ว',
     save: 'บันทึก',
     cancel: 'ยกเลิก',
     delete: 'ลบ',
@@ -702,6 +805,23 @@ export const translations = {
     download: 'ดาวน์โหลด',
     close: 'ปิด',
     retry: 'ลองใหม่',
+    view_all: 'ดูทั้งหมด',
+    view_more: 'ดูเพิ่มเติม',
+    buy_now: 'ซื้อเลย',
+    try_now: 'ลองเลย',
+    user: 'ผู้ใช้',
+    copied_link: 'คัดลอกลิงก์แล้ว!',
+    
+    // Home sections
+    trending_outfits: 'ชุดยอดนิยม',
+    outfits_loved: 'ชุดยอดนิยม',
+    tryon_history: 'ประวัติการลอง',
+    login_to_view_history: 'เข้าสู่ระบบเพื่อดูประวัติการลอง',
+    no_tryon_yet: 'คุณยังไม่ได้ลองชุดใดเลย',
+    suggestions_for_you: 'แนะนำสำหรับคุณ',
+    community_share: 'ชุมชนแชร์',
+    no_outfit_yet: 'ยังไม่มีชุด',
+    be_first_to_share: 'เป็นคนแรกที่แชร์ชุดของคุณ!',
     
     // Navigation
     nav_home: 'หน้าแรก',

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClothingItem } from '@/types/clothing';
 import { useOutfitFeed } from '@/hooks/useOutfitFeed';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
 import { TrendingOutfitsSection } from '@/components/home/TrendingOutfitsSection';
 import { TryOnHistorySection } from '@/components/home/TryOnHistorySection';
@@ -18,6 +19,7 @@ interface HomePageProps {
 
 export const HomePage = ({ onNavigateToTryOn, onNavigateToHistory, onSelectItem }: HomePageProps) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { outfits, isLoading, isLoadingMore, hasMore, loadMore, refresh, hideOutfit, saveOutfit, unsaveOutfit } = useOutfitFeed();
   
   const [commentsOutfitId, setCommentsOutfitId] = useState<string | null>(null);
@@ -62,12 +64,12 @@ export const HomePage = ({ onNavigateToTryOn, onNavigateToHistory, onSelectItem 
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           await navigator.clipboard.writeText(url);
-          toast.success('Đã copy link!');
+          toast.success(t('copied_link'));
         }
       }
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success('Đã copy link!');
+      toast.success(t('copied_link'));
     }
   };
 
