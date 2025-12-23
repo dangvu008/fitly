@@ -11,6 +11,52 @@ interface ClothingItemData {
   purchaseUrl?: string;
 }
 
+/**
+ * Represents the record structure for a shared outfit to be inserted into the database.
+ * Requirements 5.2: Create shared outfit with attribution to original outfit
+ */
+export interface SharedOutfitRecord {
+  user_id: string;
+  title: string;
+  description: string | null;
+  result_image_url: string;
+  clothing_items: ClothingItemData[];
+  inspired_by_outfit_id: string | null;
+}
+
+/**
+ * Prepares the shared outfit record for database insertion.
+ * This is a pure function that can be tested without database dependencies.
+ * 
+ * Requirements 5.2: WHEN a user shares a try-on result THEN the system SHALL create
+ * a new shared outfit post with attribution to the original outfit
+ * 
+ * @param userId - The ID of the user sharing the outfit
+ * @param title - The title of the shared outfit
+ * @param resultImageUrl - The URL of the try-on result image
+ * @param clothingItems - Array of clothing items in the outfit
+ * @param description - Optional description of the outfit
+ * @param inspiredByOutfitId - Optional ID of the original outfit that inspired this one
+ * @returns The prepared record for database insertion
+ */
+export function prepareSharedOutfitRecord(
+  userId: string,
+  title: string,
+  resultImageUrl: string,
+  clothingItems: ClothingItemData[],
+  description?: string | null,
+  inspiredByOutfitId?: string | null
+): SharedOutfitRecord {
+  return {
+    user_id: userId,
+    title,
+    description: description || null,
+    result_image_url: resultImageUrl,
+    clothing_items: clothingItems,
+    inspired_by_outfit_id: inspiredByOutfitId || null,
+  };
+}
+
 export interface SharedOutfit {
   id: string;
   user_id: string;
@@ -22,6 +68,7 @@ export interface SharedOutfit {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
+  inspired_by_outfit_id: string | null;
   isLiked?: boolean;
 }
 
@@ -160,19 +207,26 @@ export const useSharedOutfits = () => {
     title: string,
     resultImageUrl: string,
     clothingItems: ClothingItemData[],
-    description?: string
+    description?: string,
+    inspiredByOutfitId?: string | null
   ) => {
     if (!user) {
       toast.error('Vui lòng đăng nhập để chia sẻ outfit');
       return false;
     }
 
-    const { error } = await supabase.from('shared_outfits').insert({
-      user_id: user.id,
+    // Requirements 5.2: Create shared outfit with attribution to original outfit
+    const record = prepareSharedOutfitRecord(
+      user.id,
       title,
-      description: description || null,
-      result_image_url: resultImageUrl,
-      clothing_items: clothingItems as any,
+      resultImageUrl,
+      clothingItems,
+      description,
+      inspiredByOutfitId
+    );
+    const { error } = await supabase.from('shared_outfits').insert({
+      ...record,
+      clothing_items: record.clothing_items as any,
     });
 
     if (error) {

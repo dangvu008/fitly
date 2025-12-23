@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { TryOutfitButton } from './TryOutfitButton';
+import { SharedOutfit } from '@/hooks/useOutfitTryOn';
 
 interface ClothingItemInfo {
   name: string;
@@ -35,11 +37,20 @@ interface OutfitFeedCardProps {
     created_at: string;
     user_id: string;
     clothing_items: ClothingItemInfo[];
+    inspired_by_outfit_id?: string | null;
   };
   userProfile?: {
     display_name?: string;
     avatar_url?: string;
   };
+  /** Profile of the user who created the original outfit (for "Inspired by" display) */
+  inspiredByOutfit?: {
+    id: string;
+    title: string;
+    user_profile?: {
+      display_name?: string;
+    };
+  } | null;
   isLiked?: boolean;
   isSaved?: boolean;
   onOpenComments: (outfitId: string) => void;
@@ -54,6 +65,7 @@ interface OutfitFeedCardProps {
 export const OutfitFeedCard = ({
   outfit,
   userProfile,
+  inspiredByOutfit,
   isLiked = false,
   isSaved = false,
   onOpenComments,
@@ -164,6 +176,25 @@ export const OutfitFeedCard = ({
     locale: vi 
   });
 
+  // Convert outfit prop to SharedOutfit format for TryOutfitButton
+  const sharedOutfitData: SharedOutfit = {
+    id: outfit.id,
+    title: outfit.title,
+    description: outfit.description,
+    result_image_url: outfit.result_image_url,
+    clothing_items: outfit.clothing_items.map(item => ({
+      name: item.name,
+      imageUrl: item.imageUrl,
+      shopUrl: item.shopUrl,
+      price: item.price,
+    })),
+    user_id: outfit.user_id,
+    created_at: outfit.created_at,
+    likes_count: outfit.likes_count,
+    comments_count: outfit.comments_count ?? 0,
+    is_featured: outfit.is_featured,
+  };
+
   return (
     <div className="bg-card border-b border-border">
       {/* Header */}
@@ -246,6 +277,11 @@ export const OutfitFeedCard = ({
             >
               <Share2 size={24} />
             </button>
+            {/* Try Outfit Button - Requirements: 1.1 */}
+            <TryOutfitButton
+              outfit={sharedOutfitData}
+              variant="icon"
+            />
           </div>
           <button
             onClick={handleSave}
@@ -272,6 +308,15 @@ export const OutfitFeedCard = ({
           </p>
           {outfit.description && (
             <p className="text-sm text-muted-foreground">{outfit.description}</p>
+          )}
+          {/* Inspired by link - Requirements 5.3 */}
+          {inspiredByOutfit && (
+            <button
+              onClick={() => onViewDetail(inspiredByOutfit.id)}
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              ✨ Lấy cảm hứng từ outfit của {inspiredByOutfit.user_profile?.display_name || 'người dùng khác'}
+            </button>
           )}
         </div>
 

@@ -4,6 +4,13 @@ import { Heart, Share2, ExternalLink, ShoppingBag, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
+import { OutfitAnalyzer } from '@/components/outfit/OutfitAnalyzer';
+import { ClothingItemsGrid } from '@/components/feed/ClothingItemsGrid';
+import { ClothingItemDetailSheet } from '@/components/feed/ClothingItemDetailSheet';
+import { SimilarItemsSheet } from '@/components/feed/SimilarItemsSheet';
+import { TryOutfitButton } from '@/components/feed/TryOutfitButton';
+import { useSimilarClothing } from '@/hooks/useSimilarClothing';
+import { ClothingItemInfo, SharedOutfit } from '@/hooks/useOutfitTryOn';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +46,17 @@ export const SharedOutfitDetailPage = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  
+  // State for clothing item detail sheet (Requirements: 2.1, 2.2)
+  const [selectedItem, setSelectedItem] = useState<ClothingItemInfo | null>(null);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  
+  // State for similar items sheet (Requirements: 3.1, 3.3, 3.4)
+  const [similarSheetOpen, setSimilarSheetOpen] = useState(false);
+  const [sourceItemForSimilar, setSourceItemForSimilar] = useState<ClothingItemInfo | null>(null);
+  
+  // Hook for finding similar items
+  const { findSimilar, isSearching, similarItems } = useSimilarClothing();
 
   useEffect(() => {
     if (id) {
@@ -125,6 +143,42 @@ export const SharedOutfitDetailPage = () => {
     navigate('/');
   };
 
+  // Handler for clicking on a clothing item in the grid (Requirements: 2.1, 2.2)
+  const handleItemClick = (item: ClothingItemInfo, index: number) => {
+    setSelectedItem(item);
+    setDetailSheetOpen(true);
+  };
+
+  // Handler for finding similar items (Requirements: 3.1, 3.3, 3.4)
+  const handleFindSimilar = (item: ClothingItemInfo) => {
+    setSourceItemForSimilar(item);
+    setDetailSheetOpen(false);
+    setSimilarSheetOpen(true);
+    findSimilar(item);
+  };
+
+  // Convert outfit to SharedOutfit format for TryOutfitButton
+  const getSharedOutfitData = (): SharedOutfit | null => {
+    if (!outfit) return null;
+    return {
+      id: outfit.id,
+      title: outfit.title,
+      description: outfit.description,
+      result_image_url: outfit.result_image_url,
+      clothing_items: outfit.clothing_items.map(item => ({
+        name: item.name,
+        imageUrl: item.imageUrl,
+        shopUrl: item.purchaseUrl,
+        category: item.category,
+      })),
+      user_id: '', // Not needed for try-on
+      created_at: outfit.created_at,
+      likes_count: outfit.likes_count,
+      comments_count: 0,
+      is_featured: outfit.is_featured,
+    };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
@@ -202,6 +256,13 @@ export const SharedOutfitDetailPage = () => {
               <button onClick={() => setShareOpen(true)} className="press-effect">
                 <Share2 size={24} strokeWidth={1.5} />
               </button>
+              {/* Try Outfit Button - Requirements: 1.1 */}
+              {getSharedOutfitData() && (
+                <TryOutfitButton
+                  outfit={getSharedOutfitData()!}
+                  variant="icon"
+                />
+              )}
             </div>
             
             <div className="font-semibold text-sm">
@@ -217,62 +278,46 @@ export const SharedOutfitDetailPage = () => {
           </div>
         </div>
 
-        {/* Clothing items */}
+        {/* Clothing items - Using ClothingItemsGrid (Requirements: 2.1, 2.4) */}
         <div>
           <h2 className="font-display font-semibold text-base text-foreground mb-4 flex items-center gap-2">
             <ShoppingBag size={18} />
             Các món đồ trong outfit ({outfit.clothing_items?.length || 0})
           </h2>
 
-          <div className="space-y-3">
-            {outfit.clothing_items?.map((item, index) => (
-              <div
-                key={item.id || index}
-                className="bg-card rounded-xl border border-border overflow-hidden flex hover:shadow-medium transition-shadow"
-              >
-                {/* Item image */}
-                <div className="w-20 h-20 flex-shrink-0 bg-secondary">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
+          {/* ClothingItemsGrid for horizontal scrollable display */}
+          <ClothingItemsGrid
+            items={outfit.clothing_items?.map(item => ({
+              name: item.name,
+              imageUrl: item.imageUrl,
+              shopUrl: item.purchaseUrl,
+              category: item.category,
+            })) || []}
+            onItemClick={handleItemClick}
+            showShopLinks={true}
+          />
 
-                {/* Item info */}
-                <div className="flex-1 p-3 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-medium text-foreground text-sm line-clamp-1">
-                      {item.name}
-                    </h3>
-                    {item.category && (
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {item.category}
-                      </span>
-                    )}
-                  </div>
+          {/* Full Try Outfit Button - Requirements: 1.1 */}
+          {getSharedOutfitData() && (
+            <div className="mt-4">
+              <TryOutfitButton
+                outfit={getSharedOutfitData()!}
+                variant="full"
+                className="w-full"
+              />
+            </div>
+          )}
+        </div>
 
-                  {/* Buy button */}
-                  <Button
-                    size="sm"
-                    variant={item.purchaseUrl ? 'instagram' : 'outline'}
-                    className="w-full mt-2 h-8 text-xs"
-                    onClick={() => handleBuyItem(item)}
-                  >
-                    {item.purchaseUrl ? (
-                      <>
-                        <ExternalLink size={12} className="mr-1" />
-                        Mua ngay
-                      </>
-                    ) : (
-                      'Chưa có link'
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* AI Outfit Analyzer */}
+        <div className="pt-4 border-t border-border">
+          <h2 className="font-display font-semibold text-base text-foreground mb-4 flex items-center gap-2">
+            🔍 Phân tích & Tìm mua
+          </h2>
+          <OutfitAnalyzer 
+            imageUrl={outfit.result_image_url}
+            existingItems={outfit.clothing_items}
+          />
         </div>
       </div>
 
@@ -283,6 +328,23 @@ export const SharedOutfitDetailPage = () => {
         imageUrl={outfit.result_image_url}
         title={outfit.title}
         shareUrl={window.location.href}
+      />
+
+      {/* Clothing Item Detail Sheet (Requirements: 2.2, 2.3, 3.1) */}
+      <ClothingItemDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        item={selectedItem}
+        onFindSimilar={handleFindSimilar}
+      />
+
+      {/* Similar Items Sheet (Requirements: 3.3, 3.4) */}
+      <SimilarItemsSheet
+        open={similarSheetOpen}
+        onOpenChange={setSimilarSheetOpen}
+        sourceItem={sourceItemForSimilar}
+        similarItems={similarItems}
+        isSearching={isSearching}
       />
 
       {/* Bottom Navigation */}

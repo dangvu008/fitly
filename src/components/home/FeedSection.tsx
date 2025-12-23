@@ -21,10 +21,19 @@ interface SharedOutfit {
   created_at: string;
   user_id: string;
   clothing_items: ClothingItemInfo[];
+  inspired_by_outfit_id?: string | null;
   user_profile?: {
     display_name?: string;
     avatar_url?: string;
   };
+  /** Data about the outfit that inspired this one (Requirements 5.3) */
+  inspired_by_outfit?: {
+    id: string;
+    title: string;
+    user_profile?: {
+      display_name?: string;
+    };
+  } | null;
   isLiked?: boolean;
   isSaved?: boolean;
 }
@@ -122,6 +131,7 @@ export const FeedSection = ({
             <OutfitFeedCard
               outfit={outfit}
               userProfile={outfit.user_profile}
+              inspiredByOutfit={outfit.inspired_by_outfit}
               isLiked={outfit.isLiked}
               isSaved={outfit.isSaved}
               onOpenComments={onOpenComments}

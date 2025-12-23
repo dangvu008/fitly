@@ -29,6 +29,8 @@ interface ShareToPublicDialogProps {
   resultImageUrl: string;
   clothingItems: ClothingItemData[];
   onSuccess?: () => void;
+  /** Optional ID of the outfit that inspired this try-on result (Requirements 5.2) */
+  inspiredByOutfitId?: string | null;
 }
 
 export const ShareToPublicDialog = ({ 
@@ -36,7 +38,8 @@ export const ShareToPublicDialog = ({
   onOpenChange, 
   resultImageUrl, 
   clothingItems,
-  onSuccess 
+  onSuccess,
+  inspiredByOutfitId,
 }: ShareToPublicDialogProps) => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
@@ -51,11 +54,13 @@ export const ShareToPublicDialog = ({
     }
 
     setIsSharing(true);
+    // Requirements 5.2: Pass inspired_by_outfit_id for attribution
     const success = await shareOutfit(
       title.trim(),
       resultImageUrl,
       clothingItems,
-      description.trim() || undefined
+      description.trim() || undefined,
+      inspiredByOutfitId
     );
     setIsSharing(false);
 

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 interface ClothingItemData {
   name: string;
@@ -55,12 +56,51 @@ const uploadImage = async (
   }
 };
 
+export interface SaveTryOnOptions {
+  userId: string;
+  bodyImage: string;
+  resultImage: string;
+  clothingItems: ClothingItemData[];
+  sourceOutfitId?: string | null;
+}
+
+/**
+ * Prepares the try-on history record for database insertion.
+ * This is a pure function that can be tested without database dependencies.
+ * 
+ * Requirements 4.2: Store result with reference to the original shared outfit
+ */
+export interface TryOnHistoryRecord {
+  user_id: string;
+  body_image_url: string;
+  result_image_url: string;
+  clothing_items: Json;
+  source_outfit_id: string | null;
+}
+
+export function prepareTryOnHistoryRecord(
+  userId: string,
+  bodyImageUrl: string,
+  resultImageUrl: string,
+  clothingItems: ClothingItemData[],
+  sourceOutfitId?: string | null
+): TryOnHistoryRecord {
+  return {
+    user_id: userId,
+    body_image_url: bodyImageUrl,
+    result_image_url: resultImageUrl,
+    clothing_items: JSON.parse(JSON.stringify(clothingItems)) as Json,
+    source_outfit_id: sourceOutfitId || null,
+  };
+}
+
 export const useTryOnHistory = () => {
   const saveTryOnResult = async (
     userId: string,
     bodyImage: string,
     resultImage: string,
-    clothingItems: ClothingItemData[]
+    clothingItems: ClothingItemData[],
+    sourceOutfitId?: string | null
   ): Promise<boolean> => {
     try {
       // Upload images to storage
@@ -74,13 +114,16 @@ export const useTryOnHistory = () => {
         return false;
       }
 
-      // Save to database
-      const { error } = await supabase.from('try_on_history').insert([{
-        user_id: userId,
-        body_image_url: bodyImageUrl,
-        result_image_url: resultImageUrl,
-        clothing_items: JSON.parse(JSON.stringify(clothingItems)),
-      }]);
+      // Save to database with optional source outfit reference
+      // Requirements 4.2: Store result with reference to the original shared outfit
+      const record = prepareTryOnHistoryRecord(
+        userId,
+        bodyImageUrl,
+        resultImageUrl,
+        clothingItems,
+        sourceOutfitId
+      );
+      const { error } = await supabase.from('try_on_history').insert([record]);
 
       if (error) {
         console.error('Save error:', error);

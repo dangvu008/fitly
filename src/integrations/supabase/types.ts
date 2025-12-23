@@ -224,6 +224,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          inspired_by_outfit_id: string | null
           is_featured: boolean
           likes_count: number
           result_image_url: string
@@ -237,6 +238,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          inspired_by_outfit_id?: string | null
           is_featured?: boolean
           likes_count?: number
           result_image_url: string
@@ -250,6 +252,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          inspired_by_outfit_id?: string | null
           is_featured?: boolean
           likes_count?: number
           result_image_url?: string
@@ -257,7 +260,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shared_outfits_inspired_by_outfit_id_fkey"
+            columns: ["inspired_by_outfit_id"]
+            isOneToOne: false
+            referencedRelation: "shared_outfits"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       try_on_history: {
         Row: {
@@ -267,6 +278,7 @@ export type Database = {
           id: string
           is_favorite: boolean
           result_image_url: string
+          source_outfit_id: string | null
           user_id: string
         }
         Insert: {
@@ -276,6 +288,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean
           result_image_url: string
+          source_outfit_id?: string | null
           user_id: string
         }
         Update: {
@@ -285,9 +298,18 @@ export type Database = {
           id?: string
           is_favorite?: boolean
           result_image_url?: string
+          source_outfit_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "try_on_history_source_outfit_id_fkey"
+            columns: ["source_outfit_id"]
+            isOneToOne: false
+            referencedRelation: "shared_outfits"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       user_clothing: {
         Row: {

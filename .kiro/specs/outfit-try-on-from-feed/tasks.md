@@ -1,0 +1,101 @@
+# Implementation Plan
+
+- [x] 1. Create core hooks for outfit try-on flow
+  - [x] 1.1 Create `useOutfitTryOn` hook
+    - Wrap existing `useAITryOn` hook for outfit-specific flow
+    - Handle body image state and clothing items extraction from outfit
+    - Manage try-on process lifecycle
+    - _Requirements: 1.3, 1.4, 1.5, 1.6_
+  - [x] 1.2 Write property test for outfit items passed to processor
+    - **Property 1: All outfit items passed to try-on processor**
+    - **Validates: Requirements 1.3**
+  - [x] 1.3 Create `useSimilarClothing` hook
+    - Search user's wardrobe by category
+    - Sort results by relevance (category match + color similarity)
+    - Return empty array if no matches
+    - _Requirements: 3.2, 3.3, 3.4_
+  - [x] 1.4 Write property test for similar items search
+    - **Property 4: Similar items search returns same category**
+    - **Validates: Requirements 3.2, 3.3**
+
+- [x] 2. Create clothing items display components
+  - [x] 2.1 Create `ClothingItemsGrid` component
+    - Display clothing items in horizontal scrollable list
+    - Show thumbnail, name, price for each item
+    - Handle item tap to open detail
+    - _Requirements: 2.1, 2.4_
+  - [x] 2.2 Write property test for clothing items count
+    - **Property 2: Clothing items count matches outfit data**
+    - **Validates: Requirements 2.1**
+  - [x] 2.3 Create `ClothingItemDetailSheet` component
+    - Bottom sheet with item image, name, price, shop link
+    - Show "Shop" button only when shopUrl exists
+    - Include "Find similar" button
+    - _Requirements: 2.2, 2.3, 3.1_
+  - [x] 2.4 Write property test for shop button visibility
+    - **Property 3: Shop button visibility based on shopUrl**
+    - **Validates: Requirements 2.3**
+  - [x] 2.5 Create `SimilarItemsSheet` component
+    - Display similar items from user's wardrobe
+    - Show empty state when no matches found
+    - Allow selecting item to add to try-on
+    - _Requirements: 3.3, 3.4_
+
+- [x] 3. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. Create try-on flow components
+  - [x] 4.1 Create `TryOutfitButton` component
+    - Icon variant for feed card, full variant for detail page
+    - Trigger try-on dialog on click
+    - _Requirements: 1.1_
+  - [x] 4.2 Create `TryOutfitDialog` component
+    - Reuse `TryOnCanvas` for body image selection
+    - Show outfit preview with clothing items
+    - Start try-on process on confirm
+    - Display progress and result
+    - _Requirements: 1.2, 1.4, 1.5, 1.6_
+  - [x] 4.3 Write unit tests for TryOutfitDialog
+    - Test dialog opens with body image selector
+    - Test progress indicator during processing
+    - Test result display on success
+    - Test error handling on failure
+    - _Requirements: 1.2, 1.4, 1.5, 1.6_
+
+- [x] 5. Integrate with existing feed components
+  - [x] 5.1 Update `OutfitFeedCard` to include TryOutfitButton
+    - Add button to action bar
+    - Pass outfit data to button
+    - _Requirements: 1.1_
+  - [x] 5.2 Update `SharedOutfitDetailPage` with try-on and clothing items
+    - Add ClothingItemsGrid section
+    - Add TryOutfitButton
+    - Wire up ClothingItemDetailSheet
+    - _Requirements: 1.1, 2.1, 2.2_
+
+- [x] 6. Implement save and share with attribution
+  - [x] 6.1 Update try-on history to store source outfit reference
+    - Add `source_outfit_id` column to try_on_history table
+    - Update `useTryOnHistory` to save source reference
+    - _Requirements: 4.2_
+  - [x] 6.2 Write property test for saved result source reference
+    - **Property 5: Saved result contains source outfit reference**
+    - **Validates: Requirements 4.2**
+  - [x] 6.3 Update share flow to include attribution
+    - Add `inspired_by_outfit_id` column to shared_outfits table
+    - Update `ShareToPublicDialog` to pass source outfit ID
+    - Display "Inspired by" link on shared outfits
+    - _Requirements: 5.2, 5.3_
+  - [x] 6.4 Write property test for shared result attribution
+    - **Property 6: Shared result contains attribution**
+    - **Validates: Requirements 5.2**
+
+- [x] 7. Add authentication guards
+  - [x] 7.1 Add login prompts for save and share actions
+    - Show `LoginRequiredDialog` when user not logged in
+    - Redirect to action after successful login
+    - _Requirements: 4.4, 5.4_
+
+- [x] 8. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+

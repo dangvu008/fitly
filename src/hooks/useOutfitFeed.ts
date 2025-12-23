@@ -20,10 +20,19 @@ interface SharedOutfit {
   created_at: string;
   user_id: string;
   clothing_items: ClothingItemInfo[];
+  inspired_by_outfit_id?: string | null;
   user_profile?: {
     display_name?: string;
     avatar_url?: string;
   };
+  /** Data about the outfit that inspired this one (Requirements 5.3) */
+  inspired_by_outfit?: {
+    id: string;
+    title: string;
+    user_profile?: {
+      display_name?: string;
+    };
+  } | null;
   isLiked?: boolean;
   isSaved?: boolean;
 }
@@ -286,6 +295,37 @@ export const useOutfitFeed = () => {
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
+      // Fetch inspired_by outfits data (Requirements 5.3)
+      const inspiredByIds = outfitsData
+        .map(o => (o as any).inspired_by_outfit_id)
+        .filter((id): id is string => !!id);
+      
+      let inspiredByMap = new Map<string, { id: string; title: string; user_id: string }>();
+      if (inspiredByIds.length > 0) {
+        const { data: inspiredOutfits } = await supabase
+          .from('shared_outfits')
+          .select('id, title, user_id')
+          .in('id', inspiredByIds);
+        
+        if (inspiredOutfits) {
+          // Fetch profiles for inspired outfit authors
+          const inspiredUserIds = [...new Set(inspiredOutfits.map(o => o.user_id))];
+          const { data: inspiredProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name')
+            .in('user_id', inspiredUserIds);
+          
+          const inspiredProfileMap = new Map(inspiredProfiles?.map(p => [p.user_id, p]) || []);
+          
+          inspiredOutfits.forEach(outfit => {
+            inspiredByMap.set(outfit.id, {
+              ...outfit,
+              user_profile: inspiredProfileMap.get(outfit.user_id),
+            } as any);
+          });
+        }
+      }
+
       // Check user likes and saves if logged in
       let likedOutfitIds = new Set<string>();
       let savedOutfitIds = new Set<string>();
@@ -310,21 +350,33 @@ export const useOutfitFeed = () => {
         savedOutfitIds = new Set(savesResult.data?.map(s => s.outfit_id) || []);
       }
 
-      const formattedOutfits: SharedOutfit[] = outfitsData.map(outfit => ({
-        id: outfit.id,
-        title: outfit.title,
-        description: outfit.description,
-        result_image_url: outfit.result_image_url,
-        likes_count: outfit.likes_count,
-        comments_count: (outfit as any).comments_count ?? 0,
-        is_featured: outfit.is_featured,
-        created_at: outfit.created_at,
-        user_id: outfit.user_id,
-        clothing_items: (outfit.clothing_items as unknown as ClothingItemInfo[]) || [],
-        user_profile: profileMap.get(outfit.user_id),
-        isLiked: likedOutfitIds.has(outfit.id),
-        isSaved: savedOutfitIds.has(outfit.id),
-      }));
+      const formattedOutfits: SharedOutfit[] = outfitsData.map(outfit => {
+        const inspiredByOutfitId = (outfit as any).inspired_by_outfit_id;
+        const inspiredByOutfitData = inspiredByOutfitId ? inspiredByMap.get(inspiredByOutfitId) : null;
+        
+        return {
+          id: outfit.id,
+          title: outfit.title,
+          description: outfit.description,
+          result_image_url: outfit.result_image_url,
+          likes_count: outfit.likes_count,
+          comments_count: (outfit as any).comments_count ?? 0,
+          is_featured: outfit.is_featured,
+          created_at: outfit.created_at,
+          user_id: outfit.user_id,
+          clothing_items: (outfit.clothing_items as unknown as ClothingItemInfo[]) || [],
+          inspired_by_outfit_id: inspiredByOutfitId || null,
+          user_profile: profileMap.get(outfit.user_id),
+          // Requirements 5.3: Include inspired_by_outfit data for display
+          inspired_by_outfit: inspiredByOutfitData ? {
+            id: inspiredByOutfitData.id,
+            title: inspiredByOutfitData.title,
+            user_profile: (inspiredByOutfitData as any).user_profile,
+          } : null,
+          isLiked: likedOutfitIds.has(outfit.id),
+          isSaved: savedOutfitIds.has(outfit.id),
+        };
+      });
 
       // Add sample outfits if no real data or for initial display
       if (isInitial && formattedOutfits.length === 0) {
