@@ -227,9 +227,9 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
 
   return (
     <div ref={ref} className="space-y-3">
-      {/* Horizontal scrollable outfit slots */}
-      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4" ref={dropdownRef}>
-        <div className="flex gap-2 min-w-max py-1">
+      {/* Horizontally distributed outfit slots */}
+      <div className="w-full" ref={dropdownRef}>
+        <div className="grid grid-cols-5 gap-2">
           {/* Category slots */}
           {outfitSlots.map((slot) => {
             const item = itemsByCategory[slot.category];
@@ -239,8 +239,8 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
             const categoryClothing = getClothingForCategory(slot.category);
             const IconComponent = slot.icon;
             
-            return (
-              <div key={slot.category} className="flex flex-col items-center gap-1">
+              return (
+                <div key={slot.category} className="flex flex-col items-center gap-1">
                 <Popover 
                   open={isExpanded} 
                   onOpenChange={(open) => {
@@ -252,10 +252,9 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                   }}
                 >
                   <PopoverTrigger asChild>
-                    {/* Slot container */}
-                    <button
-                      className={cn(
-                        "relative w-[72px] h-[72px] rounded-xl overflow-hidden transition-all duration-300",
+                      <button
+                        className={cn(
+                          "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300",
                         item 
                           ? "ring-2 ring-primary shadow-glow" 
                           : "border-2 border-dashed border-border bg-card",
