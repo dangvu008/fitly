@@ -21,12 +21,11 @@ export const LanguageSwitcher = ({ className }: { className?: string }) => {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="iconSm"
       onClick={toggleLanguage}
-      className={cn("gap-1.5 text-xs font-medium", className)}
+      className={cn("text-lg", className)}
     >
       {language === 'vi' ? <VietnamFlag /> : <USFlag />}
-      <span className="uppercase">{language}</span>
     </Button>
   );
 };
