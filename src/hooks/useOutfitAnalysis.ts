@@ -1,14 +1,6 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { analyzeOutfitImage, DetectedItem } from '@/utils/outfitAnalysis';
 import { ClothingItemInfo } from './useOutfitTryOn';
-
-interface AnalyzedItem {
-  name: string;
-  category: string;
-  color?: string;
-  style?: string;
-  confidence: number;
-}
 
 interface UseOutfitAnalysisReturn {
   analyzeOutfit: (imageUrl: string) => Promise<ClothingItemInfo[]>;
@@ -18,7 +10,8 @@ interface UseOutfitAnalysisReturn {
 }
 
 /**
- * Hook to analyze outfit images using AI and extract clothing items
+ * Hook to analyze outfit images using client-side AI (FREE - no API costs!)
+ * Uses Hugging Face Transformers.js running entirely in the browser
  */
 export function useOutfitAnalysis(): UseOutfitAnalysisReturn {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -30,18 +23,11 @@ export function useOutfitAnalysis(): UseOutfitAnalysisReturn {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('analyze-outfit-items', {
-        body: { imageUrl },
-      });
-
-      if (fnError) {
-        throw new Error(fnError.message);
-      }
-
-      const items: AnalyzedItem[] = data?.items || [];
+      // Use client-side analysis - completely FREE!
+      const items: DetectedItem[] = await analyzeOutfitImage(imageUrl);
       
       // Convert analyzed items to ClothingItemInfo format
-      const clothingItems: ClothingItemInfo[] = items.map((item, index) => ({
+      const clothingItems: ClothingItemInfo[] = items.map((item) => ({
         name: item.name,
         imageUrl: imageUrl, // Use outfit image as placeholder
         category: item.category,
