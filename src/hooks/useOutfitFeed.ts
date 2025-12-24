@@ -420,6 +420,13 @@ export const useOutfitFeed = () => {
   }, [fetchOutfits]);
 
   const hideOutfit = useCallback(async (outfitId: string) => {
+    // For sample outfits (non-UUID), just hide locally without database
+    if (outfitId.startsWith('sample-')) {
+      setHiddenOutfitIds(prev => new Set([...prev, outfitId]));
+      setOutfits(prev => prev.filter(o => o.id !== outfitId));
+      return true;
+    }
+    
     if (!user) return false;
     
     try {
@@ -439,6 +446,14 @@ export const useOutfitFeed = () => {
   }, [user]);
 
   const saveOutfit = useCallback(async (outfitId: string) => {
+    // Sample outfits cannot be saved to database
+    if (outfitId.startsWith('sample-')) {
+      setOutfits(prev => prev.map(o => 
+        o.id === outfitId ? { ...o, isSaved: true } : o
+      ));
+      return true;
+    }
+    
     if (!user) return false;
     
     try {
@@ -459,6 +474,14 @@ export const useOutfitFeed = () => {
   }, [user]);
 
   const unsaveOutfit = useCallback(async (outfitId: string) => {
+    // Sample outfits - just update local state
+    if (outfitId.startsWith('sample-')) {
+      setOutfits(prev => prev.map(o => 
+        o.id === outfitId ? { ...o, isSaved: false } : o
+      ));
+      return true;
+    }
+    
     if (!user) return false;
     
     try {

@@ -1,13 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ExternalLink, EyeOff } from 'lucide-react';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  MoreHorizontal,
+  ExternalLink,
+  EyeOff,
+  Star,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,6 +63,7 @@ interface OutfitFeedCardProps {
   } | null;
   isLiked?: boolean;
   isSaved?: boolean;
+  isFavorite?: boolean;
   onOpenComments: (outfitId: string) => void;
   onShare: (outfitId: string) => void;
   onViewDetail: (outfitId: string) => void;
@@ -60,6 +71,7 @@ interface OutfitFeedCardProps {
   onSave?: (outfitId: string) => Promise<boolean>;
   onUnsave?: (outfitId: string) => Promise<boolean>;
   onHide?: (outfitId: string) => Promise<boolean>;
+  onToggleFavorite?: (outfitId: string) => Promise<boolean>;
 }
 
 export const OutfitFeedCard = ({
@@ -68,6 +80,7 @@ export const OutfitFeedCard = ({
   inspiredByOutfit,
   isLiked = false,
   isSaved = false,
+  isFavorite = false,
   onOpenComments,
   onShare,
   onViewDetail,
@@ -75,12 +88,14 @@ export const OutfitFeedCard = ({
   onSave,
   onUnsave,
   onHide,
+  onToggleFavorite,
 }: OutfitFeedCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [liked, setLiked] = useState(isLiked);
   const [likesCount, setLikesCount] = useState(outfit.likes_count);
   const [saved, setSaved] = useState(isSaved);
+  const [favorite, setFavorite] = useState(isFavorite);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showClothingItems, setShowClothingItems] = useState(false);
@@ -158,12 +173,24 @@ export const OutfitFeedCard = ({
       toast.error('Vui lòng đăng nhập');
       return;
     }
-    
+
     const success = await onHide?.(outfit.id);
     if (success) {
       toast.success('Đã ẩn outfit này');
     } else {
       toast.error('Không thể ẩn outfit');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập');
+      return;
+    }
+
+    const success = await onToggleFavorite?.(outfit.id);
+    if (success) {
+      setFavorite(!favorite);
     }
   };
 
@@ -224,7 +251,18 @@ export const OutfitFeedCard = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleHide} className="gap-2 text-destructive">
+            <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
+              <Star
+                size={16}
+                className={cn(favorite && 'fill-yellow-500 text-yellow-500')}
+              />
+              {favorite ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleHide}
+              className="gap-2 text-destructive"
+            >
               <EyeOff size={16} />
               Ẩn outfit này
             </DropdownMenuItem>

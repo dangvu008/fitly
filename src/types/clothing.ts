@@ -9,6 +9,7 @@ export interface ClothingItem {
   shopName?: string;
   price?: string;
   isFavorite?: boolean;
+  isHidden?: boolean;
   color?: string;
   gender?: 'male' | 'female' | 'unisex' | 'unknown';
   style?: string;

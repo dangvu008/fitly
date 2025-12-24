@@ -1,23 +1,32 @@
-import { Heart, ExternalLink } from 'lucide-react';
+import { Heart, ExternalLink, EyeOff } from 'lucide-react';
 import { ClothingItem } from '@/types/clothing';
 import { Button } from '@/components/ui/button';
+import { ClothingItemActions } from './ClothingItemActions';
 import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
 
 interface ClothingCardProps {
   item: ClothingItem;
   onSelect?: (item: ClothingItem) => void;
-  onToggleFavorite?: (item: ClothingItem) => void;
+  onToggleFavorite?: (id: string) => Promise<boolean>;
+  onToggleHidden?: (id: string) => Promise<boolean>;
+  onDelete?: (id: string) => Promise<boolean>;
+  onEdit?: (item: ClothingItem) => void;
   size?: 'sm' | 'md' | 'lg';
   isSelected?: boolean;
+  showActions?: boolean;
 }
 
 export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({ 
   item, 
   onSelect, 
   onToggleFavorite,
+  onToggleHidden,
+  onDelete,
+  onEdit,
   size = 'md',
   isSelected = false,
+  showActions = false,
 }, ref) => {
   const sizeClasses = {
     sm: 'w-16 h-16',
@@ -40,7 +49,8 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
           sizeClasses[size],
           isSelected 
             ? "border-primary ring-2 ring-primary shadow-glow" 
-            : "border-border hover:border-primary/50"
+            : "border-border hover:border-primary/50",
+          item.isHidden && "opacity-50"
         )}
       >
         <img 
@@ -51,30 +61,33 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
         
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Hidden indicator */}
+        {item.isHidden && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <EyeOff size={20} className="text-white" />
+          </div>
+        )}
+        
+        {/* Favorite indicator */}
+        {item.isFavorite && (
+          <div className="absolute top-1 left-1">
+            <Heart size={14} className="fill-red-500 text-red-500" />
+          </div>
+        )}
       </button>
       
-      {/* Favorite button */}
-      {onToggleFavorite && (
-        <Button
-          variant="ghost"
-          size="iconSm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(item);
-          }}
-          className={cn(
-            "absolute top-1 right-1 bg-card/80 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300",
-            item.isFavorite && "opacity-100"
-          )}
-        >
-          <Heart 
-            size={14} 
-            className={cn(
-              "transition-colors",
-              item.isFavorite && "fill-accent text-accent"
-            )} 
+      {/* Actions menu */}
+      {showActions && (
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ClothingItemActions
+            item={item}
+            onToggleFavorite={onToggleFavorite}
+            onToggleHidden={onToggleHidden}
+            onDelete={onDelete}
+            onEdit={onEdit}
           />
-        </Button>
+        </div>
       )}
       
       {/* Item info for large size */}

@@ -15,6 +15,8 @@ interface UserClothingRecord {
   style: string | null;
   pattern: string | null;
   tags: string[] | null;
+  is_favorite: boolean | null;
+  is_hidden: boolean | null;
   created_at: string;
 }
 
@@ -23,6 +25,7 @@ export const useUserClothing = () => {
   const [userClothing, setUserClothing] = useState<ClothingItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
 
   const fetchUserClothing = useCallback(async () => {
     if (!user) {
@@ -50,6 +53,8 @@ export const useUserClothing = () => {
         style: record.style || undefined,
         pattern: record.pattern || undefined,
         tags: record.tags || [],
+        isFavorite: record.is_favorite || false,
+        isHidden: record.is_hidden || false,
       }));
 
       setUserClothing(items);
@@ -170,13 +175,89 @@ export const useUserClothing = () => {
     }
   }, [user]);
 
+  // Toggle favorite status for a clothing item
+  const toggleFavorite = useCallback(async (id: string): Promise<boolean> => {
+    if (!user) return false;
+
+    const item = userClothing.find(i => i.id === id);
+    if (!item) return false;
+
+    const newFavoriteStatus = !item.isFavorite;
+
+    try {
+      const { error } = await supabase
+        .from('user_clothing')
+        .update({ is_favorite: newFavoriteStatus })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setUserClothing(prev => prev.map(i => 
+        i.id === id ? { ...i, isFavorite: newFavoriteStatus } : i
+      ));
+      
+      toast.success(newFavoriteStatus ? 'Đã thêm vào yêu thích' : 'Đã bỏ khỏi yêu thích');
+      return true;
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Không thể cập nhật');
+      return false;
+    }
+  }, [user, userClothing]);
+
+  // Toggle hidden status for a clothing item
+  const toggleHidden = useCallback(async (id: string): Promise<boolean> => {
+    if (!user) return false;
+
+    const item = userClothing.find(i => i.id === id);
+    if (!item) return false;
+
+    const newHiddenStatus = !(item as any).isHidden;
+
+    try {
+      const { error } = await supabase
+        .from('user_clothing')
+        .update({ is_hidden: newHiddenStatus })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setUserClothing(prev => prev.map(i => 
+        i.id === id ? { ...i, isHidden: newHiddenStatus } : i
+      ));
+      
+      toast.success(newHiddenStatus ? 'Đã ẩn quần áo' : 'Đã hiện quần áo');
+      return true;
+    } catch (error) {
+      console.error('Error toggling hidden:', error);
+      toast.error('Không thể cập nhật');
+      return false;
+    }
+  }, [user, userClothing]);
+
+  // Filter clothing based on showHidden state
+  const visibleClothing = showHidden 
+    ? userClothing 
+    : userClothing.filter(item => !(item as any).isHidden);
+
+  // Get only favorite items
+  const favoriteClothing = userClothing.filter(item => item.isFavorite);
+
   return {
-    userClothing,
+    userClothing: visibleClothing,
+    allClothing: userClothing,
+    favoriteClothing,
     isLoading,
     isSaving,
+    showHidden,
+    setShowHidden,
     saveClothingItem,
     updateClothingItem,
     deleteClothingItem,
+    toggleFavorite,
+    toggleHidden,
     refetch: fetchUserClothing,
   };
 };
