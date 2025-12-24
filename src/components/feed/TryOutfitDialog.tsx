@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, RefreshCw, Download, Share2, Bookmark, Check } from 'lucide-react';
+import { X, RefreshCw, Download, Share2, Bookmark, Check, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,10 @@ import { AIProgressBar } from '@/components/tryOn/AIProgressBar';
 import { ClothingItemsGrid } from './ClothingItemsGrid';
 import { ShareToPublicDialog } from '@/components/outfit/ShareToPublicDialog';
 import { LoginRequiredDialog } from '@/components/auth/LoginRequiredDialog';
-import { useOutfitTryOn, SharedOutfit } from '@/hooks/useOutfitTryOn';
+import { useOutfitTryOn, SharedOutfit, ClothingItemInfo } from '@/hooks/useOutfitTryOn';
 import { useTryOnHistory } from '@/hooks/useTryOnHistory';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOutfitAnalysis } from '@/hooks/useOutfitAnalysis';
 
 interface TryOutfitDialogProps {
   open: boolean;
@@ -57,6 +58,7 @@ export const TryOutfitDialog = ({
 
   const { saveTryOnResult } = useTryOnHistory();
   const { user } = useAuth();
+  const { analyzeOutfit, isAnalyzing, analyzedItems } = useOutfitAnalysis();
 
   const [step, setStep] = useState<DialogStep>('select-body');
   const [isSaving, setIsSaving] = useState(false);
@@ -64,8 +66,13 @@ export const TryOutfitDialog = ({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<'save' | 'share' | null>(null);
+  
+  // Use AI-analyzed items if available, otherwise fall back to database items
+  const displayItems: ClothingItemInfo[] = analyzedItems.length > 0 
+    ? analyzedItems 
+    : outfit.clothing_items || [];
 
-  // Reset state when dialog opens
+  // Reset state when dialog opens and trigger AI analysis
   useEffect(() => {
     if (open) {
       setStep('select-body');
@@ -73,8 +80,11 @@ export const TryOutfitDialog = ({
       setShowLoginDialog(false);
       setPendingAction(null);
       clearResult();
+      
+      // Analyze outfit image with AI to get accurate clothing items
+      analyzeOutfit(outfit.result_image_url);
     }
-  }, [open, clearResult]);
+  }, [open, clearResult, analyzeOutfit, outfit.result_image_url]);
 
   // Handle pending action after user logs in
   // Requirements 4.4, 5.4: Redirect to action after successful login
@@ -237,18 +247,29 @@ export const TryOutfitDialog = ({
                   </div>
                 </div>
 
-                {/* Clothing items preview */}
-                {outfit.clothing_items && outfit.clothing_items.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Các món đồ trong outfit
-                    </h3>
+                {/* Clothing items preview - using AI-analyzed items */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Các món đồ trong outfit
+                  </h3>
+                  {isAnalyzing ? (
+                    <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">
+                        Đang phân tích outfit...
+                      </span>
+                    </div>
+                  ) : displayItems.length > 0 ? (
                     <ClothingItemsGrid
-                      items={outfit.clothing_items}
+                      items={displayItems}
                       showShopLinks={false}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
+                      Không tìm thấy món đồ nào
+                    </p>
+                  )}
+                </div>
 
                 {/* Body image selector */}
                 <div className="space-y-2">

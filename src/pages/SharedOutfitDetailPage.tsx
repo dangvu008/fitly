@@ -10,6 +10,7 @@ import { ClothingItemDetailSheet } from '@/components/feed/ClothingItemDetailShe
 import { SimilarItemsSheet } from '@/components/feed/SimilarItemsSheet';
 import { TryOutfitButton } from '@/components/feed/TryOutfitButton';
 import { useSimilarClothing } from '@/hooks/useSimilarClothing';
+import { useOutfitAnalysis } from '@/hooks/useOutfitAnalysis';
 import { ClothingItemInfo, SharedOutfit } from '@/hooks/useOutfitTryOn';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -57,6 +58,9 @@ export const SharedOutfitDetailPage = () => {
   
   // Hook for finding similar items
   const { findSimilar, isSearching, similarItems } = useSimilarClothing();
+  
+  // Hook for AI outfit analysis
+  const { analyzeOutfit, isAnalyzing, analyzedItems } = useOutfitAnalysis();
 
   useEffect(() => {
     if (id) {
@@ -66,6 +70,23 @@ export const SharedOutfitDetailPage = () => {
       }
     }
   }, [id, user]);
+
+  // Trigger AI analysis when outfit is loaded
+  useEffect(() => {
+    if (outfit?.result_image_url) {
+      analyzeOutfit(outfit.result_image_url);
+    }
+  }, [outfit?.result_image_url, analyzeOutfit]);
+
+  // Use AI-analyzed items if available, otherwise fall back to database items
+  const displayItems: ClothingItemInfo[] = analyzedItems.length > 0 
+    ? analyzedItems 
+    : (outfit?.clothing_items?.map(item => ({
+        name: item.name,
+        imageUrl: item.imageUrl,
+        shopUrl: item.purchaseUrl,
+        category: item.category,
+      })) || []);
 
   const fetchOutfitDetail = async (outfitId: string) => {
     setLoading(true);
@@ -278,24 +299,33 @@ export const SharedOutfitDetailPage = () => {
           </div>
         </div>
 
-        {/* Clothing items - Using ClothingItemsGrid (Requirements: 2.1, 2.4) */}
+        {/* Clothing items - Using AI analysis (Requirements: 2.1, 2.4) */}
         <div>
           <h2 className="font-display font-semibold text-base text-foreground mb-4 flex items-center gap-2">
             <ShoppingBag size={18} />
-            Các món đồ trong outfit ({outfit.clothing_items?.length || 0})
+            Các món đồ trong outfit
+            {!isAnalyzing && ` (${displayItems.length})`}
           </h2>
 
-          {/* ClothingItemsGrid for horizontal scrollable display */}
-          <ClothingItemsGrid
-            items={outfit.clothing_items?.map(item => ({
-              name: item.name,
-              imageUrl: item.imageUrl,
-              shopUrl: item.purchaseUrl,
-              category: item.category,
-            })) || []}
-            onItemClick={handleItemClick}
-            showShopLinks={true}
-          />
+          {/* Show loading state while analyzing */}
+          {isAnalyzing ? (
+            <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">
+                Đang phân tích outfit bằng AI...
+              </span>
+            </div>
+          ) : displayItems.length > 0 ? (
+            <ClothingItemsGrid
+              items={displayItems}
+              onItemClick={handleItemClick}
+              showShopLinks={true}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
+              Không tìm thấy món đồ nào
+            </p>
+          )}
 
           {/* Full Try Outfit Button - Requirements: 1.1 */}
           {getSharedOutfitData() && (

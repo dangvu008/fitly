@@ -8,6 +8,15 @@ vi.mock('@/hooks/useOutfitTryOn', () => ({
   useOutfitTryOn: vi.fn(),
 }));
 
+vi.mock('@/hooks/useOutfitAnalysis', () => ({
+  useOutfitAnalysis: vi.fn(() => ({
+    analyzeOutfit: vi.fn().mockResolvedValue([]),
+    isAnalyzing: false,
+    error: null,
+    analyzedItems: [],
+  })),
+}));
+
 vi.mock('@/hooks/useTryOnHistory', () => ({
   useTryOnHistory: vi.fn(() => ({
     saveTryOnResult: vi.fn().mockResolvedValue(true),
@@ -85,8 +94,10 @@ vi.mock('./ClothingItemsGrid', () => ({
 }));
 
 import { useOutfitTryOn } from '@/hooks/useOutfitTryOn';
+import { useOutfitAnalysis } from '@/hooks/useOutfitAnalysis';
 
 const mockUseOutfitTryOn = useOutfitTryOn as ReturnType<typeof vi.fn>;
+const mockUseOutfitAnalysis = useOutfitAnalysis as ReturnType<typeof vi.fn>;
 
 // Sample outfit for testing
 const sampleOutfit: SharedOutfit = {
@@ -122,6 +133,13 @@ describe('TryOutfitDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseOutfitTryOn.mockReturnValue(defaultMockReturn);
+    // Mock useOutfitAnalysis to return analyzed items immediately (not loading)
+    mockUseOutfitAnalysis.mockReturnValue({
+      analyzeOutfit: vi.fn().mockResolvedValue(sampleOutfit.clothing_items),
+      isAnalyzing: false,
+      error: null,
+      analyzedItems: sampleOutfit.clothing_items,
+    });
   });
 
   /**
