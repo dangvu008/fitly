@@ -5,6 +5,8 @@ env.allowLocalModels = false;
 env.useBrowserCache = true;
 
 const MAX_IMAGE_DIMENSION = 1024;
+// Threshold for mask - pixels with mask value below this are kept as foreground
+const MASK_THRESHOLD = 0.5;
 
 let segmenter: any = null;
 let isInitializing = false;
@@ -55,29 +57,42 @@ export const initBackgroundRemover = async (onProgress?: (progress: number) => v
   
   initPromise = (async () => {
     try {
-      // Try WebGPU first
-      console.log('Attempting to load segmenter with WebGPU...');
+      // Use RMBG model which is specifically designed for background removal
+      // It's better at preserving clothing details including white/light colored items
+      console.log('Attempting to load RMBG segmenter with WebGPU...');
       segmenter = await pipeline(
         'image-segmentation',
-        'Xenova/segformer-b0-finetuned-ade-512-512',
+        'briaai/RMBG-1.4',
         { device: 'webgpu' }
       );
-      console.log('Segmenter loaded with WebGPU');
+      console.log('RMBG Segmenter loaded with WebGPU');
       onProgress?.(100);
     } catch (error) {
-      console.warn('WebGPU not available, falling back to CPU:', error);
+      console.warn('WebGPU not available or RMBG failed, trying fallback:', error);
       try {
+        // Fallback to RMBG on CPU
         segmenter = await pipeline(
           'image-segmentation',
-          'Xenova/segformer-b0-finetuned-ade-512-512'
+          'briaai/RMBG-1.4'
         );
-        console.log('Segmenter loaded with CPU');
+        console.log('RMBG Segmenter loaded with CPU');
         onProgress?.(100);
-      } catch (cpuError) {
-        console.error('Failed to load segmenter:', cpuError);
-        isInitializing = false;
-        initPromise = null;
-        throw new Error('Không thể khởi tạo bộ xóa nền. Vui lòng thử lại.');
+      } catch (rmbgError) {
+        console.warn('RMBG failed, trying segformer fallback:', rmbgError);
+        try {
+          // Final fallback to segformer
+          segmenter = await pipeline(
+            'image-segmentation',
+            'Xenova/segformer-b0-finetuned-ade-512-512'
+          );
+          console.log('Segformer loaded as fallback');
+          onProgress?.(100);
+        } catch (cpuError) {
+          console.error('Failed to load any segmenter:', cpuError);
+          isInitializing = false;
+          initPromise = null;
+          throw new Error('Không thể khởi tạo bộ xóa nền. Vui lòng thử lại.');
+        }
       }
     }
     isInitializing = false;
@@ -196,11 +211,23 @@ export const removeBackground = async (
       return imageDataUrl;
     }
     
-    // Invert mask to keep subject (clothing)
+    // Apply mask with threshold to preserve more of the subject
+    // This helps prevent over-removal of light-colored clothing
     for (let i = 0; i < bestMask.data.length; i++) {
       const maskValue = bestMask.data[i];
-      // Invert: keep foreground (clothing), remove background
-      const alpha = Math.round((1 - maskValue) * 255);
+      // Use threshold: if mask value is below threshold, keep the pixel fully opaque
+      // This helps preserve light-colored clothing that might be mistaken for background
+      let alpha: number;
+      if (maskValue < MASK_THRESHOLD) {
+        // Foreground - keep fully opaque
+        alpha = 255;
+      } else if (maskValue > (1 - MASK_THRESHOLD)) {
+        // Background - make fully transparent
+        alpha = 0;
+      } else {
+        // Edge region - smooth transition
+        alpha = Math.round((1 - maskValue) * 255);
+      }
       data[i * 4 + 3] = alpha;
     }
     

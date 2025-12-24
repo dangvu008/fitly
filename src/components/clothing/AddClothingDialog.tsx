@@ -3,6 +3,8 @@ import { X, Upload, Link2, Loader2, ImagePlus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -40,16 +42,20 @@ export const AddClothingDialog = ({
     issueTranslationMap
   } = useClothingValidation();
 
+  // Option to skip background removal for images that already have transparent/white background
+  const [removeBackground, setRemoveBackground] = useState(true);
+
   const handleClose = () => {
     setImageUrl('');
     setPreviewImage(null);
     setIsLoadingUrl(false);
+    setRemoveBackground(true);
     onClose();
   };
 
   const processClothingImage = async (imageDataUrl: string, sourceName: string) => {
     const result = await validateAndProcessClothing(imageDataUrl, { 
-      removeBackground: true, 
+      removeBackground, 
       language 
     });
     
@@ -233,8 +239,25 @@ export const AddClothingDialog = ({
                 </div>
               </button>
 
+              {/* Background removal toggle */}
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="remove-bg-upload" className="text-sm font-medium">
+                    Tự động xóa nền
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Tắt nếu ảnh đã có nền trắng/trong suốt
+                  </p>
+                </div>
+                <Switch
+                  id="remove-bg-upload"
+                  checked={removeBackground}
+                  onCheckedChange={setRemoveBackground}
+                />
+              </div>
+
               <p className="text-xs text-muted-foreground text-center">
-                AI sẽ tự động nhận diện loại quần áo và xóa nền ảnh
+                AI sẽ tự động nhận diện loại quần áo{removeBackground ? ' và xóa nền ảnh' : ''}
               </p>
             </TabsContent>
 
@@ -289,6 +312,23 @@ export const AddClothingDialog = ({
                   </>
                 )}
               </Button>
+
+              {/* Background removal toggle for URL tab */}
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="remove-bg-url" className="text-sm font-medium">
+                    Tự động xóa nền
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Tắt nếu ảnh đã có nền trắng/trong suốt
+                  </p>
+                </div>
+                <Switch
+                  id="remove-bg-url"
+                  checked={removeBackground}
+                  onCheckedChange={setRemoveBackground}
+                />
+              </div>
 
               <p className="text-xs text-muted-foreground text-center">
                 Link ảnh phải là link trực tiếp đến file ảnh (JPG, PNG, WEBP)
