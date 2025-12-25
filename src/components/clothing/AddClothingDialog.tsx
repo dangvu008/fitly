@@ -9,7 +9,6 @@ import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
 interface AddClothingDialogProps {
@@ -42,7 +41,6 @@ export const AddClothingDialog = ({
     issueTranslationMap
   } = useClothingValidation();
 
-  // Option to skip background removal for images that already have transparent/white background
   const [removeBackground, setRemoveBackground] = useState(true);
 
   const handleClose = () => {
@@ -82,7 +80,6 @@ export const AddClothingDialog = ({
     }
     
     const aiCategory = result.analysis?.category || 'top';
-    // Use target category if provided, otherwise use AI detected category
     const appCategory = targetCategory && targetCategory !== 'all' && targetCategory !== 'unknown' 
       ? targetCategory 
       : mapToAppCategory(aiCategory);
@@ -126,40 +123,38 @@ export const AddClothingDialog = ({
 
   const handleUrlSubmit = async () => {
     if (!imageUrl.trim()) {
-      toast.error('Vui lòng nhập link ảnh');
+      toast.error(t('add_clothing_url_required'));
       return;
     }
 
-    // Validate URL format
     try {
       new URL(imageUrl);
     } catch {
-      toast.error('Link ảnh không hợp lệ');
+      toast.error(t('add_clothing_url_invalid'));
       return;
     }
 
     setIsLoadingUrl(true);
     
     try {
-      // Fetch image from URL and convert to base64
       const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error('Không thể tải ảnh');
+      if (!response.ok) throw new Error('Cannot load image');
       
       const blob = await response.blob();
       if (!blob.type.startsWith('image/')) {
-        throw new Error('Link không phải là ảnh');
+        throw new Error('Not an image');
       }
       
       const reader = new FileReader();
       reader.onload = async (event) => {
         const imageDataUrl = event.target?.result as string;
         setPreviewImage(imageDataUrl);
-        await processClothingImage(imageDataUrl, 'Quần áo từ URL');
+        await processClothingImage(imageDataUrl, t('add_clothing_from_url'));
       };
       reader.readAsDataURL(blob);
     } catch (error) {
       console.error('Error loading image from URL:', error);
-      toast.error('Không thể tải ảnh từ link. Vui lòng kiểm tra lại link hoặc thử cách khác.');
+      toast.error(t('add_clothing_url_error'));
     } finally {
       setIsLoadingUrl(false);
     }
@@ -170,30 +165,28 @@ export const AddClothingDialog = ({
   return (
     <div className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-card rounded-2xl w-full max-w-sm shadow-medium overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-display font-bold text-lg text-foreground">
             {targetCategory && targetCategory !== 'all' && targetCategory !== 'unknown'
-              ? `Thêm ${targetCategory === 'top' ? 'áo' : targetCategory === 'bottom' ? 'quần' : targetCategory === 'dress' ? 'váy' : targetCategory === 'shoes' ? 'giày' : 'phụ kiện'}`
-              : 'Thêm quần áo mới'}
+              ? t('add_clothing_add_category').replace('{category}', t(`slot_${targetCategory}` as any))
+              : t('add_clothing_title')}
           </h3>
           <Button variant="ghost" size="iconSm" onClick={handleClose}>
             <X size={18} />
           </Button>
         </div>
 
-        {/* Processing overlay */}
         {isValidating && progress && (
           <div className="absolute inset-0 z-10 bg-card/95 flex items-center justify-center">
             <div className="text-center space-y-4 p-6">
               <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
               <div className="space-y-2">
-                <p className="font-medium text-foreground">Đang phân tích ảnh...</p>
+                <p className="font-medium text-foreground">{t('add_clothing_analyzing')}</p>
                 <p className="text-sm text-muted-foreground">
-                  {progress.stage === 'checking_size' && 'Kiểm tra kích thước...'}
-                  {progress.stage === 'analyzing' && 'Nhận diện quần áo...'}
-                  {progress.stage === 'removing_background' && 'Xóa nền ảnh...'}
-                  {progress.stage === 'complete' && 'Hoàn tất!'}
+                  {progress.stage === 'checking_size' && t('add_clothing_checking_size')}
+                  {progress.stage === 'analyzing' && t('add_clothing_detecting')}
+                  {progress.stage === 'removing_background' && t('add_clothing_removing_bg')}
+                  {progress.stage === 'complete' && t('add_clothing_complete')}
                 </p>
               </div>
               <Progress value={progress.progress} className="h-2 w-48 mx-auto" />
@@ -201,17 +194,16 @@ export const AddClothingDialog = ({
           </div>
         )}
 
-        {/* Content */}
         <div className="p-4">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'url')}>
             <TabsList className="w-full grid grid-cols-2 mb-4">
               <TabsTrigger value="upload" className="flex items-center gap-2">
                 <Upload size={14} />
-                Tải ảnh lên
+                {t('add_clothing_upload_tab')}
               </TabsTrigger>
               <TabsTrigger value="url" className="flex items-center gap-2">
                 <Link2 size={14} />
-                Nhập link
+                {t('add_clothing_url_tab')}
               </TabsTrigger>
             </TabsList>
 
@@ -232,22 +224,17 @@ export const AddClothingDialog = ({
                   <ImagePlus size={28} className="text-primary" />
                 </div>
                 <div className="text-center">
-                  <p className="font-medium text-foreground">Chọn ảnh từ thiết bị</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Hỗ trợ JPG, PNG, WEBP
-                  </p>
+                  <p className="font-medium text-foreground">{t('add_clothing_select_device')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('add_clothing_supported')}</p>
                 </div>
               </button>
 
-              {/* Background removal toggle */}
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
                   <Label htmlFor="remove-bg-upload" className="text-sm font-medium">
-                    Tự động xóa nền
+                    {t('add_clothing_auto_remove_bg')}
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Tắt nếu ảnh đã có nền trắng/trong suốt
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('add_clothing_auto_remove_bg_hint')}</p>
                 </div>
                 <Switch
                   id="remove-bg-upload"
@@ -257,16 +244,14 @@ export const AddClothingDialog = ({
               </div>
 
               <p className="text-xs text-muted-foreground text-center">
-                AI sẽ tự động nhận diện loại quần áo{removeBackground ? ' và xóa nền ảnh' : ''}
+                {removeBackground ? t('add_clothing_ai_detect_and_remove') : t('add_clothing_ai_detect')}
               </p>
             </TabsContent>
 
             <TabsContent value="url" className="space-y-4">
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Link ảnh quần áo
-                  </label>
+                  <label className="text-sm font-medium text-foreground">{t('add_clothing_url_label')}</label>
                   <Input
                     type="url"
                     placeholder="https://example.com/image.jpg"
@@ -276,63 +261,41 @@ export const AddClothingDialog = ({
                   />
                 </div>
 
-                {/* Preview area */}
                 <div className="aspect-[4/3] rounded-xl border border-border bg-muted/30 overflow-hidden flex items-center justify-center">
                   {previewImage ? (
-                    <img 
-                      src={previewImage} 
-                      alt="Preview" 
-                      className="w-full h-full object-contain"
-                    />
+                    <img src={previewImage} alt="Preview" className="w-full h-full object-contain" />
                   ) : (
                     <div className="text-center p-4">
                       <Link2 size={32} className="mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Dán link ảnh và nhấn "Thêm quần áo"
-                      </p>
+                      <p className="text-sm text-muted-foreground">{t('add_clothing_url_placeholder')}</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <Button
-                onClick={handleUrlSubmit}
-                disabled={!imageUrl.trim() || isLoadingUrl || isValidating}
-                className="w-full h-11"
-              >
+              <Button onClick={handleUrlSubmit} disabled={!imageUrl.trim() || isLoadingUrl || isValidating} className="w-full h-11">
                 {isLoadingUrl ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Đang tải...
+                    {t('add_clothing_loading')}
                   </>
                 ) : (
                   <>
                     <Check size={16} />
-                    Thêm quần áo
+                    {t('add_clothing_add_btn')}
                   </>
                 )}
               </Button>
 
-              {/* Background removal toggle for URL tab */}
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
-                  <Label htmlFor="remove-bg-url" className="text-sm font-medium">
-                    Tự động xóa nền
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Tắt nếu ảnh đã có nền trắng/trong suốt
-                  </p>
+                  <Label htmlFor="remove-bg-url" className="text-sm font-medium">{t('add_clothing_auto_remove_bg')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('add_clothing_auto_remove_bg_hint')}</p>
                 </div>
-                <Switch
-                  id="remove-bg-url"
-                  checked={removeBackground}
-                  onCheckedChange={setRemoveBackground}
-                />
+                <Switch id="remove-bg-url" checked={removeBackground} onCheckedChange={setRemoveBackground} />
               </div>
 
-              <p className="text-xs text-muted-foreground text-center">
-                Link ảnh phải là link trực tiếp đến file ảnh (JPG, PNG, WEBP)
-              </p>
+              <p className="text-xs text-muted-foreground text-center">{t('add_clothing_url_hint')}</p>
             </TabsContent>
           </Tabs>
         </div>
