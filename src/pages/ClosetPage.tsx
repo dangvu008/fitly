@@ -33,13 +33,7 @@ interface CategoryOption {
   icon: React.ReactNode;
 }
 
-const categories: CategoryOption[] = [
-  { id: 'top', label: 'Áo', icon: <Shirt size={20} /> },
-  { id: 'bottom', label: 'Quần', icon: <span className="text-lg">👖</span> },
-  { id: 'dress', label: 'Váy', icon: <span className="text-lg">👗</span> },
-  { id: 'shoes', label: 'Giày', icon: <span className="text-lg">👟</span> },
-  { id: 'accessory', label: 'Phụ kiện', icon: <span className="text-lg">👓</span> },
-];
+// Categories are defined dynamically using translations
 
 interface ClosetPageProps {
   onNavigateToTryOn?: () => void;
@@ -48,7 +42,15 @@ interface ClosetPageProps {
 export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  const categories: CategoryOption[] = [
+    { id: 'top', label: t('slot_top'), icon: <Shirt size={20} /> },
+    { id: 'bottom', label: t('slot_bottom'), icon: <span className="text-lg">👖</span> },
+    { id: 'dress', label: t('slot_dress'), icon: <span className="text-lg">👗</span> },
+    { id: 'shoes', label: t('slot_shoes'), icon: <span className="text-lg">👟</span> },
+    { id: 'accessory', label: t('slot_accessory'), icon: <span className="text-lg">👓</span> },
+  ];
   const [activeMainTab, setActiveMainTab] = useState<'clothing' | 'outfits'>('clothing');
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('top');
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
@@ -79,7 +81,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
       if (error) {
         console.error('Error fetching clothing:', error);
-        toast.error('Không thể tải quần áo');
+        toast.error(t('closet_cannot_load'));
       } else {
         setUserClothingItems(data?.map(item => ({
           id: item.id,
@@ -119,7 +121,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
       if (error) {
         console.error('Error fetching outfits:', error);
-        toast.error('Không thể tải lịch sử outfit');
+        toast.error(t('history_cannot_load'));
       } else {
         setOutfits(data?.map(item => ({
           id: item.id,
@@ -144,12 +146,12 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
       .eq('id', itemId);
 
     if (error) {
-      toast.error('Không thể cập nhật trạng thái');
+      toast.error(t('closet_cannot_update'));
     } else {
       setUserClothingItems(prev => prev.map(item => 
         item.id === itemId ? { ...item, is_purchased: !currentStatus } : item
       ));
-      toast.success(currentStatus ? 'Đã chuyển sang Wishlist' : 'Đã đánh dấu đã mua');
+      toast.success(currentStatus ? t('closet_moved_to_wishlist') : t('closet_marked_bought'));
     }
   };
 
@@ -161,12 +163,12 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
       .eq('id', outfitId);
 
     if (error) {
-      toast.error('Không thể cập nhật yêu thích');
+      toast.error(t('closet_cannot_update_fav'));
     } else {
       setOutfits(prev => prev.map(item => 
         item.id === outfitId ? { ...item, is_favorite: !currentStatus } : item
       ));
-      toast.success(currentStatus ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích');
+      toast.success(currentStatus ? t('closet_removed_fav') : t('closet_added_fav'));
     }
   };
 
@@ -222,12 +224,12 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
       <div className="pb-24 pt-16 px-4 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
           <ShoppingBag size={64} className="text-muted-foreground" />
-          <h2 className="text-xl font-display font-bold">Đăng nhập để xem tủ đồ</h2>
+          <h2 className="text-xl font-display font-bold">{t('closet_login_to_view')}</h2>
           <p className="text-muted-foreground text-sm">
-            Đăng nhập để lưu và quản lý quần áo, phụ kiện của bạn
+            {t('closet_login_required')}
           </p>
           <Button onClick={() => navigate('/auth')} className="gradient-primary">
-            Đăng nhập ngay
+            {t('closet_login_now')}
           </Button>
         </div>
       </div>
@@ -242,11 +244,11 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
           <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="clothing" className="gap-2">
               <Shirt size={16} />
-              Quần áo
+              {t('closet_clothing')}
             </TabsTrigger>
             <TabsTrigger value="outfits" className="gap-2">
               <Heart size={16} />
-              Outfit đã lưu
+              {t('closet_saved_outfits')}
             </TabsTrigger>
           </TabsList>
 
@@ -260,7 +262,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                 className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-xl border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 transition-colors"
               >
                 <Plus size={20} />
-                <span className="text-[10px] mt-0.5">Thêm</span>
+                <span className="text-[10px] mt-0.5">{t('closet_add')}</span>
               </button>
               
               {/* Category Buttons */}
@@ -292,7 +294,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 )}
               >
-                Tất cả
+                {t('closet_all')}
               </button>
               <button
                 onClick={() => setOwnershipFilter('owned')}
@@ -304,7 +306,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                 )}
               >
                 <Check size={14} />
-                Có trong tủ
+                {t('closet_in_closet')}
               </button>
               <button
                 onClick={() => setOwnershipFilter('not_owned')}
@@ -316,7 +318,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                 )}
               >
                 <ShoppingBag size={14} />
-                Chưa mua
+                {t('closet_not_bought')}
               </button>
             </div>
 
@@ -328,10 +330,10 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
             ) : filteredClothing.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
                 <Shirt size={48} className="text-muted-foreground" />
-                <p className="text-muted-foreground">Chưa có quần áo nào</p>
+                <p className="text-muted-foreground">{t('closet_no_clothing')}</p>
                 <Button variant="outline" size="sm" onClick={onNavigateToTryOn} className="gap-1">
                   <Plus size={14} />
-                  Thêm quần áo mới
+                  {t('closet_add_new')}
                 </Button>
               </div>
             ) : (
@@ -361,7 +363,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                             onClick={(e) => e.stopPropagation()}
                             className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
                           >
-                            Mua
+                            {t('closet_buy')}
                             <ExternalLink size={10} />
                           </a>
                         )}
@@ -410,7 +412,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                 size="sm"
                 onClick={() => setShowFavoritesOnly(false)}
               >
-                Tất cả
+                {t('closet_all')}
               </Button>
               <Button 
                 variant={showFavoritesOnly ? 'default' : 'outline'} 
@@ -419,7 +421,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                 className="gap-1"
               >
                 <Heart size={14} />
-                Yêu thích
+                {t('closet_favorites')}
               </Button>
             </div>
 
@@ -432,10 +434,10 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
                 <Heart size={48} className="text-muted-foreground" />
                 <p className="text-muted-foreground">
-                  {showFavoritesOnly ? 'Chưa có outfit yêu thích' : 'Chưa có outfit nào được lưu'}
+                  {showFavoritesOnly ? t('closet_no_fav_outfit') : t('closet_no_saved_outfit')}
                 </p>
                 <Button variant="outline" size="sm" onClick={onNavigateToTryOn} className="gap-1">
-                  Thử đồ ngay
+                  {t('wardrobe_try_now')}
                 </Button>
               </div>
             ) : (
