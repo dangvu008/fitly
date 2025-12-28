@@ -7,13 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Heart, ExternalLink, Tag, Shirt, User, Check } from 'lucide-react';
+import { Heart, ExternalLink, Tag, Shirt, User, Check, Loader2 } from 'lucide-react';
 
 interface ClothingDetailsFormProps {
   item: ClothingItem;
   imageUrl: string;
   onSave: (item: ClothingItem) => void;
   onCancel: () => void;
+  mode?: 'create' | 'edit';
+  isSaving?: boolean;
 }
 
 const CATEGORIES: ClothingCategory[] = ['top', 'bottom', 'dress', 'shoes', 'accessory'];
@@ -23,7 +25,9 @@ export const ClothingDetailsForm = ({
   item, 
   imageUrl,
   onSave, 
-  onCancel 
+  onCancel,
+  mode = 'create',
+  isSaving = false
 }: ClothingDetailsFormProps) => {
   const { t } = useLanguage();
   
@@ -163,14 +167,20 @@ export const ClothingDetailsForm = ({
           variant="outline" 
           onClick={onCancel}
           className="flex-1 h-11"
+          disabled={isSaving}
         >
           {t('btn_cancel')}
         </Button>
         <Button 
           onClick={handleSave}
           className="flex-1 h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground"
+          disabled={isSaving}
         >
-          <Check size={16} className="mr-2" />
+          {isSaving ? (
+            <Loader2 size={16} className="mr-2 animate-spin" />
+          ) : (
+            <Check size={16} className="mr-2" />
+          )}
           {t('btn_save')}
         </Button>
       </div>

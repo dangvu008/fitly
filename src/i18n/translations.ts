@@ -463,6 +463,7 @@ export const translations = {
     clothing_form_purchase_url: 'Link mua (tùy chọn)',
     clothing_form_purchase_url_hint: 'Thêm link mua hàng để mua lại sau',
     clothing_form_review_title: 'Xác nhận thông tin',
+    clothing_form_edit_title: 'Sửa thông tin',
     btn_cancel: 'Hủy',
     btn_save: 'Lưu',
     
@@ -959,6 +960,7 @@ export const translations = {
     clothing_form_purchase_url: 'Purchase link (optional)',
     clothing_form_purchase_url_hint: 'Add purchase link to buy again later',
     clothing_form_review_title: 'Confirm details',
+    clothing_form_edit_title: 'Edit details',
     btn_cancel: 'Cancel',
     btn_save: 'Save',
     
@@ -1455,6 +1457,7 @@ export const translations = {
     clothing_form_purchase_url: '购买链接(可选)',
     clothing_form_purchase_url_hint: '添加购买链接以便日后再次购买',
     clothing_form_review_title: '确认信息',
+    clothing_form_edit_title: '编辑信息',
     btn_cancel: '取消',
     btn_save: '保存',
     
@@ -1947,6 +1950,7 @@ export const translations = {
     clothing_form_purchase_url: '구매 링크(선택)',
     clothing_form_purchase_url_hint: '나중에 다시 구매할 수 있도록 링크 추가',
     clothing_form_review_title: '정보 확인',
+    clothing_form_edit_title: '정보 수정',
     btn_cancel: '취소',
     btn_save: '저장',
     
@@ -2439,6 +2443,7 @@ export const translations = {
     clothing_form_purchase_url: '購入リンク(任意)',
     clothing_form_purchase_url_hint: '後で購入するためリンクを追加',
     clothing_form_review_title: '情報確認',
+    clothing_form_edit_title: '情報編集',
     btn_cancel: 'キャンセル',
     btn_save: '保存',
     
@@ -2931,6 +2936,7 @@ export const translations = {
     clothing_form_purchase_url: 'ลิงก์ซื้อ(ถ้ามี)',
     clothing_form_purchase_url_hint: 'เพิ่มลิงก์ซื้อเพื่อซื้อซ้ำในภายหลัง',
     clothing_form_review_title: 'ยืนยันข้อมูล',
+    clothing_form_edit_title: 'แก้ไขข้อมูล',
     btn_cancel: 'ยกเลิก',
     btn_save: 'บันทึก',
     

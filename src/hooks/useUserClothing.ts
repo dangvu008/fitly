@@ -102,18 +102,22 @@ export const useUserClothing = () => {
 
   const updateClothingItem = useCallback(async (
     id: string, 
-    updates: { name?: string; tags?: string[] }
+    updates: { name?: string; tags?: string[]; category?: ClothingCategory; gender?: string; shopUrl?: string }
   ): Promise<boolean> => {
     if (!user) return false;
 
     setIsSaving(true);
     try {
+      const updateData: Record<string, unknown> = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.tags !== undefined) updateData.tags = updates.tags;
+      if (updates.category !== undefined) updateData.category = updates.category;
+      if (updates.gender !== undefined) updateData.gender = updates.gender;
+      if (updates.shopUrl !== undefined) updateData.shop_url = updates.shopUrl;
+
       const { error } = await supabase
         .from('user_clothing')
-        .update({
-          name: updates.name,
-          tags: updates.tags,
-        })
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', user.id);
 
@@ -121,7 +125,14 @@ export const useUserClothing = () => {
 
       setUserClothing(prev => prev.map(item => 
         item.id === id 
-          ? { ...item, name: updates.name ?? item.name, tags: updates.tags ?? item.tags }
+          ? { 
+              ...item, 
+              name: updates.name ?? item.name, 
+              tags: updates.tags ?? item.tags,
+              category: updates.category ?? item.category,
+              gender: (updates.gender as 'male' | 'female' | 'unisex' | 'unknown' | undefined) ?? item.gender,
+              shopUrl: updates.shopUrl ?? item.shopUrl
+            }
           : item
       ));
       return true;

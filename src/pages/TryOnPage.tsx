@@ -6,7 +6,7 @@ import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
 import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
 import { AIProgressBar } from '@/components/tryOn/AIProgressBar';
 import { EditResultDialog } from '@/components/tryOn/EditResultDialog';
-import { EditClothingDialog } from '@/components/clothing/EditClothingDialog';
+import { EditClothingDetailsDialog } from '@/components/clothing/EditClothingDetailsDialog';
 import { AddClothingDialog } from '@/components/clothing/AddClothingDialog';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
 import { ShareToPublicDialog } from '@/components/outfit/ShareToPublicDialog';
@@ -407,8 +407,14 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     setEditingClothing(item);
   };
 
-  const handleUpdateClothing = async (id: string, updates: { name: string; tags: string[] }) => {
-    const success = await updateClothingItem(id, updates);
+  const handleUpdateClothing = async (updatedItem: ClothingItem) => {
+    const success = await updateClothingItem(updatedItem.id, { 
+      name: updatedItem.name, 
+      tags: updatedItem.tags || [],
+      category: updatedItem.category,
+      gender: updatedItem.gender,
+      shopUrl: updatedItem.shopUrl
+    });
     if (success) {
       toast.success(t('clothing_updated'));
     }
@@ -1018,7 +1024,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
       {/* Edit Clothing Dialog */}
       {editingClothing && (
-        <EditClothingDialog
+        <EditClothingDetailsDialog
           item={editingClothing}
           isOpen={!!editingClothing}
           isSaving={isSavingClothing}
