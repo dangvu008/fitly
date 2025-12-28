@@ -87,7 +87,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isResultSaved, setIsResultSaved] = useState(false);
-  const [pendingClothingToSave, setPendingClothingToSave] = useState<ClothingItem | null>(null);
+  
   const [editingClothing, setEditingClothing] = useState<ClothingItem | null>(null);
   const [showClothingPanel, setShowClothingPanel] = useState(false);
   const [showAddClothingDialog, setShowAddClothingDialog] = useState(false);
@@ -227,9 +227,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     handleAddClothing(item);
   };
 
-  const handleSaveClothingFromDialog = (item: ClothingItem) => {
+  const handleSaveClothingFromDialog = async (item: ClothingItem) => {
     if (user) {
-      setPendingClothingToSave(item);
+      await saveClothingItem(item);
     }
   };
 
@@ -325,7 +325,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       handleAddClothing(newItem);
       
       if (user) {
-        setPendingClothingToSave(newItem);
+        saveClothingItem(newItem);
       }
       
       const genderLabel = result.analysis?.gender === 'male' 
@@ -368,7 +368,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       handleAddClothing(newItem);
       
       if (user) {
-        setPendingClothingToSave(newItem);
+        saveClothingItem(newItem);
         
         // Save correction for AI learning
         await saveCorrection(
@@ -391,11 +391,6 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     toast.success(t('msg_item_removed'));
   };
 
-  const handleSaveClothingToCollection = async () => {
-    if (!pendingClothingToSave) return;
-    await saveClothingItem(pendingClothingToSave);
-    setPendingClothingToSave(null);
-  };
 
   const handleDeleteSavedClothing = async (id: string) => {
     setPendingDeleteId(id);
@@ -856,57 +851,6 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         />
       )}
 
-      {/* Save Clothing Dialog */}
-      {pendingClothingToSave && (
-        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-xl p-5 max-w-xs w-full shadow-medium space-y-4 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
-                <img 
-                  src={pendingClothingToSave.imageUrl} 
-                  alt={pendingClothingToSave.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">{pendingClothingToSave.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {pendingClothingToSave.color && `${pendingClothingToSave.color}`}
-                  {pendingClothingToSave.gender && pendingClothingToSave.gender !== 'unknown' && ` • ${
-                    pendingClothingToSave.gender === 'male' ? t('msg_gender_male') : 
-                    pendingClothingToSave.gender === 'female' ? t('msg_gender_female') : 'Unisex'
-                  }`}
-                </p>
-              </div>
-            </div>
-            <p className="text-sm text-center text-muted-foreground">
-              {t('msg_save_clothing_question')}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setPendingClothingToSave(null)}
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                variant="instagram"
-                className="flex-1"
-                onClick={handleSaveClothingToCollection}
-                disabled={isSavingClothing}
-              >
-                {isSavingClothing ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Heart size={16} />
-                )}
-                {t('save')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="px-4 space-y-4">
