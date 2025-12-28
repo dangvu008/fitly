@@ -441,6 +441,15 @@ export const translations = {
     clothing_form_review_title: 'Xác nhận thông tin',
     btn_cancel: 'Hủy',
     btn_save: 'Lưu',
+    
+    // Body Image Source Dialog
+    body_image_source_title: 'Chọn ảnh toàn thân',
+    body_image_upload_new: 'Tải ảnh mới',
+    body_image_upload_new_desc: 'Chọn từ thư viện hoặc chụp ảnh mới',
+    body_image_from_history: 'Ảnh đã dùng trước đây',
+    body_image_no_history: 'Chưa có ảnh nào trong lịch sử',
+    body_image_use_selected: 'Sử dụng ảnh này',
+    body_image_login_hint: 'Đăng nhập để xem ảnh đã dùng trước đây',
   },
   en: {
     // Common
@@ -882,6 +891,15 @@ export const translations = {
     clothing_form_review_title: 'Confirm details',
     btn_cancel: 'Cancel',
     btn_save: 'Save',
+    
+    // Body Image Source Dialog
+    body_image_source_title: 'Choose body photo',
+    body_image_upload_new: 'Upload new photo',
+    body_image_upload_new_desc: 'Select from gallery or take new photo',
+    body_image_from_history: 'Previously used photos',
+    body_image_no_history: 'No photos in history yet',
+    body_image_use_selected: 'Use this photo',
+    body_image_login_hint: 'Login to see previously used photos',
   },
   zh: {
     // Common
@@ -1323,6 +1341,15 @@ export const translations = {
     clothing_form_review_title: '确认信息',
     btn_cancel: '取消',
     btn_save: '保存',
+    
+    // Body Image Source Dialog
+    body_image_source_title: '选择身体照片',
+    body_image_upload_new: '上传新照片',
+    body_image_upload_new_desc: '从相册选择或拍摄新照片',
+    body_image_from_history: '之前使用过的照片',
+    body_image_no_history: '历史中还没有照片',
+    body_image_use_selected: '使用这张照片',
+    body_image_login_hint: '登录查看之前使用过的照片',
   },
   ko: {
     // Common
@@ -1760,6 +1787,15 @@ export const translations = {
     clothing_form_review_title: '정보 확인',
     btn_cancel: '취소',
     btn_save: '저장',
+    
+    // Body Image Source Dialog
+    body_image_source_title: '신체 사진 선택',
+    body_image_upload_new: '새 사진 업로드',
+    body_image_upload_new_desc: '갤러리에서 선택하거나 새로 촬영',
+    body_image_from_history: '이전에 사용한 사진',
+    body_image_no_history: '기록에 사진이 없습니다',
+    body_image_use_selected: '이 사진 사용',
+    body_image_login_hint: '이전 사진을 보려면 로그인하세요',
   },
   ja: {
     // Common
@@ -2197,6 +2233,15 @@ export const translations = {
     clothing_form_review_title: '情報確認',
     btn_cancel: 'キャンセル',
     btn_save: '保存',
+    
+    // Body Image Source Dialog
+    body_image_source_title: '身体写真を選択',
+    body_image_upload_new: '新しい写真をアップロード',
+    body_image_upload_new_desc: 'ギャラリーから選択または新しく撮影',
+    body_image_from_history: '以前使用した写真',
+    body_image_no_history: '履歴に写真がありません',
+    body_image_use_selected: 'この写真を使用',
+    body_image_login_hint: 'ログインして以前の写真を見る',
   },
   th: {
     // Common
@@ -2634,6 +2679,15 @@ export const translations = {
     clothing_form_review_title: 'ยืนยันข้อมูล',
     btn_cancel: 'ยกเลิก',
     btn_save: 'บันทึก',
+    
+    // Body Image Source Dialog
+    body_image_source_title: 'เลือกรูปร่างกาย',
+    body_image_upload_new: 'อัปโหลดรูปใหม่',
+    body_image_upload_new_desc: 'เลือกจากแกลเลอรีหรือถ่ายรูปใหม่',
+    body_image_from_history: 'รูปที่เคยใช้',
+    body_image_no_history: 'ยังไม่มีรูปในประวัติ',
+    body_image_use_selected: 'ใช้รูปนี้',
+    body_image_login_hint: 'เข้าสู่ระบบเพื่อดูรูปที่เคยใช้',
   },
 } as const;
 

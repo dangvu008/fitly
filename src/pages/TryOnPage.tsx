@@ -13,6 +13,7 @@ import { ShareToPublicDialog } from '@/components/outfit/ShareToPublicDialog';
 import { SaveOutfitDialog } from '@/components/outfit/SaveOutfitDialog';
 import { LoginRequiredDialog } from '@/components/auth/LoginRequiredDialog';
 import { SelectCategoryDialog } from '@/components/clothing/SelectCategoryDialog';
+import { BodyImageSourceDialog } from '@/components/tryOn/BodyImageSourceDialog';
 import { sampleClothing } from '@/data/sampleClothing';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAITryOn } from '@/hooks/useAITryOn';
@@ -97,6 +98,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showEditResultDialog, setShowEditResultDialog] = useState(false);
+  const [showBodyImageSourceDialog, setShowBodyImageSourceDialog] = useState(false);
   const [isEditingResult, setIsEditingResult] = useState(false);
   const [pendingUnknownItem, setPendingUnknownItem] = useState<{
     item: Omit<ClothingItem, 'category'>;
@@ -884,6 +886,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
               clearResult();
               toast.success(t('msg_upload_success'));
             }}
+            onOpenSourceDialog={() => setShowBodyImageSourceDialog(true)}
           />
         </div>
 
@@ -1089,6 +1092,24 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           isProcessing={isEditingResult}
         />
       )}
+
+      {/* Body Image Source Dialog */}
+      <BodyImageSourceDialog
+        open={showBodyImageSourceDialog}
+        onOpenChange={setShowBodyImageSourceDialog}
+        onUploadNew={() => {
+          // Trigger file input through window reference
+          if ((window as any).__tryOnCanvasTriggerFileInput) {
+            (window as any).__tryOnCanvasTriggerFileInput();
+          }
+        }}
+        onSelectFromHistory={(imageUrl) => {
+          setBodyImage(imageUrl);
+          setAiResultImage(null);
+          clearResult();
+          toast.success(t('msg_upload_success'));
+        }}
+      />
     </div>
   );
 };
