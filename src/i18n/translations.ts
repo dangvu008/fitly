@@ -449,6 +449,8 @@ export const translations = {
     body_image_from_history: 'Ảnh đã dùng trước đây',
     body_image_no_history: 'Chưa có ảnh nào trong lịch sử',
     body_image_use_selected: 'Sử dụng ảnh này',
+    body_image_set_default: 'Đặt làm ảnh mặc định',
+    body_image_is_default: 'Đây là ảnh mặc định',
     body_image_login_hint: 'Đăng nhập để xem ảnh đã dùng trước đây',
   },
   en: {
@@ -899,6 +901,8 @@ export const translations = {
     body_image_from_history: 'Previously used photos',
     body_image_no_history: 'No photos in history yet',
     body_image_use_selected: 'Use this photo',
+    body_image_set_default: 'Set as default',
+    body_image_is_default: 'This is your default',
     body_image_login_hint: 'Login to see previously used photos',
   },
   zh: {
@@ -1349,6 +1353,8 @@ export const translations = {
     body_image_from_history: '之前使用过的照片',
     body_image_no_history: '历史中还没有照片',
     body_image_use_selected: '使用这张照片',
+    body_image_set_default: '设为默认',
+    body_image_is_default: '这是默认照片',
     body_image_login_hint: '登录查看之前使用过的照片',
   },
   ko: {
@@ -1795,6 +1801,8 @@ export const translations = {
     body_image_from_history: '이전에 사용한 사진',
     body_image_no_history: '기록에 사진이 없습니다',
     body_image_use_selected: '이 사진 사용',
+    body_image_set_default: '기본값으로 설정',
+    body_image_is_default: '기본 사진입니다',
     body_image_login_hint: '이전 사진을 보려면 로그인하세요',
   },
   ja: {
@@ -2241,6 +2249,8 @@ export const translations = {
     body_image_from_history: '以前使用した写真',
     body_image_no_history: '履歴に写真がありません',
     body_image_use_selected: 'この写真を使用',
+    body_image_set_default: 'デフォルトに設定',
+    body_image_is_default: 'デフォルトの写真です',
     body_image_login_hint: 'ログインして以前の写真を見る',
   },
   th: {
@@ -2687,6 +2697,8 @@ export const translations = {
     body_image_from_history: 'รูปที่เคยใช้',
     body_image_no_history: 'ยังไม่มีรูปในประวัติ',
     body_image_use_selected: 'ใช้รูปนี้',
+    body_image_set_default: 'ตั้งเป็นค่าเริ่มต้น',
+    body_image_is_default: 'นี่คือรูปเริ่มต้น',
     body_image_login_hint: 'เข้าสู่ระบบเพื่อดูรูปที่เคยใช้',
   },
 } as const;

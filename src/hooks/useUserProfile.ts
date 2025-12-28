@@ -11,6 +11,7 @@ interface UserProfile {
   followers_count: number;
   following_count: number;
   created_at: string;
+  default_body_image_url: string | null;
 }
 
 interface SharedOutfit {
@@ -61,6 +62,7 @@ export const useUserProfile = (userId?: string) => {
           followers_count: (profileData as any).followers_count ?? 0,
           following_count: (profileData as any).following_count ?? 0,
           created_at: profileData.created_at,
+          default_body_image_url: (profileData as any).default_body_image_url ?? null,
         });
       }
 
@@ -155,6 +157,27 @@ export const useUserProfile = (userId?: string) => {
     fetchProfile();
   }, [fetchProfile]);
 
+  const setDefaultBodyImage = useCallback(async (imageUrl: string | null) => {
+    if (!user) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ default_body_image_url: imageUrl })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, default_body_image_url: imageUrl } : null);
+      toast.success(imageUrl ? 'Đã đặt ảnh mặc định' : 'Đã xóa ảnh mặc định');
+      return true;
+    } catch (error) {
+      console.error('Error setting default body image:', error);
+      toast.error('Không thể cập nhật ảnh mặc định');
+      return false;
+    }
+  }, [user]);
+
   return {
     profile,
     outfits,
@@ -165,5 +188,6 @@ export const useUserProfile = (userId?: string) => {
     follow,
     unfollow,
     refetch: fetchProfile,
+    setDefaultBodyImage,
   };
 };
