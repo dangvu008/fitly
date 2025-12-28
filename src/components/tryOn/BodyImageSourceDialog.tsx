@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Camera, History, Loader2, ImagePlus } from 'lucide-react';
+import { Camera, History, Loader2, ImagePlus, Star, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface BodyImageRecord {
   id: string;
@@ -19,6 +20,8 @@ interface BodyImageSourceDialogProps {
   onOpenChange: (open: boolean) => void;
   onUploadNew: () => void;
   onSelectFromHistory: (imageUrl: string) => void;
+  defaultBodyImageUrl?: string | null;
+  onSetDefault?: (imageUrl: string | null) => Promise<boolean>;
 }
 
 export const BodyImageSourceDialog = ({
@@ -26,12 +29,15 @@ export const BodyImageSourceDialog = ({
   onOpenChange,
   onUploadNew,
   onSelectFromHistory,
+  defaultBodyImageUrl,
+  onSetDefault,
 }: BodyImageSourceDialogProps) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [historyImages, setHistoryImages] = useState<BodyImageRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isSettingDefault, setIsSettingDefault] = useState(false);
 
   useEffect(() => {
     if (open && user) {
@@ -85,6 +91,28 @@ export const BodyImageSourceDialog = ({
       onOpenChange(false);
       setSelectedImage(null);
     }
+  };
+
+  const handleSetDefault = async () => {
+    if (!selectedImage || !onSetDefault) return;
+    
+    setIsSettingDefault(true);
+    const success = await onSetDefault(selectedImage);
+    setIsSettingDefault(false);
+    
+    if (success) {
+      onSelectFromHistory(selectedImage);
+      onOpenChange(false);
+      setSelectedImage(null);
+    }
+  };
+
+  const handleClearDefault = async () => {
+    if (!onSetDefault) return;
+    
+    setIsSettingDefault(true);
+    await onSetDefault(null);
+    setIsSettingDefault(false);
   };
 
   return (
@@ -143,7 +171,7 @@ export const BodyImageSourceDialog = ({
                         key={item.id}
                         onClick={() => handleSelectImage(item.body_image_url)}
                         className={cn(
-                          "aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all",
+                          "aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all relative",
                           selectedImage === item.body_image_url
                             ? "border-primary ring-2 ring-primary/20"
                             : "border-transparent hover:border-primary/50"
@@ -154,19 +182,45 @@ export const BodyImageSourceDialog = ({
                           alt="Body"
                           className="w-full h-full object-cover"
                         />
+                        {item.body_image_url === defaultBodyImageUrl && (
+                          <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <Star size={12} className="text-primary-foreground fill-current" />
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
                 </ScrollArea>
 
                 {selectedImage && (
-                  <div className="pt-3 border-t border-border mt-3">
+                  <div className="pt-3 border-t border-border mt-3 space-y-2">
                     <Button
                       className="w-full"
                       onClick={handleConfirmSelection}
                     >
                       {t('body_image_use_selected')}
                     </Button>
+                    {onSetDefault && selectedImage !== defaultBodyImageUrl && (
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={handleSetDefault}
+                        disabled={isSettingDefault}
+                      >
+                        {isSettingDefault ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Star size={16} />
+                        )}
+                        {t('body_image_set_default')}
+                      </Button>
+                    )}
+                    {onSetDefault && selectedImage === defaultBodyImageUrl && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                        <Check size={16} />
+                        {t('body_image_is_default')}
+                      </div>
+                    )}
                   </div>
                 )}
               </>

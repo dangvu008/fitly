@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { useCategoryCorrections } from '@/hooks/useCategoryCorrections';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -124,6 +125,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     issueTranslationMap
   } = useClothingValidation();
   const { saveCorrection } = useCategoryCorrections();
+  const { profile, setDefaultBodyImage } = useUserProfile();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
@@ -167,7 +169,16 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       );
       setIsResultSaved(true); // History results are already saved
     }
-  }, [historyResult]);  // Get clothing based on source and filter by search
+  }, [historyResult]);
+
+  // Auto-load default body image when user profile loads
+  useEffect(() => {
+    if (profile?.default_body_image_url && !bodyImage && !reuseBodyImage && !historyResult?.bodyImageUrl) {
+      setBodyImage(profile.default_body_image_url);
+    }
+  }, [profile?.default_body_image_url, bodyImage, reuseBodyImage, historyResult?.bodyImageUrl]);
+
+  // Get clothing based on source and filter by search
   const displayedClothing = clothingSource === 'saved' ? userClothing : clothing;
   const filteredByCategory = activeCategory === 'all'
     ? displayedClothing 
@@ -1109,6 +1120,8 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           clearResult();
           toast.success(t('msg_upload_success'));
         }}
+        defaultBodyImageUrl={profile?.default_body_image_url}
+        onSetDefault={setDefaultBodyImage}
       />
     </div>
   );
