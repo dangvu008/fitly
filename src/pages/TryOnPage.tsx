@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Wand2, Bookmark } from 'lucide-react';
+import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Wand2, Bookmark, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
@@ -93,6 +93,8 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [showAddClothingDialog, setShowAddClothingDialog] = useState(false);
   const [targetCategoryForUpload, setTargetCategoryForUpload] = useState<ClothingCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'color'>('date');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showShareToPublicDialog, setShowShareToPublicDialog] = useState(false);
   const [showSaveOutfitDialog, setShowSaveOutfitDialog] = useState(false);
@@ -192,6 +194,20 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         return nameMatch || tagMatch;
       })
     : filteredByCategory;
+
+  // Sort clothing items
+  const sortedClothing = [...filteredClothing].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'color':
+        return (a.color || '').localeCompare(b.color || '');
+      case 'date':
+      default:
+        // Newer items first (assumes id or created_at reflects order)
+        return 0; // Keep original order for sample, newer first for saved
+    }
+  });
 
   const handleAddBodyImage = () => {
     fileInputRef.current?.click();
@@ -382,7 +398,14 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   };
 
   const handleDeleteSavedClothing = async (id: string) => {
-    await deleteClothingItem(id);
+    setPendingDeleteId(id);
+  };
+
+  const confirmDeleteClothing = async () => {
+    if (pendingDeleteId) {
+      await deleteClothingItem(pendingDeleteId);
+      setPendingDeleteId(null);
+    }
   };
 
   const handleEditClothing = (item: ClothingItem) => {
@@ -987,9 +1010,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
               </button>
             </div>
             
-            {/* Search Bar */}
-            <div className="px-4 py-3">
-              <div className="relative">
+            {/* Search Bar + Sort */}
+            <div className="px-4 py-3 flex gap-2">
+              <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="text"
@@ -999,11 +1022,22 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                   className="pl-9 h-10"
                 />
               </div>
+              {clothingSource === 'saved' && (
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'color')}
+                  className="h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="date">{t('sort_by_date')}</option>
+                  <option value="name">{t('sort_by_name')}</option>
+                  <option value="color">{t('sort_by_color')}</option>
+                </select>
+              )}
             </div>
             
             {/* Clothing Grid */}
             <div className="flex-1 overflow-y-auto px-4 pb-4">
-              {filteredClothing.length === 0 ? (
+              {sortedClothing.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-muted-foreground">
                     {clothingSource === 'saved' ? t('no_saved_clothing') : t('no_clothing')}
@@ -1011,7 +1045,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
-                  {filteredClothing.map((item) => {
+                  {sortedClothing.map((item) => {
                     const [showMobileActions, setShowMobileActions] = React.useState(false);
                     
                     return (
@@ -1150,6 +1184,32 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         defaultBodyImageUrl={profile?.default_body_image_url}
         onSetDefault={setDefaultBodyImage}
       />
+
+      {/* Delete Confirmation Dialog */}
+      {pendingDeleteId && (
+        <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-xl p-6 max-w-sm w-full shadow-lg border border-border space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">{t('confirm_delete_title')}</h3>
+            <p className="text-sm text-muted-foreground">{t('confirm_delete_clothing')}</p>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setPendingDeleteId(null)}
+              >
+                {t('cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={confirmDeleteClothing}
+              >
+                {t('delete')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
