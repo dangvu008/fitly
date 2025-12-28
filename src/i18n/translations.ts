@@ -424,6 +424,23 @@ export const translations = {
     login_to_share: 'Đăng nhập để chia sẻ',
     login_to_save_desc: 'Bạn cần đăng nhập để lưu kết quả thử đồ vào lịch sử của mình.',
     login_to_share_desc: 'Bạn cần đăng nhập để chia sẻ outfit lên cộng đồng.',
+    
+    // Clothing Details Form
+    clothing_form_detected: 'AI đã nhận diện:',
+    clothing_form_name: 'Tên',
+    clothing_form_name_placeholder: 'Nhập tên món đồ...',
+    clothing_form_category: 'Loại',
+    clothing_form_gender: 'Giới tính',
+    clothing_form_gender_male: 'Nam',
+    clothing_form_gender_female: 'Nữ',
+    clothing_form_gender_unisex: 'Unisex',
+    clothing_form_owned: 'Đã có sẵn',
+    clothing_form_owned_desc: 'Bạn đã sở hữu món đồ này',
+    clothing_form_purchase_url: 'Link mua (tùy chọn)',
+    clothing_form_purchase_url_hint: 'Thêm link mua hàng để mua lại sau',
+    clothing_form_review_title: 'Xác nhận thông tin',
+    btn_cancel: 'Hủy',
+    btn_save: 'Lưu',
   },
   en: {
     // Common
@@ -848,6 +865,23 @@ export const translations = {
     login_to_share: 'Login to share',
     login_to_save_desc: 'You need to login to save try-on results to your history.',
     login_to_share_desc: 'You need to login to share outfit to the community.',
+    
+    // Clothing Details Form
+    clothing_form_detected: 'AI detected:',
+    clothing_form_name: 'Name',
+    clothing_form_name_placeholder: 'Enter item name...',
+    clothing_form_category: 'Category',
+    clothing_form_gender: 'Gender',
+    clothing_form_gender_male: 'Male',
+    clothing_form_gender_female: 'Female',
+    clothing_form_gender_unisex: 'Unisex',
+    clothing_form_owned: 'Already owned',
+    clothing_form_owned_desc: 'You already have this item',
+    clothing_form_purchase_url: 'Purchase link (optional)',
+    clothing_form_purchase_url_hint: 'Add purchase link to buy again later',
+    clothing_form_review_title: 'Confirm details',
+    btn_cancel: 'Cancel',
+    btn_save: 'Save',
   },
   zh: {
     // Common
@@ -1272,6 +1306,23 @@ export const translations = {
     login_to_share: '登录以分享',
     login_to_save_desc: '您需要登录才能将试穿结果保存到历史记录。',
     login_to_share_desc: '您需要登录才能将搭配分享到社区。',
+    
+    // Clothing Details Form
+    clothing_form_detected: 'AI识别:',
+    clothing_form_name: '名称',
+    clothing_form_name_placeholder: '输入服装名称...',
+    clothing_form_category: '类别',
+    clothing_form_gender: '性别',
+    clothing_form_gender_male: '男款',
+    clothing_form_gender_female: '女款',
+    clothing_form_gender_unisex: '中性',
+    clothing_form_owned: '已拥有',
+    clothing_form_owned_desc: '您已拥有此单品',
+    clothing_form_purchase_url: '购买链接(可选)',
+    clothing_form_purchase_url_hint: '添加购买链接以便日后再次购买',
+    clothing_form_review_title: '确认信息',
+    btn_cancel: '取消',
+    btn_save: '保存',
   },
   ko: {
     // Common
@@ -1692,6 +1743,23 @@ export const translations = {
     login_to_share: '공유하려면 로그인',
     login_to_save_desc: '피팅 결과를 기록에 저장하려면 로그인이 필요합니다.',
     login_to_share_desc: '코디를 커뮤니티에 공유하려면 로그인이 필요합니다.',
+    
+    // Clothing Details Form
+    clothing_form_detected: 'AI 감지:',
+    clothing_form_name: '이름',
+    clothing_form_name_placeholder: '아이템 이름 입력...',
+    clothing_form_category: '카테고리',
+    clothing_form_gender: '성별',
+    clothing_form_gender_male: '남성',
+    clothing_form_gender_female: '여성',
+    clothing_form_gender_unisex: '유니섹스',
+    clothing_form_owned: '이미 소유',
+    clothing_form_owned_desc: '이미 가지고 있는 아이템입니다',
+    clothing_form_purchase_url: '구매 링크(선택)',
+    clothing_form_purchase_url_hint: '나중에 다시 구매할 수 있도록 링크 추가',
+    clothing_form_review_title: '정보 확인',
+    btn_cancel: '취소',
+    btn_save: '저장',
   },
   ja: {
     // Common
@@ -2112,6 +2180,23 @@ export const translations = {
     login_to_share: '共有するにはログイン',
     login_to_save_desc: '試着結果を履歴に保存するにはログインが必要です。',
     login_to_share_desc: 'コーデをコミュニティに共有するにはログインが必要です。',
+    
+    // Clothing Details Form
+    clothing_form_detected: 'AI検出:',
+    clothing_form_name: '名前',
+    clothing_form_name_placeholder: 'アイテム名を入力...',
+    clothing_form_category: 'カテゴリー',
+    clothing_form_gender: '性別',
+    clothing_form_gender_male: 'メンズ',
+    clothing_form_gender_female: 'レディース',
+    clothing_form_gender_unisex: 'ユニセックス',
+    clothing_form_owned: '所有済み',
+    clothing_form_owned_desc: '既に持っているアイテムです',
+    clothing_form_purchase_url: '購入リンク(任意)',
+    clothing_form_purchase_url_hint: '後で購入するためリンクを追加',
+    clothing_form_review_title: '情報確認',
+    btn_cancel: 'キャンセル',
+    btn_save: '保存',
   },
   th: {
     // Common
@@ -2532,6 +2617,23 @@ export const translations = {
     login_to_share: 'เข้าสู่ระบบเพื่อแชร์',
     login_to_save_desc: 'คุณต้องเข้าสู่ระบบเพื่อบันทึกผลลัพธ์การลองเสื้อในประวัติของคุณ',
     login_to_share_desc: 'คุณต้องเข้าสู่ระบบเพื่อแชร์ชุดไปยังชุมชน',
+    
+    // Clothing Details Form
+    clothing_form_detected: 'AI ตรวจพบ:',
+    clothing_form_name: 'ชื่อ',
+    clothing_form_name_placeholder: 'ใส่ชื่อสินค้า...',
+    clothing_form_category: 'หมวดหมู่',
+    clothing_form_gender: 'เพศ',
+    clothing_form_gender_male: 'ผู้ชาย',
+    clothing_form_gender_female: 'ผู้หญิง',
+    clothing_form_gender_unisex: 'Unisex',
+    clothing_form_owned: 'มีอยู่แล้ว',
+    clothing_form_owned_desc: 'คุณมีสินค้าชิ้นนี้อยู่แล้ว',
+    clothing_form_purchase_url: 'ลิงก์ซื้อ(ถ้ามี)',
+    clothing_form_purchase_url_hint: 'เพิ่มลิงก์ซื้อเพื่อซื้อซ้ำในภายหลัง',
+    clothing_form_review_title: 'ยืนยันข้อมูล',
+    btn_cancel: 'ยกเลิก',
+    btn_save: 'บันทึก',
   },
 } as const;
 
