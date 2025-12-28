@@ -473,6 +473,10 @@ export const translations = {
     url_blocked_domain: 'Domain không được phép',
     url_invalid_format: 'Định dạng link không hợp lệ',
     body_image_login_hint: 'Đăng nhập để xem ảnh đã dùng trước đây',
+    tab_upload_file: 'Tải ảnh mới',
+    tab_enter_url: 'Nhập link ảnh',
+    tryon_result_history: 'Ảnh thử đồ đã lưu',
+    no_tryon_result_history: 'Chưa có ảnh thử đồ nào',
   },
   en: {
     // Common
@@ -946,6 +950,10 @@ export const translations = {
     url_blocked_domain: 'Domain not allowed',
     url_invalid_format: 'Invalid URL format',
     body_image_login_hint: 'Login to see previously used photos',
+    tab_upload_file: 'Upload new',
+    tab_enter_url: 'Enter URL',
+    tryon_result_history: 'Saved try-on photos',
+    no_tryon_result_history: 'No try-on photos yet',
   },
   zh: {
     // Common
@@ -1419,6 +1427,10 @@ export const translations = {
     url_blocked_domain: '域名不允许',
     url_invalid_format: '链接格式无效',
     body_image_login_hint: '登录查看之前使用过的照片',
+    tab_upload_file: '上传新照片',
+    tab_enter_url: '输入链接',
+    tryon_result_history: '已保存的试穿照片',
+    no_tryon_result_history: '还没有试穿照片',
   },
   ko: {
     // Common
@@ -1888,6 +1900,10 @@ export const translations = {
     url_blocked_domain: '도메인이 허용되지 않습니다',
     url_invalid_format: 'URL 형식이 잘못되었습니다',
     body_image_login_hint: '이전 사진을 보려면 로그인하세요',
+    tab_upload_file: '새로 업로드',
+    tab_enter_url: 'URL 입력',
+    tryon_result_history: '저장된 피팅 사진',
+    no_tryon_result_history: '피팅 사진이 없습니다',
   },
   ja: {
     // Common
@@ -2357,6 +2373,10 @@ export const translations = {
     url_blocked_domain: 'ドメインが許可されていません',
     url_invalid_format: 'URLフォーマットが無効です',
     body_image_login_hint: 'ログインして以前の写真を見る',
+    tab_upload_file: '新規アップロード',
+    tab_enter_url: 'URL入力',
+    tryon_result_history: '保存した試着写真',
+    no_tryon_result_history: '試着写真はまだありません',
   },
   th: {
     // Common
@@ -2826,6 +2846,10 @@ export const translations = {
     url_blocked_domain: 'โดเมนไม่อนุญาต',
     url_invalid_format: 'รูปแบบลิงก์ไม่ถูกต้อง',
     body_image_login_hint: 'เข้าสู่ระบบเพื่อดูรูปที่เคยใช้',
+    tab_upload_file: 'อัปโหลดใหม่',
+    tab_enter_url: 'ใส่ลิงก์',
+    tryon_result_history: 'รูปลองเสื้อผ้าที่บันทึก',
+    no_tryon_result_history: 'ยังไม่มีรูปลองเสื้อผ้า',
   },
 } as const;
 
