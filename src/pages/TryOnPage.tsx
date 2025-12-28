@@ -989,68 +989,24 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
-                  {sortedClothing.map((item) => {
-                    const [showMobileActions, setShowMobileActions] = React.useState(false);
-                    
-                    return (
-                      <div 
-                        key={item.id} 
-                        className="relative group"
-                        onTouchStart={() => {
-                          if (clothingSource === 'saved') {
-                            const timer = setTimeout(() => setShowMobileActions(true), 500);
-                            (window as any).__longPressTimer = timer;
-                          }
-                        }}
-                        onTouchEnd={() => {
-                          clearTimeout((window as any).__longPressTimer);
-                        }}
-                        onTouchMove={() => {
-                          clearTimeout((window as any).__longPressTimer);
-                        }}
-                      >
-                        <ClothingCard
-                          item={item}
-                          size="md"
-                          onSelect={(item) => {
-                            if (!showMobileActions) {
-                              handleAddClothing(item);
-                              setShowClothingPanel(false);
-                            }
-                            setShowMobileActions(false);
-                          }}
-                          isSelected={selectedItems.some(i => i.id === item.id)}
-                        />
-                        {clothingSource === 'saved' && (
-                          <div className={cn(
-                            "absolute inset-0 flex items-end justify-center gap-1 pb-1 transition-opacity pointer-events-none",
-                            showMobileActions ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                          )}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClothing(item);
-                                setShowMobileActions(false);
-                              }}
-                              className="w-7 h-7 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center shadow-md pointer-events-auto hover:bg-primary transition-colors"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteSavedClothing(item.id);
-                                setShowMobileActions(false);
-                              }}
-                              className="w-7 h-7 rounded-full bg-destructive/90 text-destructive-foreground flex items-center justify-center shadow-md pointer-events-auto hover:bg-destructive transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {sortedClothing.map((item) => (
+                    <ClothingCard
+                      key={item.id}
+                      item={item}
+                      size="md"
+                      onSelect={(item) => {
+                        handleAddClothing(item);
+                        setShowClothingPanel(false);
+                      }}
+                      isSelected={selectedItems.some(i => i.id === item.id)}
+                      showActions={clothingSource === 'saved'}
+                      onEdit={clothingSource === 'saved' ? handleEditClothing : undefined}
+                      onDelete={clothingSource === 'saved' ? async (id) => {
+                        handleDeleteSavedClothing(id);
+                        return true;
+                      } : undefined}
+                    />
+                  ))}
                 </div>
               )}
             </div>
