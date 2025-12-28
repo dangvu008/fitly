@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Wand2, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCard } from '@/components/clothing/ClothingCard';
@@ -1011,41 +1011,68 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
-                  {filteredClothing.map((item) => (
-                    <div key={item.id} className="relative group">
-                      <ClothingCard
-                        item={item}
-                        size="md"
-                        onSelect={(item) => {
-                          handleAddClothing(item);
-                          setShowClothingPanel(false);
+                  {filteredClothing.map((item) => {
+                    const [showMobileActions, setShowMobileActions] = React.useState(false);
+                    
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="relative group"
+                        onTouchStart={() => {
+                          if (clothingSource === 'saved') {
+                            const timer = setTimeout(() => setShowMobileActions(true), 500);
+                            (window as any).__longPressTimer = timer;
+                          }
                         }}
-                        isSelected={selectedItems.some(i => i.id === item.id)}
-                      />
-                      {clothingSource === 'saved' && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditClothing(item);
-                            }}
-                            className="absolute top-1 left-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteSavedClothing(item.id);
-                            }}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                        onTouchEnd={() => {
+                          clearTimeout((window as any).__longPressTimer);
+                        }}
+                        onTouchMove={() => {
+                          clearTimeout((window as any).__longPressTimer);
+                        }}
+                      >
+                        <ClothingCard
+                          item={item}
+                          size="md"
+                          onSelect={(item) => {
+                            if (!showMobileActions) {
+                              handleAddClothing(item);
+                              setShowClothingPanel(false);
+                            }
+                            setShowMobileActions(false);
+                          }}
+                          isSelected={selectedItems.some(i => i.id === item.id)}
+                        />
+                        {clothingSource === 'saved' && (
+                          <div className={cn(
+                            "absolute inset-0 flex items-end justify-center gap-1 pb-1 transition-opacity pointer-events-none",
+                            showMobileActions ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                          )}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditClothing(item);
+                                setShowMobileActions(false);
+                              }}
+                              className="w-7 h-7 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center shadow-md pointer-events-auto hover:bg-primary transition-colors"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSavedClothing(item.id);
+                                setShowMobileActions(false);
+                              }}
+                              className="w-7 h-7 rounded-full bg-destructive/90 text-destructive-foreground flex items-center justify-center shadow-md pointer-events-auto hover:bg-destructive transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
