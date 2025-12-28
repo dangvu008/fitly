@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, Locale } from 'date-fns';
 import { vi, enUS, zhCN, ko, ja, th } from 'date-fns/locale';
 
 interface HomePageProps {

@@ -1,7 +1,8 @@
-import { ImagePlus, Shirt, Square, Footprints, Glasses, Crown, MoreHorizontal } from 'lucide-react';
+import { ImagePlus, Shirt, RectangleVertical, Footprints, Watch, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClothingCategory } from '@/types/clothing';
 import { cn } from '@/lib/utils';
+import { DressIcon } from './icons/DressIcon';
 
 interface CategorySidebarProps {
   activeCategory: ClothingCategory;
@@ -11,10 +12,10 @@ interface CategorySidebarProps {
 
 const categories: { id: ClothingCategory; icon: React.ElementType; label: string }[] = [
   { id: 'top', icon: Shirt, label: 'Áo' },
-  { id: 'bottom', icon: Square, label: 'Quần' },
-  { id: 'dress', icon: Crown, label: 'Váy' },
+  { id: 'bottom', icon: RectangleVertical, label: 'Quần' },
+  { id: 'dress', icon: DressIcon, label: 'Váy' },
   { id: 'shoes', icon: Footprints, label: 'Giày' },
-  { id: 'accessory', icon: Glasses, label: 'Phụ kiện' },
+  { id: 'accessory', icon: Watch, label: 'Phụ kiện' },
   { id: 'all', icon: MoreHorizontal, label: 'Khác' },
 ];
 

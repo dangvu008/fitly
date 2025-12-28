@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Shirt, Square, Crown, Footprints, Glasses } from 'lucide-react';
+import { Shirt, RectangleVertical, Footprints, Watch } from 'lucide-react';
 import { ClothingCategory } from '@/types/clothing';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { DressIcon } from './icons/DressIcon';
 
 interface SelectCategoryDialogProps {
   isOpen: boolean;
@@ -14,10 +15,10 @@ interface SelectCategoryDialogProps {
 
 const categoryOptions: { id: ClothingCategory; icon: React.ElementType; labelKey: string }[] = [
   { id: 'top', icon: Shirt, labelKey: 'slot_top' },
-  { id: 'bottom', icon: Square, labelKey: 'slot_bottom' },
-  { id: 'dress', icon: Crown, labelKey: 'slot_dress' },
+  { id: 'bottom', icon: RectangleVertical, labelKey: 'slot_bottom' },
+  { id: 'dress', icon: DressIcon, labelKey: 'slot_dress' },
   { id: 'shoes', icon: Footprints, labelKey: 'slot_shoes' },
-  { id: 'accessory', icon: Glasses, labelKey: 'slot_accessory' },
+  { id: 'accessory', icon: Watch, labelKey: 'slot_accessory' },
 ];
 
 export const SelectCategoryDialog = ({ 
