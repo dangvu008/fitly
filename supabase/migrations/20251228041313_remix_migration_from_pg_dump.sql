@@ -49,6 +49,70 @@ $$;
 
 
 --
+-- Name: update_follow_counts(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.update_follow_counts() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    -- Increment following_count for follower
+    UPDATE public.profiles 
+    SET following_count = following_count + 1 
+    WHERE user_id = NEW.follower_id;
+    
+    -- Increment followers_count for following
+    UPDATE public.profiles 
+    SET followers_count = followers_count + 1 
+    WHERE user_id = NEW.following_id;
+    
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    -- Decrement following_count for follower
+    UPDATE public.profiles 
+    SET following_count = GREATEST(following_count - 1, 0)
+    WHERE user_id = OLD.follower_id;
+    
+    -- Decrement followers_count for following
+    UPDATE public.profiles 
+    SET followers_count = GREATEST(followers_count - 1, 0)
+    WHERE user_id = OLD.following_id;
+    
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+
+--
+-- Name: update_outfit_comments_count(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.update_outfit_comments_count() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.shared_outfits 
+    SET comments_count = comments_count + 1 
+    WHERE id = NEW.outfit_id;
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE public.shared_outfits 
+    SET comments_count = GREATEST(comments_count - 1, 0)
+    WHERE id = OLD.outfit_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+
+--
 -- Name: update_outfit_likes_count(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -91,6 +155,59 @@ $$;
 SET default_table_access_method = heap;
 
 --
+-- Name: category_corrections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.category_corrections (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    image_hash text NOT NULL,
+    ai_predicted_category text,
+    user_selected_category text NOT NULL,
+    image_features jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: follows; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.follows (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    follower_id uuid NOT NULL,
+    following_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT follows_check CHECK ((follower_id <> following_id))
+);
+
+
+--
+-- Name: hidden_outfits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hidden_outfits (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    outfit_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: outfit_comments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.outfit_comments (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    outfit_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    content text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: outfit_likes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -112,7 +229,21 @@ CREATE TABLE public.profiles (
     display_name text,
     avatar_url text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    followers_count integer DEFAULT 0 NOT NULL,
+    following_count integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: saved_outfits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.saved_outfits (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    outfit_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -130,7 +261,8 @@ CREATE TABLE public.shared_outfits (
     likes_count integer DEFAULT 0 NOT NULL,
     is_featured boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    comments_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -187,6 +319,54 @@ CREATE TABLE public.user_collections (
 
 
 --
+-- Name: category_corrections category_corrections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_corrections
+    ADD CONSTRAINT category_corrections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: follows follows_follower_id_following_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.follows
+    ADD CONSTRAINT follows_follower_id_following_id_key UNIQUE (follower_id, following_id);
+
+
+--
+-- Name: follows follows_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.follows
+    ADD CONSTRAINT follows_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: hidden_outfits hidden_outfits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hidden_outfits
+    ADD CONSTRAINT hidden_outfits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: hidden_outfits hidden_outfits_user_id_outfit_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hidden_outfits
+    ADD CONSTRAINT hidden_outfits_user_id_outfit_id_key UNIQUE (user_id, outfit_id);
+
+
+--
+-- Name: outfit_comments outfit_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.outfit_comments
+    ADD CONSTRAINT outfit_comments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: outfit_likes outfit_likes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -219,6 +399,22 @@ ALTER TABLE ONLY public.profiles
 
 
 --
+-- Name: saved_outfits saved_outfits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.saved_outfits
+    ADD CONSTRAINT saved_outfits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: saved_outfits saved_outfits_user_id_outfit_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.saved_outfits
+    ADD CONSTRAINT saved_outfits_user_id_outfit_id_key UNIQUE (user_id, outfit_id);
+
+
+--
 -- Name: shared_outfits shared_outfits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -248,6 +444,20 @@ ALTER TABLE ONLY public.user_clothing
 
 ALTER TABLE ONLY public.user_collections
     ADD CONSTRAINT user_collections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_category_corrections_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_category_corrections_category ON public.category_corrections USING btree (user_selected_category);
+
+
+--
+-- Name: idx_category_corrections_features; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_category_corrections_features ON public.category_corrections USING gin (image_features);
 
 
 --
@@ -321,6 +531,20 @@ CREATE TRIGGER update_collections_updated_at BEFORE UPDATE ON public.user_collec
 
 
 --
+-- Name: outfit_comments update_comments_count; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_comments_count AFTER INSERT OR DELETE ON public.outfit_comments FOR EACH ROW EXECUTE FUNCTION public.update_outfit_comments_count();
+
+
+--
+-- Name: follows update_follow_counts_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_follow_counts_trigger AFTER INSERT OR DELETE ON public.follows FOR EACH ROW EXECUTE FUNCTION public.update_follow_counts();
+
+
+--
 -- Name: outfit_likes update_likes_count_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -342,6 +566,22 @@ CREATE TRIGGER update_shared_outfits_updated_at BEFORE UPDATE ON public.shared_o
 
 
 --
+-- Name: hidden_outfits hidden_outfits_outfit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hidden_outfits
+    ADD CONSTRAINT hidden_outfits_outfit_id_fkey FOREIGN KEY (outfit_id) REFERENCES public.shared_outfits(id) ON DELETE CASCADE;
+
+
+--
+-- Name: outfit_comments outfit_comments_outfit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.outfit_comments
+    ADD CONSTRAINT outfit_comments_outfit_id_fkey FOREIGN KEY (outfit_id) REFERENCES public.shared_outfits(id) ON DELETE CASCADE;
+
+
+--
 -- Name: outfit_likes outfit_likes_outfit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -355,6 +595,14 @@ ALTER TABLE ONLY public.outfit_likes
 
 ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: saved_outfits saved_outfits_outfit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.saved_outfits
+    ADD CONSTRAINT saved_outfits_outfit_id_fkey FOREIGN KEY (outfit_id) REFERENCES public.shared_outfits(id) ON DELETE CASCADE;
 
 
 --
@@ -374,10 +622,38 @@ ALTER TABLE ONLY public.user_collections
 
 
 --
+-- Name: outfit_comments Anyone can view comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view comments" ON public.outfit_comments FOR SELECT USING (true);
+
+
+--
+-- Name: category_corrections Anyone can view corrections for AI learning; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view corrections for AI learning" ON public.category_corrections FOR SELECT USING (true);
+
+
+--
+-- Name: follows Anyone can view follows; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view follows" ON public.follows FOR SELECT USING (true);
+
+
+--
 -- Name: outfit_likes Anyone can view likes count; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Anyone can view likes count" ON public.outfit_likes FOR SELECT USING (true);
+
+
+--
+-- Name: profiles Anyone can view profiles; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view profiles" ON public.profiles FOR SELECT USING (true);
 
 
 --
@@ -388,10 +664,31 @@ CREATE POLICY "Anyone can view shared outfits" ON public.shared_outfits FOR SELE
 
 
 --
+-- Name: category_corrections Authenticated users can create corrections; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Authenticated users can create corrections" ON public.category_corrections FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
+-- Name: outfit_comments Users can create comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can create comments" ON public.outfit_comments FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
 -- Name: shared_outfits Users can create shared outfits; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Users can create shared outfits" ON public.shared_outfits FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
+-- Name: outfit_comments Users can delete own comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can delete own comments" ON public.outfit_comments FOR DELETE USING ((auth.uid() = user_id));
 
 
 --
@@ -420,6 +717,20 @@ CREATE POLICY "Users can delete their own shared outfits" ON public.shared_outfi
 --
 
 CREATE POLICY "Users can delete their own try-on history" ON public.try_on_history FOR DELETE USING ((auth.uid() = user_id));
+
+
+--
+-- Name: follows Users can follow others; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can follow others" ON public.follows FOR INSERT WITH CHECK ((auth.uid() = follower_id));
+
+
+--
+-- Name: hidden_outfits Users can hide outfits; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can hide outfits" ON public.hidden_outfits FOR INSERT WITH CHECK ((auth.uid() = user_id));
 
 
 --
@@ -458,10 +769,38 @@ CREATE POLICY "Users can like outfits" ON public.outfit_likes FOR INSERT WITH CH
 
 
 --
+-- Name: saved_outfits Users can save outfits; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can save outfits" ON public.saved_outfits FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
+-- Name: follows Users can unfollow; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can unfollow" ON public.follows FOR DELETE USING ((auth.uid() = follower_id));
+
+
+--
+-- Name: hidden_outfits Users can unhide outfits; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can unhide outfits" ON public.hidden_outfits FOR DELETE USING ((auth.uid() = user_id));
+
+
+--
 -- Name: outfit_likes Users can unlike their own likes; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Users can unlike their own likes" ON public.outfit_likes FOR DELETE USING ((auth.uid() = user_id));
+
+
+--
+-- Name: saved_outfits Users can unsave outfits; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can unsave outfits" ON public.saved_outfits FOR DELETE USING ((auth.uid() = user_id));
 
 
 --
@@ -493,6 +832,20 @@ CREATE POLICY "Users can update their own shared outfits" ON public.shared_outfi
 
 
 --
+-- Name: hidden_outfits Users can view own hidden outfits; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can view own hidden outfits" ON public.hidden_outfits FOR SELECT USING ((auth.uid() = user_id));
+
+
+--
+-- Name: saved_outfits Users can view own saved outfits; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can view own saved outfits" ON public.saved_outfits FOR SELECT USING ((auth.uid() = user_id));
+
+
+--
 -- Name: user_clothing Users can view their own clothing; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -507,18 +860,35 @@ CREATE POLICY "Users can view their own collections" ON public.user_collections 
 
 
 --
--- Name: profiles Users can view their own profile; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING ((auth.uid() = user_id));
-
-
---
 -- Name: try_on_history Users can view their own try-on history; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Users can view their own try-on history" ON public.try_on_history FOR SELECT USING ((auth.uid() = user_id));
 
+
+--
+-- Name: category_corrections; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.category_corrections ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: follows; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: hidden_outfits; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.hidden_outfits ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: outfit_comments; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.outfit_comments ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: outfit_likes; Type: ROW SECURITY; Schema: public; Owner: -
@@ -531,6 +901,12 @@ ALTER TABLE public.outfit_likes ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: saved_outfits; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.saved_outfits ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: shared_outfits; Type: ROW SECURITY; Schema: public; Owner: -
