@@ -47,6 +47,14 @@ export const translations = {
     nav_suggest: 'Gợi ý',
     nav_wardrobe: 'Tủ đồ',
     nav_community: 'Cộng đồng',
+    nav_search: 'Tìm kiếm',
+    nav_studio: 'Studio',
+    
+    // Search page
+    search_placeholder: 'Tìm theo tên hoặc tag...',
+    search_trending: 'Xu hướng',
+    search_categories: 'Danh mục',
+    search_recent: 'Tìm kiếm gần đây',
     
     // Auth
     login: 'Đăng nhập',
@@ -502,6 +510,38 @@ export const translations = {
     tab_enter_url: 'Nhập link ảnh',
     tryon_result_history: 'Ảnh thử đồ đã lưu',
     no_tryon_result_history: 'Chưa có ảnh thử đồ nào',
+    
+    // Monetization - Gems
+    gems_balance: 'Gems',
+    gems_cost: 'Chi phí: {count} Gem',
+    gems_insufficient: 'Không đủ gems',
+    gems_watch_ad: 'Xem quảng cáo để nhận 1 Gem',
+    gems_buy_title: 'Mua thêm Gems',
+    gems_package_small: '10 Gems',
+    gems_package_medium: '50 Gems',
+    gems_package_large: '120 Gems',
+    gems_best_value: 'Giá tốt nhất',
+    
+    // Monetization - Pro
+    pro_title: 'Nâng cấp lên Pro',
+    pro_price: '$4.99/tuần',
+    pro_feature_4k: 'Thử đồ 4K không giới hạn',
+    pro_feature_no_gems: 'Không tốn Gem',
+    pro_feature_badge: 'Huy hiệu Pro',
+    pro_subscribe: 'Đăng ký ngay',
+    pro_locked: 'Tính năng Pro',
+    
+    // Monetization - Affiliate
+    affiliate_find_similar: 'Tìm đồ tương tự',
+    affiliate_shop_now: 'Mua ngay',
+    affiliate_on_amazon: 'trên Amazon',
+    affiliate_on_shopee: 'trên Shopee',
+    
+    // Monetization - Ads
+    ads_watch_to_earn: 'Xem quảng cáo để nhận gems',
+    ads_loading: 'Đang tải quảng cáo...',
+    ads_limit_reached: 'Đã đạt giới hạn quảng cáo hôm nay',
+    ads_error: 'Không thể tải quảng cáo',
   },
   en: {
     // Common
@@ -549,6 +589,14 @@ export const translations = {
     nav_suggest: 'Suggest',
     nav_wardrobe: 'Wardrobe',
     nav_community: 'Community',
+    nav_search: 'Search',
+    nav_studio: 'Studio',
+    
+    // Search page
+    search_placeholder: 'Search by name or tag...',
+    search_trending: 'Trending',
+    search_categories: 'Categories',
+    search_recent: 'Recent Searches',
     
     // Auth
     login: 'Login',
@@ -1004,6 +1052,38 @@ export const translations = {
     tab_enter_url: 'Enter URL',
     tryon_result_history: 'Saved try-on photos',
     no_tryon_result_history: 'No try-on photos yet',
+    
+    // Monetization - Gems
+    gems_balance: 'Gems',
+    gems_cost: 'Cost: {count} Gem',
+    gems_insufficient: 'Not enough gems',
+    gems_watch_ad: 'Watch Ad for 1 Gem',
+    gems_buy_title: 'Get More Gems',
+    gems_package_small: '10 Gems',
+    gems_package_medium: '50 Gems',
+    gems_package_large: '120 Gems',
+    gems_best_value: 'Best Value',
+    
+    // Monetization - Pro
+    pro_title: 'Upgrade to Pro',
+    pro_price: '$4.99/week',
+    pro_feature_4k: 'Unlimited 4K Try-ons',
+    pro_feature_no_gems: 'No Gem cost',
+    pro_feature_badge: 'Pro Badge',
+    pro_subscribe: 'Subscribe Now',
+    pro_locked: 'Pro Feature',
+    
+    // Monetization - Affiliate
+    affiliate_find_similar: 'Find Similar Items',
+    affiliate_shop_now: 'Shop Now',
+    affiliate_on_amazon: 'on Amazon',
+    affiliate_on_shopee: 'on Shopee',
+    
+    // Monetization - Ads
+    ads_watch_to_earn: 'Watch ad to earn gems',
+    ads_loading: 'Loading ad...',
+    ads_limit_reached: 'Daily ad limit reached',
+    ads_error: 'Ad failed to load',
   },
   zh: {
     // Common
@@ -1051,6 +1131,14 @@ export const translations = {
     nav_suggest: '推荐',
     nav_wardrobe: '衣柜',
     nav_community: '社区',
+    nav_search: '搜索',
+    nav_studio: 'Studio',
+    
+    // Search page
+    search_placeholder: '按名称或标签搜索...',
+    search_trending: '热门',
+    search_categories: '分类',
+    search_recent: '最近搜索',
     
     // Auth
     login: '登录',
@@ -1506,6 +1594,38 @@ export const translations = {
     tab_enter_url: '输入链接',
     tryon_result_history: '已保存的试穿照片',
     no_tryon_result_history: '还没有试穿照片',
+    
+    // Monetization - Gems
+    gems_balance: '宝石',
+    gems_cost: '费用: {count} 宝石',
+    gems_insufficient: '宝石不足',
+    gems_watch_ad: '观看广告获得1宝石',
+    gems_buy_title: '获取更多宝石',
+    gems_package_small: '10 宝石',
+    gems_package_medium: '50 宝石',
+    gems_package_large: '120 宝石',
+    gems_best_value: '最划算',
+    
+    // Monetization - Pro
+    pro_title: '升级到Pro',
+    pro_price: '$4.99/周',
+    pro_feature_4k: '无限4K试穿',
+    pro_feature_no_gems: '无需宝石',
+    pro_feature_badge: 'Pro徽章',
+    pro_subscribe: '立即订阅',
+    pro_locked: 'Pro功能',
+    
+    // Monetization - Affiliate
+    affiliate_find_similar: '查找相似商品',
+    affiliate_shop_now: '立即购买',
+    affiliate_on_amazon: '在亚马逊',
+    affiliate_on_shopee: '在虾皮',
+    
+    // Monetization - Ads
+    ads_watch_to_earn: '观看广告赚取宝石',
+    ads_loading: '加载广告中...',
+    ads_limit_reached: '今日广告次数已达上限',
+    ads_error: '广告加载失败',
   },
   ko: {
     // Common
@@ -1553,6 +1673,14 @@ export const translations = {
     nav_suggest: '추천',
     nav_wardrobe: '옷장',
     nav_community: '커뮤니티',
+    nav_search: '검색',
+    nav_studio: 'Studio',
+    
+    // Search page
+    search_placeholder: '이름 또는 태그로 검색...',
+    search_trending: '인기',
+    search_categories: '카테고리',
+    search_recent: '최근 검색',
     
     // Auth
     login: '로그인',
@@ -2004,6 +2132,38 @@ export const translations = {
     tab_enter_url: 'URL 입력',
     tryon_result_history: '저장된 피팅 사진',
     no_tryon_result_history: '피팅 사진이 없습니다',
+    
+    // Monetization - Gems
+    gems_balance: '젬',
+    gems_cost: '비용: {count} 젬',
+    gems_insufficient: '젬이 부족합니다',
+    gems_watch_ad: '광고 시청으로 1젬 받기',
+    gems_buy_title: '젬 더 받기',
+    gems_package_small: '10 젬',
+    gems_package_medium: '50 젬',
+    gems_package_large: '120 젬',
+    gems_best_value: '최고 가치',
+    
+    // Monetization - Pro
+    pro_title: 'Pro로 업그레이드',
+    pro_price: '$4.99/주',
+    pro_feature_4k: '무제한 4K 피팅',
+    pro_feature_no_gems: '젬 비용 없음',
+    pro_feature_badge: 'Pro 배지',
+    pro_subscribe: '지금 구독',
+    pro_locked: 'Pro 기능',
+    
+    // Monetization - Affiliate
+    affiliate_find_similar: '비슷한 상품 찾기',
+    affiliate_shop_now: '지금 쇼핑',
+    affiliate_on_amazon: '아마존에서',
+    affiliate_on_shopee: '쇼피에서',
+    
+    // Monetization - Ads
+    ads_watch_to_earn: '광고 시청으로 젬 받기',
+    ads_loading: '광고 로딩 중...',
+    ads_limit_reached: '오늘 광고 한도 도달',
+    ads_error: '광고 로드 실패',
   },
   ja: {
     // Common
@@ -2051,6 +2211,14 @@ export const translations = {
     nav_suggest: 'おすすめ',
     nav_wardrobe: 'ワードローブ',
     nav_community: 'コミュニティ',
+    nav_search: '検索',
+    nav_studio: 'Studio',
+    
+    // Search page
+    search_placeholder: '名前またはタグで検索...',
+    search_trending: 'トレンド',
+    search_categories: 'カテゴリー',
+    search_recent: '最近の検索',
     
     // Auth
     login: 'ログイン',
@@ -2502,6 +2670,38 @@ export const translations = {
     tab_enter_url: 'URL入力',
     tryon_result_history: '保存した試着写真',
     no_tryon_result_history: '試着写真はまだありません',
+    
+    // Monetization - Gems
+    gems_balance: 'ジェム',
+    gems_cost: '費用: {count} ジェム',
+    gems_insufficient: 'ジェムが足りません',
+    gems_watch_ad: '広告を見て1ジェム獲得',
+    gems_buy_title: 'ジェムを追加',
+    gems_package_small: '10 ジェム',
+    gems_package_medium: '50 ジェム',
+    gems_package_large: '120 ジェム',
+    gems_best_value: 'お得',
+    
+    // Monetization - Pro
+    pro_title: 'Proにアップグレード',
+    pro_price: '$4.99/週',
+    pro_feature_4k: '無制限4K試着',
+    pro_feature_no_gems: 'ジェム不要',
+    pro_feature_badge: 'Proバッジ',
+    pro_subscribe: '今すぐ登録',
+    pro_locked: 'Pro機能',
+    
+    // Monetization - Affiliate
+    affiliate_find_similar: '似た商品を探す',
+    affiliate_shop_now: '今すぐ購入',
+    affiliate_on_amazon: 'Amazonで',
+    affiliate_on_shopee: 'Shopeeで',
+    
+    // Monetization - Ads
+    ads_watch_to_earn: '広告を見てジェムを獲得',
+    ads_loading: '広告を読み込み中...',
+    ads_limit_reached: '本日の広告上限に達しました',
+    ads_error: '広告の読み込みに失敗しました',
   },
   th: {
     // Common
@@ -2549,6 +2749,14 @@ export const translations = {
     nav_suggest: 'แนะนำ',
     nav_wardrobe: 'ตู้เสื้อผ้า',
     nav_community: 'ชุมชน',
+    nav_search: 'ค้นหา',
+    nav_studio: 'Studio',
+    
+    // Search page
+    search_placeholder: 'ค้นหาตามชื่อหรือแท็ก...',
+    search_trending: 'มาแรง',
+    search_categories: 'หมวดหมู่',
+    search_recent: 'การค้นหาล่าสุด',
     
     // Auth
     login: 'เข้าสู่ระบบ',
@@ -3000,6 +3208,38 @@ export const translations = {
     tab_enter_url: 'ใส่ลิงก์',
     tryon_result_history: 'รูปลองเสื้อผ้าที่บันทึก',
     no_tryon_result_history: 'ยังไม่มีรูปลองเสื้อผ้า',
+    
+    // Monetization - Gems
+    gems_balance: 'เพชร',
+    gems_cost: 'ค่าใช้จ่าย: {count} เพชร',
+    gems_insufficient: 'เพชรไม่เพียงพอ',
+    gems_watch_ad: 'ดูโฆษณารับ 1 เพชร',
+    gems_buy_title: 'รับเพชรเพิ่ม',
+    gems_package_small: '10 เพชร',
+    gems_package_medium: '50 เพชร',
+    gems_package_large: '120 เพชร',
+    gems_best_value: 'คุ้มที่สุด',
+    
+    // Monetization - Pro
+    pro_title: 'อัปเกรดเป็น Pro',
+    pro_price: '$4.99/สัปดาห์',
+    pro_feature_4k: 'ลองเสื้อผ้า 4K ไม่จำกัด',
+    pro_feature_no_gems: 'ไม่เสียเพชร',
+    pro_feature_badge: 'ป้าย Pro',
+    pro_subscribe: 'สมัครเลย',
+    pro_locked: 'ฟีเจอร์ Pro',
+    
+    // Monetization - Affiliate
+    affiliate_find_similar: 'ค้นหาสินค้าคล้ายกัน',
+    affiliate_shop_now: 'ซื้อเลย',
+    affiliate_on_amazon: 'บน Amazon',
+    affiliate_on_shopee: 'บน Shopee',
+    
+    // Monetization - Ads
+    ads_watch_to_earn: 'ดูโฆษณารับเพชร',
+    ads_loading: 'กำลังโหลดโฆษณา...',
+    ads_limit_reached: 'ถึงขีดจำกัดโฆษณาวันนี้แล้ว',
+    ads_error: 'โหลดโฆษณาไม่สำเร็จ',
   },
 } as const;
 

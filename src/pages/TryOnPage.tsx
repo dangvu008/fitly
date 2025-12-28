@@ -24,6 +24,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { useCategoryCorrections } from '@/hooks/useCategoryCorrections';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useProSubscription } from '@/hooks/useProSubscription';
+import { ProSubscriptionDialog } from '@/components/monetization/ProSubscriptionDialog';
+import { FindSimilarItemsSheet } from '@/components/monetization/FindSimilarItemsSheet';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -102,6 +105,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showEditResultDialog, setShowEditResultDialog] = useState(false);
   const [showBodyImageSourceDialog, setShowBodyImageSourceDialog] = useState(false);
+  const [showProDialog, setShowProDialog] = useState(false);
+  const [showFindSimilarSheet, setShowFindSimilarSheet] = useState(false);
+  const [quality, setQuality] = useState<'standard' | '4k'>('standard');
   const [isEditingResult, setIsEditingResult] = useState(false);
   const [pendingUnknownItem, setPendingUnknownItem] = useState<{
     item: Omit<ClothingItem, 'category'>;
@@ -128,6 +134,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   } = useClothingValidation();
   const { saveCorrection } = useCategoryCorrections();
   const { profile, setDefaultBodyImage } = useUserProfile();
+  const { isPro } = useProSubscription();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
@@ -799,10 +806,19 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
                 variant="ghost"
                 size="sm"
                 className="flex-1 text-muted-foreground"
+                onClick={() => setShowFindSimilarSheet(true)}
+              >
+                <Search size={16} />
+                Tìm đồ tương tự
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 text-muted-foreground"
                 onClick={handleShare}
               >
                 <Share2 size={16} />
-                Chia sẻ link
+                Chia sẻ
               </Button>
             </div>
           </div>
@@ -886,6 +902,39 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           onDeleteClothing={handleDeleteSavedClothing}
         />
 
+        {/* Quality Selector */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setQuality('standard')}
+            className={cn(
+              "flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all",
+              quality === 'standard'
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:border-primary/50"
+            )}
+          >
+            <span>Standard</span>
+          </button>
+          <button
+            onClick={() => {
+              if (isPro) {
+                setQuality('4k');
+              } else {
+                setShowProDialog(true);
+              }
+            }}
+            className={cn(
+              "flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+              quality === '4k'
+                ? "border-yellow-500 bg-yellow-500/10 text-yellow-600"
+                : "border-border bg-card text-muted-foreground hover:border-yellow-500/50"
+            )}
+          >
+            <span>4K Ultra</span>
+            {!isPro && <Crown size={14} className="text-yellow-500" />}
+          </button>
+        </div>
+
         {/* AI Try-On Button */}
         <Button
           variant="instagram"
@@ -902,6 +951,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
             <>
               <Sparkles size={20} />
               {t('tryon_ai_button')}
+              {quality === '4k' && <span className="ml-1 text-xs opacity-80">(4K)</span>}
             </>
           )}
         </Button>
@@ -1118,6 +1168,23 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           </div>
         </div>
       )}
+
+      {/* Pro Subscription Dialog */}
+      <ProSubscriptionDialog
+        isOpen={showProDialog}
+        onClose={() => setShowProDialog(false)}
+      />
+
+      {/* Find Similar Items Sheet */}
+      <FindSimilarItemsSheet
+        isOpen={showFindSimilarSheet}
+        onClose={() => setShowFindSimilarSheet(false)}
+        clothingItems={selectedItems.map(item => ({
+          name: item.name,
+          imageUrl: item.imageUrl,
+          category: item.category,
+        }))}
+      />
     </div>
   );
 };

@@ -1,8 +1,10 @@
-import { Bell, User, Bookmark } from 'lucide-react';
+import { Bell, User, Bookmark, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProSubscription } from '@/hooks/useProSubscription';
+import { GemsCounter } from '@/components/monetization/GemsCounter';
 import logoImage from '@/assets/logo.png';
 
 interface HeaderProps {
@@ -11,10 +13,13 @@ interface HeaderProps {
   showShare?: boolean;
   showNotification?: boolean;
   showLanguageSwitcher?: boolean;
+  showGems?: boolean;
+  gemsBalance?: number;
   onBack?: () => void;
   onShare?: () => void;
   onAvatarClick?: () => void;
   onSavedClick?: () => void;
+  onGemsClick?: () => void;
 }
 
 export const Header = ({ 
@@ -23,12 +28,16 @@ export const Header = ({
   showShare, 
   showNotification,
   showLanguageSwitcher = true,
+  showGems = true,
+  gemsBalance = 0,
   onBack,
   onShare,
   onAvatarClick,
   onSavedClick,
+  onGemsClick,
 }: HeaderProps) => {
   const { user } = useAuth();
+  const { isPro } = useProSubscription();
 
   const getInitials = () => {
     if (user?.user_metadata?.display_name) {
@@ -58,6 +67,12 @@ export const Header = ({
         {/* Right actions */}
         <div className="flex items-center gap-1">
           {showLanguageSwitcher && <LanguageSwitcher />}
+          
+          {/* Gems Counter - Monetization */}
+          {showGems && (
+            <GemsCounter onPurchaseClick={onGemsClick || (() => {})} />
+          )}
+          
           {showNotification && (
             <>
               <Button 
@@ -77,7 +92,7 @@ export const Header = ({
           {/* User Avatar - Instagram style with story ring for logged in users */}
           <button 
             onClick={onAvatarClick}
-            className="ml-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
+            className="ml-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full relative"
           >
             {user ? (
               <div className="story-ring">
@@ -96,6 +111,12 @@ export const Header = ({
                   <User size={16} />
                 </AvatarFallback>
               </Avatar>
+            )}
+            {/* Pro Badge */}
+            {user && isPro && (
+              <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full p-0.5">
+                <Crown size={10} className="text-white" />
+              </div>
             )}
           </button>
         </div>

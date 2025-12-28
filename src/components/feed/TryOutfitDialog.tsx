@@ -362,6 +362,7 @@ export const TryOutfitDialog = ({
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleRetry}
+                          aria-label={t('retry')}
                           className="w-12 h-12 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                         >
                           <RefreshCw size={20} className="text-foreground" />
@@ -377,6 +378,7 @@ export const TryOutfitDialog = ({
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleDownload}
+                          aria-label={t('download')}
                           className="w-12 h-12 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                         >
                           <Download size={20} className="text-foreground" />
@@ -393,6 +395,7 @@ export const TryOutfitDialog = ({
                         <button
                           onClick={handleSave}
                           disabled={isSaving || isSaved}
+                          aria-label={isSaved ? t('feed_saved') : t('save')}
                           className={cn(
                             "w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95",
                             isSaved
@@ -420,6 +423,7 @@ export const TryOutfitDialog = ({
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleShare}
+                          aria-label={t('share')}
                           className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                         >
                           <Share2 size={20} className="text-white" />

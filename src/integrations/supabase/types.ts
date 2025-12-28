@@ -400,12 +400,174 @@ export type Database = {
         }
         Relationships: []
       }
+      user_gems: {
+        Row: {
+          id: string
+          user_id: string
+          balance: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          balance?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          balance?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gem_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          type: 'purchase' | 'ad_reward' | 'spend' | 'bonus' | 'refund'
+          description: string | null
+          reference_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          type: 'purchase' | 'ad_reward' | 'spend' | 'bonus' | 'refund'
+          description?: string | null
+          reference_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          type?: 'purchase' | 'ad_reward' | 'spend' | 'bonus' | 'refund'
+          description?: string | null
+          reference_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan: 'pro_weekly' | 'pro_monthly' | 'pro_yearly'
+          status: 'active' | 'cancelled' | 'expired' | 'pending'
+          platform: 'ios' | 'android' | 'web' | 'stripe' | null
+          external_subscription_id: string | null
+          starts_at: string
+          expires_at: string
+          cancelled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan: 'pro_weekly' | 'pro_monthly' | 'pro_yearly'
+          status: 'active' | 'cancelled' | 'expired' | 'pending'
+          platform?: 'ios' | 'android' | 'web' | 'stripe' | null
+          external_subscription_id?: string | null
+          starts_at?: string
+          expires_at: string
+          cancelled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan?: 'pro_weekly' | 'pro_monthly' | 'pro_yearly'
+          status?: 'active' | 'cancelled' | 'expired' | 'pending'
+          platform?: 'ios' | 'android' | 'web' | 'stripe' | null
+          external_subscription_id?: string | null
+          starts_at?: string
+          expires_at?: string
+          cancelled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_clicks: {
+        Row: {
+          id: string
+          user_id: string | null
+          product_id: string
+          product_name: string | null
+          platform: 'amazon' | 'shopee' | 'lazada' | 'zalora' | 'other'
+          affiliate_url: string
+          source: string | null
+          try_on_result_id: string | null
+          clicked_at: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          product_id: string
+          product_name?: string | null
+          platform: 'amazon' | 'shopee' | 'lazada' | 'zalora' | 'other'
+          affiliate_url: string
+          source?: string | null
+          try_on_result_id?: string | null
+          clicked_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          product_id?: string
+          product_name?: string | null
+          platform?: 'amazon' | 'shopee' | 'lazada' | 'zalora' | 'other'
+          affiliate_url?: string
+          source?: string | null
+          try_on_result_id?: string | null
+          clicked_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_gems: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_type: string
+          p_description?: string
+          p_reference_id?: string
+        }
+        Returns: number
+      }
+      spend_gems: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_description?: string
+          p_reference_id?: string
+        }
+        Returns: boolean
+      }
+      is_user_pro: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
