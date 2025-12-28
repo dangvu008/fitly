@@ -1,9 +1,9 @@
 import { Heart, ExternalLink, EyeOff } from 'lucide-react';
 import { ClothingItem } from '@/types/clothing';
-import { Button } from '@/components/ui/button';
 import { ClothingItemActions } from './ClothingItemActions';
 import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -17,9 +17,9 @@ interface ClothingCardProps {
   showActions?: boolean;
 }
 
-export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({ 
-  item, 
-  onSelect, 
+export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
+  item,
+  onSelect,
   onToggleFavorite,
   onToggleHidden,
   onDelete,
@@ -28,6 +28,8 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
   isSelected = false,
   showActions = false,
 }, ref) => {
+  const isMobile = useIsMobile();
+
   const sizeClasses = {
     sm: 'w-16 h-16',
     md: 'w-24 h-24',
@@ -35,51 +37,54 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
   };
 
   return (
-    <div 
+    <div
       ref={ref}
-      className={cn(
-        "relative group animate-scale-in",
-        size === 'lg' && "w-full"
-      )}
+      className={cn('relative group animate-scale-in', size === 'lg' && 'w-full')}
     >
       <button
         onClick={() => onSelect?.(item)}
         className={cn(
-          "relative rounded-2xl overflow-hidden bg-card border shadow-soft transition-all duration-300 hover:shadow-medium hover:scale-105",
+          'relative rounded-2xl overflow-hidden bg-card border shadow-soft transition-all duration-300 hover:shadow-medium hover:scale-105',
           sizeClasses[size],
-          isSelected 
-            ? "border-primary ring-2 ring-primary shadow-glow" 
-            : "border-border hover:border-primary/50",
-          item.isHidden && "opacity-50"
+          isSelected
+            ? 'border-primary ring-2 ring-primary shadow-glow'
+            : 'border-border hover:border-primary/50',
+          item.isHidden && 'opacity-50'
         )}
       >
-        <img 
-          src={item.imageUrl} 
+        <img
+          src={item.imageUrl}
           alt={item.name}
           className="w-full h-full object-cover"
+          loading="lazy"
         />
-        
+
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
+
         {/* Hidden indicator */}
         {item.isHidden && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <EyeOff size={20} className="text-white" />
+          <div className="absolute inset-0 flex items-center justify-center bg-foreground/30">
+            <EyeOff size={20} className="text-background" />
           </div>
         )}
-        
+
         {/* Favorite indicator */}
         {item.isFavorite && (
           <div className="absolute top-1 left-1">
-            <Heart size={14} className="fill-red-500 text-red-500" />
+            <Heart size={14} className="fill-destructive text-destructive" />
           </div>
         )}
       </button>
-      
+
       {/* Actions menu */}
       {showActions && (
-        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div
+          className={cn(
+            'absolute top-1 right-1 transition-opacity',
+            isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          )}
+        >
           <ClothingItemActions
             item={item}
             onToggleFavorite={onToggleFavorite}
@@ -89,7 +94,7 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
           />
         </div>
       )}
-      
+
       {/* Item info for large size */}
       {size === 'lg' && (
         <div className="mt-2 space-y-1">
@@ -97,9 +102,9 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-primary">{item.price}</span>
             {item.shopUrl && (
-              <a 
-                href={item.shopUrl} 
-                target="_blank" 
+              <a
+                href={item.shopUrl}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
               >
@@ -115,3 +120,4 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
 });
 
 ClothingCard.displayName = 'ClothingCard';
+

@@ -39,9 +39,7 @@ export const ClothingItemActions = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Bạn có chắc muốn xóa món đồ này?')) {
-      await onDelete?.(item.id);
-    }
+    await onDelete?.(item.id);
   };
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -55,8 +53,9 @@ export const ClothingItemActions = ({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 bg-black/40 hover:bg-black/60 text-white rounded-full"
+          className="h-7 w-7 bg-foreground/35 hover:bg-foreground/50 text-background rounded-full"
           onClick={(e) => e.stopPropagation()}
+          aria-label="Mở menu thao tác"
         >
           <MoreVertical size={14} />
         </Button>
@@ -66,7 +65,7 @@ export const ClothingItemActions = ({
           <DropdownMenuItem onClick={handleFavorite} className="gap-2">
             <Heart
               size={16}
-              className={cn(item.isFavorite && 'fill-red-500 text-red-500')}
+              className={cn(item.isFavorite && 'fill-destructive text-destructive')}
             />
             {item.isFavorite ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
           </DropdownMenuItem>
