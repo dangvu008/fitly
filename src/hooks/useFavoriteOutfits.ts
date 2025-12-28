@@ -30,8 +30,9 @@ export const useFavoriteOutfits = () => {
 
     setIsLoading(true);
     try {
+      // Use saved_outfits table which exists in the schema
       const { data, error } = await supabase
-        .from('favorite_outfits')
+        .from('saved_outfits')
         .select(`
           id,
           outfit_id,
@@ -43,8 +44,15 @@ export const useFavoriteOutfits = () => {
 
       if (error) throw error;
 
-      setFavoriteOutfits(data || []);
-      setFavoriteOutfitIds(new Set(data?.map(f => f.outfit_id) || []));
+      const mappedData: FavoriteOutfit[] = (data || []).map(item => ({
+        id: item.id,
+        outfit_id: item.outfit_id,
+        created_at: item.created_at,
+        outfit: item.outfit as FavoriteOutfit['outfit'],
+      }));
+
+      setFavoriteOutfits(mappedData);
+      setFavoriteOutfitIds(new Set(mappedData.map(f => f.outfit_id)));
     } catch (error) {
       console.error('Error fetching favorite outfits:', error);
     } finally {
@@ -71,7 +79,7 @@ export const useFavoriteOutfits = () => {
 
     try {
       const { error } = await supabase
-        .from('favorite_outfits')
+        .from('saved_outfits')
         .insert({ user_id: user.id, outfit_id: outfitId });
 
       if (error) throw error;
@@ -102,7 +110,7 @@ export const useFavoriteOutfits = () => {
 
     try {
       const { error } = await supabase
-        .from('favorite_outfits')
+        .from('saved_outfits')
         .delete()
         .eq('user_id', user.id)
         .eq('outfit_id', outfitId);
