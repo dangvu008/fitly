@@ -1,166 +1,212 @@
-import { useState, useMemo } from 'react';
-import { Search, TrendingUp, Shirt, Footprints, Sparkles } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+/**
+ * SearchPage - Search & Shop page with affiliate monetization
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 3.1, 4.1
+ */
+
+import { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Heart, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { GemsCounter } from '@/components/monetization/GemsCounter';
+import { GemsPurchaseDialog } from '@/components/monetization/GemsPurchaseDialog';
+import { ShopSearchInput } from '@/components/shop/ShopSearchInput';
+import { VisualCategories } from '@/components/shop/VisualCategories';
+import { CuratedCollections } from '@/components/shop/CuratedCollections';
+import { ShopProductCard } from '@/components/shop/ShopProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { sampleClothing } from '@/data/sampleClothing';
-import { ClothingItem } from '@/types/clothing';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { ShopCategory, ShopProduct } from '@/types/shop';
+import { getAllShopProducts, filterProductsByCategory } from '@/data/curatedCollections';
+import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
+import { toast } from 'sonner';
 
 interface SearchPageProps {
-  onSelectItem?: (item: ClothingItem) => void;
+  onSelectItem?: (item: any) => void;
 }
 
-const categories = [
-  { id: 'all', labelKey: 'cat_all', icon: Sparkles },
-  { id: 'top', labelKey: 'cat_top', icon: Shirt },
-  { id: 'bottom', labelKey: 'cat_bottom', icon: Shirt },
-  { id: 'dress', labelKey: 'cat_dress', icon: Shirt },
-  { id: 'shoes', labelKey: 'cat_shoes', icon: Footprints },
-  { id: 'accessory', labelKey: 'cat_accessory', icon: Sparkles },
-];
-
 export const SearchPage = ({ onSelectItem }: SearchPageProps) => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
+  const { trackAndOpen } = useAffiliateTracking();
+
+  const [selectedCategory, setSelectedCategory] = useState<ShopCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isSearching, setIsSearching] = useState(false);
+  const [showGemsPurchase, setShowGemsPurchase] = useState(false);
 
-  // Filter items based on search and category
-  const filteredItems = useMemo(() => {
-    let items = sampleClothing;
-    
+  // Get all products for search results
+  const allProducts = useMemo(() => getAllShopProducts(), []);
+
+  // Filter products based on search query and category
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+
+    const query = searchQuery.toLowerCase();
+    let results = allProducts.filter(
+      (product) =>
+        product.name.toLowerCase().includes(query) ||
+        product.brand?.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query)
+    );
+
+    // Apply category filter
     if (selectedCategory !== 'all') {
-      items = items.filter(item => item.category === selectedCategory);
+      results = filterProductsByCategory(results, selectedCategory);
     }
-    
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      items = items.filter(item => 
-        item.name.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query)
-      );
-    }
-    
-    return items;
-  }, [searchQuery, selectedCategory]);
 
-  // Trending items (top 6 by default)
-  const trendingItems = useMemo(() => {
-    return sampleClothing.slice(0, 6);
+    return results;
+  }, [searchQuery, selectedCategory, allProducts]);
+
+  // Handle keyword search
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setIsSearching(true);
+    // Simulate search delay
+    setTimeout(() => setIsSearching(false), 500);
   }, []);
 
+  // Handle URL paste (visual search)
+  const handleUrlDetected = useCallback((url: string) => {
+    toast.info('Visual search coming soon!');
+    console.log('URL detected:', url);
+    // TODO: Implement visual search with the URL
+  }, []);
+
+  // Handle Try On button click
+  const handleTryOn = useCallback(
+    (product: ShopProduct) => {
+      // Navigate to try-on page with product image
+      navigate('/try-on', {
+        state: {
+          initialItem: {
+            id: product.id,
+            name: product.name,
+            imageUrl: product.imageUrl,
+            category: product.category,
+          },
+        },
+      });
+    },
+    [navigate]
+  );
+
+  // Handle Buy button click with affiliate tracking
+  const handleBuy = useCallback((product: ShopProduct) => {
+    // Track click and open URL
+    trackAndOpen({
+      productId: product.id,
+      affiliateUrl: product.affiliateUrl,
+      source: searchQuery ? 'search' : 'collection',
+    });
+  }, [searchQuery, trackAndOpen]);
+
+  // Handle saved items click
+  const handleSavedClick = useCallback(() => {
+    navigate('/saved');
+  }, [navigate]);
+
+  // Handle avatar click
+  const handleAvatarClick = useCallback(() => {
+    if (user) {
+      navigate('/profile');
+    } else {
+      toast.info('Vui lòng đăng nhập');
+    }
+  }, [user, navigate]);
+
+  const isShowingSearchResults = searchQuery.trim().length > 0;
+
   return (
-    <div className="flex flex-col h-full pb-20">
-      {/* Search Input */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder={t('search_placeholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-secondary/50 border-0 focus-visible:ring-1"
-          />
+    <div className="flex flex-col min-h-screen bg-background pb-20">
+      {/* Header - Requirements 1.1, 1.2, 1.3, 1.4 */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between px-4 h-14">
+          <h1 className="text-lg font-bold text-foreground">SEARCH & SHOP</h1>
+          <div className="flex items-center gap-3">
+            <GemsCounter onPurchaseClick={() => setShowGemsPurchase(true)} />
+            <button
+              onClick={handleSavedClick}
+              className="p-2 hover:bg-muted rounded-full transition-colors"
+            >
+              <Heart size={20} className="text-foreground" />
+            </button>
+            <button onClick={handleAvatarClick}>
+              <Avatar className="w-8 h-8 ring-2 ring-primary/20">
+                <AvatarImage src={profile?.avatar_url} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs">
+                  {profile?.display_name?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Categories - Horizontal Scroll */}
-      <div className="px-4 py-2">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex gap-2">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    isSelected
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                  }`}
-                >
-                  <Icon size={14} />
-                  {t(cat.labelKey as any)}
-                </button>
-              );
-            })}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+      {/* Search Input - Requirements 2.1 */}
+      <div className="pt-3">
+        <ShopSearchInput
+          onSearch={handleSearch}
+          onUrlDetected={handleUrlDetected}
+          isLoading={isSearching}
+        />
       </div>
+
+      {/* Visual Categories - Requirements 3.1 */}
+      <VisualCategories
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+      />
 
       {/* Content */}
-      <ScrollArea className="flex-1 px-4">
-        {/* Trending Section - Show when no search query */}
-        {!searchQuery.trim() && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp size={18} className="text-primary" />
-              <h2 className="font-semibold text-foreground">{t('search_trending')}</h2>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {trendingItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectItem?.(item)}
-                  className="aspect-square rounded-lg overflow-hidden bg-secondary/50 hover:ring-2 hover:ring-primary transition-all"
-                >
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+      <ScrollArea className="flex-1">
+        {isSearching ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : isShowingSearchResults ? (
+          /* Search Results */
+          <div className="px-4 pb-4">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              {searchResults.length} kết quả cho "{searchQuery}"
+            </h3>
+            {searchResults.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {searchResults.map((product) => (
+                  <ShopProductCard
+                    key={product.id}
+                    product={product}
+                    onTryOn={handleTryOn}
+                    onBuy={handleBuy}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Search size={48} className="mx-auto mb-2 opacity-50" />
+                <p>Không tìm thấy sản phẩm</p>
+                <p className="text-sm mt-1">Thử từ khóa khác?</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Curated Collections - Requirements 4.1 */
+          <CuratedCollections
+            selectedCategory={selectedCategory}
+            onTryOn={handleTryOn}
+            onBuy={handleBuy}
+          />
         )}
-
-        {/* Search Results / All Items */}
-        <div>
-          <h2 className="font-semibold text-foreground mb-3">
-            {searchQuery.trim() 
-              ? `${filteredItems.length} ${t('search_categories').toLowerCase()}`
-              : t('search_categories')
-            }
-          </h2>
-          
-          {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2 pb-4">
-              {filteredItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectItem?.(item)}
-                  className="flex flex-col rounded-lg overflow-hidden bg-secondary/30 hover:ring-2 hover:ring-primary transition-all"
-                >
-                  <div className="aspect-square">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-medium text-foreground truncate">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {item.category}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search size={48} className="mx-auto mb-2 opacity-50" />
-              <p>No items found</p>
-            </div>
-          )}
-        </div>
       </ScrollArea>
+
+      {/* Gems Purchase Dialog */}
+      <GemsPurchaseDialog
+        isOpen={showGemsPurchase}
+        onClose={() => setShowGemsPurchase(false)}
+      />
     </div>
   );
 };

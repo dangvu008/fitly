@@ -109,15 +109,22 @@ export const useClothingValidation = () => {
   }, []);
 
   const analyzeWithAI = useCallback(async (imageBase64: string): Promise<ClothingAnalysis> => {
-    const { data, error } = await supabase.functions.invoke('analyze-clothing-image', {
-      body: { imageBase64 }
-    });
-
-    if (error) {
-      throw new Error(error.message || 'Failed to analyze image');
-    }
-
-    return data as ClothingAnalysis;
+    // Skip AI analysis to reduce costs - return default values
+    // The virtual-try-on model will handle validation internally
+    console.log('Skipping AI clothing analysis to reduce costs');
+    return {
+      isClothing: true,
+      isFullyVisible: true,
+      isFolded: false,
+      category: 'unknown',
+      subcategory: 'unknown',
+      color: 'unknown',
+      pattern: 'unknown',
+      quality: 'acceptable',
+      issues: [],
+      style: 'unknown',
+      gender: 'unknown'
+    };
   }, []);
 
   const validateAndProcessClothing = useCallback(async (

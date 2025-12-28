@@ -13,6 +13,8 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft",
         // Instagram Gradient Button
         instagram: "gradient-instagram text-white hover:opacity-90 shadow-medium",
+        // Magic Gradient Button - Purple CTA
+        magic: "btn-magic shadow-medium",
         // Destructive
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         // Outline - Instagram style

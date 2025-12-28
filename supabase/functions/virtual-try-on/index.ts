@@ -40,6 +40,31 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
+    // Check and increment quota before processing
+    const { data: quotaResult, error: quotaError } = await supabaseClient.rpc('increment_user_quota', {
+      p_user_id: user.id,
+    });
+
+    if (quotaError) {
+      console.error('Quota check error:', quotaError);
+      return new Response(
+        JSON.stringify({ error: 'Không thể kiểm tra hạn mức sử dụng' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!quotaResult) {
+      console.log('Quota exceeded for user:', user.id);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          code: 'QUOTA_EXCEEDED',
+          error: 'Bạn đã hết lượt thử miễn phí hôm nay. Nâng cấp Pro để thử không giới hạn!' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { bodyImage, clothingItems } = await req.json();
 
     // Support both single item (legacy) and multiple items
@@ -232,6 +257,21 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
       }
 
       console.error('No image generated in response:', JSON.stringify(data));
+      
+      // Check for specific error messages in the response
+      const errorContent = message?.content?.toLowerCase() || '';
+      const refusalReason = data.choices?.[0]?.finish_reason;
+      
+      // Detect common failure reasons
+      if (errorContent.includes('person') || errorContent.includes('human') || errorContent.includes('body') || refusalReason === 'content_filter') {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Không tìm thấy người trong ảnh. Vui lòng tải lên ảnh rõ nét hơn với người đứng thẳng, toàn thân.',
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // If we have more attempts left, try again.
       if (i < attempts.length - 1) {

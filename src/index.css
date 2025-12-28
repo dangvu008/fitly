@@ -54,6 +54,16 @@
     --gradient-warm: linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(340 82% 52%) 100%);
     --gradient-story: linear-gradient(45deg, hsl(45 100% 51%), hsl(28 100% 54%), hsl(340 82% 52%), hsl(280 87% 50%), hsl(214 100% 59%));
     
+    /* Magic Gradient - Purple CTA (#8E2DE2 -> #4A00E0) */
+    --gradient-magic: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
+    --magic-from: 271 73% 53%;
+    --magic-to: 256 100% 44%;
+    
+    /* Gem Colors - Gold (#FFD700) */
+    --gem: 51 100% 50%;
+    --gem-light: 51 100% 63%;
+    --gem-dark: 51 100% 45%;
+    
     /* Shadows */
     --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.08);
     --shadow-medium: 0 4px 12px hsl(0 0% 0% / 0.1);
@@ -146,6 +156,30 @@
     @apply shadow-lg;
   }
 
+  /* Magic gradient button - Purple CTA */
+  .btn-magic {
+    @apply relative overflow-hidden font-semibold text-white transition-all duration-200;
+    background: var(--gradient-magic);
+  }
+  
+  .btn-magic:hover {
+    @apply shadow-lg brightness-110;
+  }
+  
+  .btn-magic:active {
+    @apply scale-95;
+  }
+
+  /* Gem button style */
+  .btn-gem {
+    @apply font-semibold transition-all duration-200;
+    color: hsl(var(--gem));
+  }
+  
+  .btn-gem:hover {
+    color: hsl(var(--gem-light));
+  }
+
   /* Instagram-style card */
   .card-instagram {
     @apply bg-card rounded-lg border border-border;
@@ -221,6 +255,23 @@
 
   .gradient-story {
     background: var(--gradient-story);
+  }
+
+  .gradient-magic {
+    background: var(--gradient-magic);
+  }
+  
+  /* Gem color utilities */
+  .text-gem {
+    color: hsl(var(--gem));
+  }
+  
+  .bg-gem {
+    background-color: hsl(var(--gem));
+  }
+  
+  .border-gem {
+    border-color: hsl(var(--gem));
   }
   
   /* Shadows */

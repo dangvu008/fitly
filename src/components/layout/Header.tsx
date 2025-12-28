@@ -1,6 +1,5 @@
-import { Bell, User, Bookmark, Crown } from 'lucide-react';
+import { User, Bookmark, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProSubscription } from '@/hooks/useProSubscription';
@@ -27,7 +26,7 @@ export const Header = ({
   showBack, 
   showShare, 
   showNotification,
-  showLanguageSwitcher = true,
+  showLanguageSwitcher = false,
   showGems = true,
   gemsBalance = 0,
   onBack,
@@ -52,7 +51,7 @@ export const Header = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border safe-top">
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
-        {/* Logo - Instagram style */}
+        {/* Logo - Far left */}
         <div className="flex items-center gap-2.5">
           <img 
             src={logoImage} 
@@ -64,35 +63,29 @@ export const Header = ({
           </span>
         </div>
         
-        {/* Right actions */}
-        <div className="flex items-center gap-1">
-          {showLanguageSwitcher && <LanguageSwitcher />}
-          
-          {/* Gems Counter - Monetization */}
+        {/* Right actions - Gem Badge, Bookmark, Avatar with 16px gaps */}
+        <div className="flex items-center gap-4">
+          {/* Gems Counter - Pill Badge */}
           {showGems && (
             <GemsCounter onPurchaseClick={onGemsClick || (() => {})} />
           )}
           
+          {/* Bookmark Icon */}
           {showNotification && (
-            <>
-              <Button 
-                variant="ghost" 
-                size="iconSm" 
-                className="text-foreground"
-                onClick={onSavedClick}
-              >
-                <Bookmark size={22} strokeWidth={1.5} />
-              </Button>
-              <Button variant="ghost" size="iconSm" className="text-foreground">
-                <Bell size={22} strokeWidth={1.5} />
-              </Button>
-            </>
+            <Button 
+              variant="ghost" 
+              size="iconSm" 
+              className="text-foreground hover:bg-muted"
+              onClick={onSavedClick}
+            >
+              <Bookmark size={22} strokeWidth={1.5} />
+            </Button>
           )}
           
-          {/* User Avatar - Instagram style with story ring for logged in users */}
+          {/* User Avatar */}
           <button 
             onClick={onAvatarClick}
-            className="ml-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full relative"
+            className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full relative"
           >
             {user ? (
               <div className="story-ring">

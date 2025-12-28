@@ -70,15 +70,16 @@ export const useImageValidation = () => {
   }, []);
 
   const analyzeWithAI = useCallback(async (imageBase64: string): Promise<ImageAnalysis> => {
-    const { data, error } = await supabase.functions.invoke('analyze-body-image', {
-      body: { imageBase64 }
-    });
-
-    if (error) {
-      throw new Error(error.message || 'Failed to analyze image');
-    }
-
-    return data as ImageAnalysis;
+    // Skip AI analysis to reduce costs - return default values
+    // The virtual-try-on model will handle validation internally
+    console.log('Skipping AI body image analysis to reduce costs');
+    return {
+      isPerson: true,
+      isFullBody: true,
+      gender: 'unknown',
+      quality: 'acceptable',
+      issues: []
+    };
   }, []);
 
   const validateAndProcessImage = useCallback(async (

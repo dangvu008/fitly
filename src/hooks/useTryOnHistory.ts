@@ -22,15 +22,15 @@ const base64ToBlob = (base64: string): Blob => {
   return new Blob([uInt8Array], { type: contentType });
 };
 
-// Upload image to storage
-const uploadImage = async (
+// Upload image to temp folder (will be auto-deleted after 24h if not saved)
+const uploadImageToTemp = async (
   base64: string,
   userId: string,
   type: 'body' | 'result'
 ): Promise<string | null> => {
   try {
     const blob = base64ToBlob(base64);
-    const fileName = `${userId}/${type}-${Date.now()}.png`;
+    const fileName = `temp/${userId}/${type}-${Date.now()}.png`;
     
     const { data, error } = await supabase.storage
       .from('try-on-images')
@@ -53,6 +53,61 @@ const uploadImage = async (
   } catch (error) {
     console.error('Upload error:', error);
     return null;
+  }
+};
+
+// Move image from temp to saved folder (permanent storage)
+const moveImageToSaved = async (
+  tempUrl: string,
+  userId: string,
+  type: 'body' | 'result'
+): Promise<string | null> => {
+  try {
+    // Extract path from URL
+    const urlParts = tempUrl.split('/try-on-images/');
+    if (urlParts.length < 2) return tempUrl; // Already in saved or invalid URL
+    
+    const tempPath = urlParts[1];
+    if (!tempPath.startsWith('temp/')) return tempUrl; // Already in saved
+    
+    // Download the file
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('try-on-images')
+      .download(tempPath);
+    
+    if (downloadError || !fileData) {
+      console.error('Download error:', downloadError);
+      return tempUrl; // Keep temp URL if download fails
+    }
+    
+    // Upload to saved folder
+    const savedPath = `saved/${userId}/${type}-${Date.now()}.png`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('try-on-images')
+      .upload(savedPath, fileData, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+    
+    if (uploadError) {
+      console.error('Upload to saved error:', uploadError);
+      return tempUrl; // Keep temp URL if upload fails
+    }
+    
+    // Delete temp file
+    await supabase.storage
+      .from('try-on-images')
+      .remove([tempPath]);
+    
+    // Get public URL for saved file
+    const { data: urlData } = supabase.storage
+      .from('try-on-images')
+      .getPublicUrl(uploadData.path);
+    
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('Move to saved error:', error);
+    return tempUrl;
   }
 };
 
@@ -89,6 +144,33 @@ export function prepareTryOnHistoryRecord(
 }
 
 export const useTryOnHistory = () => {
+  // Save try-on result to TEMP storage (auto-deleted after 24h)
+  const saveTryOnResultToTemp = async (
+    userId: string,
+    bodyImage: string,
+    resultImage: string,
+    clothingItems: ClothingItemData[]
+  ): Promise<{ bodyImageUrl: string; resultImageUrl: string } | null> => {
+    try {
+      // Upload images to TEMP folder
+      const [bodyImageUrl, resultImageUrl] = await Promise.all([
+        uploadImageToTemp(bodyImage, userId, 'body'),
+        uploadImageToTemp(resultImage, userId, 'result'),
+      ]);
+
+      if (!bodyImageUrl || !resultImageUrl) {
+        toast.error('Không thể tải ảnh lên');
+        return null;
+      }
+
+      return { bodyImageUrl, resultImageUrl };
+    } catch (error) {
+      console.error('Save to temp error:', error);
+      return null;
+    }
+  };
+
+  // Move from temp to saved and save to database (permanent)
   const saveTryOnResult = async (
     userId: string,
     bodyImage: string,
@@ -96,11 +178,43 @@ export const useTryOnHistory = () => {
     clothingItems: ClothingItemData[]
   ): Promise<boolean> => {
     try {
-      // Upload images to storage
-      const [bodyImageUrl, resultImageUrl] = await Promise.all([
-        uploadImage(bodyImage, userId, 'body'),
-        uploadImage(resultImage, userId, 'result'),
-      ]);
+      // Check if images are already URLs (from temp) or base64
+      const isBodyUrl = bodyImage.startsWith('http');
+      const isResultUrl = resultImage.startsWith('http');
+
+      let bodyImageUrl: string | null;
+      let resultImageUrl: string | null;
+
+      if (isBodyUrl && isResultUrl) {
+        // Move from temp to saved
+        [bodyImageUrl, resultImageUrl] = await Promise.all([
+          moveImageToSaved(bodyImage, userId, 'body'),
+          moveImageToSaved(resultImage, userId, 'result'),
+        ]);
+      } else {
+        // Upload directly to saved folder (legacy flow)
+        const uploadToSaved = async (base64: string, type: 'body' | 'result') => {
+          const blob = base64ToBlob(base64);
+          const fileName = `saved/${userId}/${type}-${Date.now()}.png`;
+          
+          const { data, error } = await supabase.storage
+            .from('try-on-images')
+            .upload(fileName, blob, { contentType: 'image/png', upsert: false });
+
+          if (error) return null;
+          
+          const { data: urlData } = supabase.storage
+            .from('try-on-images')
+            .getPublicUrl(data.path);
+          
+          return urlData.publicUrl;
+        };
+
+        [bodyImageUrl, resultImageUrl] = await Promise.all([
+          uploadToSaved(bodyImage, 'body'),
+          uploadToSaved(resultImage, 'result'),
+        ]);
+      }
 
       if (!bodyImageUrl || !resultImageUrl) {
         toast.error('Không thể tải ảnh lên');
@@ -131,5 +245,5 @@ export const useTryOnHistory = () => {
     }
   };
 
-  return { saveTryOnResult };
+  return { saveTryOnResult, saveTryOnResultToTemp };
 };

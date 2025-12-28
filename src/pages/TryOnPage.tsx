@@ -25,8 +25,10 @@ import { useClothingValidation } from '@/hooks/useClothingValidation';
 import { useCategoryCorrections } from '@/hooks/useCategoryCorrections';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useProSubscription } from '@/hooks/useProSubscription';
+import { useUserQuota } from '@/hooks/useUserQuota';
+import { useHaptics } from '@/hooks/useHaptics';
 import { ProSubscriptionDialog } from '@/components/monetization/ProSubscriptionDialog';
-import { FindSimilarItemsSheet, SAMPLE_AFFILIATE_PRODUCTS } from '@/components/monetization/FindSimilarItemsSheet';
+import { FindSimilarItemsSheet } from '@/components/monetization/FindSimilarItemsSheet';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -109,6 +111,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const [showFindSimilarSheet, setShowFindSimilarSheet] = useState(false);
   const [quality, setQuality] = useState<'standard' | '4k'>('standard');
   const [isEditingResult, setIsEditingResult] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [showProcessingSkeleton, setShowProcessingSkeleton] = useState(false);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [pendingUnknownItem, setPendingUnknownItem] = useState<{
     item: Omit<ClothingItem, 'category'>;
     imageUrl: string;
@@ -135,9 +140,20 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   const { saveCorrection } = useCategoryCorrections();
   const { profile, setDefaultBodyImage } = useUserProfile();
   const { isPro } = useProSubscription();
+  const { remaining, dailyLimit, hasQuotaRemaining, isUnlimited, refreshQuota } = useUserQuota();
+  const { triggerLight, triggerSuccess, triggerError } = useHaptics();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clothingInputRef = useRef<HTMLInputElement>(null);
+
+  // Cleanup cooldown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+      }
+    };
+  }, []);
 
   // Save body image to localStorage when it changes
   useEffect(() => {
@@ -429,9 +445,21 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
   };
 
   const handleAITryOn = async () => {
+    // Prevent spam clicks - check cooldown
+    if (cooldownRemaining > 0 || isProcessing) {
+      return;
+    }
+
     // Check login first
     if (!user) {
       setShowLoginDialog(true);
+      return;
+    }
+
+    // Check quota for non-Pro users
+    if (!hasQuotaRemaining) {
+      toast.error('Bạn đã hết lượt thử miễn phí hôm nay. Nâng cấp Pro để thử không giới hạn!');
+      setShowProDialog(true);
       return;
     }
 
@@ -444,6 +472,33 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       toast.error(t('msg_select_clothing'));
       return;
     }
+
+    // Start cooldown timer (minimum 20 seconds)
+    const COOLDOWN_SECONDS = 20;
+    setCooldownRemaining(COOLDOWN_SECONDS);
+    setShowProcessingSkeleton(true);
+    
+    // Clear any existing timer
+    if (cooldownTimerRef.current) {
+      clearInterval(cooldownTimerRef.current);
+    }
+    
+    // Start countdown
+    cooldownTimerRef.current = setInterval(() => {
+      setCooldownRemaining(prev => {
+        if (prev <= 1) {
+          if (cooldownTimerRef.current) {
+            clearInterval(cooldownTimerRef.current);
+            cooldownTimerRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Trigger haptic feedback when starting
+    triggerLight();
 
     // Start progress tracking
     updateProgress('compressing', 5, 'Đang nén hình ảnh...');
@@ -473,7 +528,23 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
     console.log('Starting AI try-on with compressed images:', clothingItemsData.length, 'items');
     const result = await processVirtualTryOn(compressedBodyImage, clothingItemsData);
     
+    // Hide skeleton when done
+    setShowProcessingSkeleton(false);
+    
     if (result?.success && result.generatedImage) {
+      // Trigger success haptic
+      triggerSuccess();
+      
+      // Refresh quota after successful try-on
+      refreshQuota();
+      
+      // Clear cooldown on success
+      setCooldownRemaining(0);
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+      
       setAiResultImage(result.generatedImage);
       setIsResultSaved(false);
       
@@ -487,6 +558,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           setIsResultSaved(true);
         }
       }
+    } else {
+      // Trigger error haptic on failure
+      triggerError();
     }
   };
 
@@ -935,17 +1009,81 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           </button>
         </div>
 
+        {/* Quota Indicator */}
+        {user && !isUnlimited && (
+          <div className="flex items-center justify-between px-3 py-2 bg-secondary/50 rounded-lg">
+            <span className="text-sm text-muted-foreground">
+              Lượt thử miễn phí hôm nay
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "text-sm font-semibold",
+                remaining === 0 ? "text-destructive" : "text-primary"
+              )}>
+                {remaining}/{dailyLimit}
+              </span>
+              {remaining === 0 && (
+                <button
+                  onClick={() => setShowProDialog(true)}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  Nâng cấp Pro
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Pro Badge */}
+        {user && isUnlimited && (
+          <div className="flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 rounded-lg border border-yellow-500/20">
+            <Crown size={16} className="text-yellow-500" />
+            <span className="text-sm font-medium text-yellow-600">Không giới hạn lượt thử</span>
+          </div>
+        )}
+
+        {/* Processing Skeleton - Optimistic UI */}
+        {showProcessingSkeleton && !aiResultImage && (
+          <div className="relative w-full aspect-[3/4] max-h-[30vh] rounded-xl overflow-hidden bg-secondary border border-border animate-pulse">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                <Loader2 size={32} className="animate-spin text-primary" />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-medium text-foreground">Đang xử lý...</p>
+                <p className="text-xs text-muted-foreground">AI đang tạo hình ảnh thử đồ</p>
+              </div>
+            </div>
+            {/* Shimmer effect */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              style={{
+                animation: 'shimmer 2s infinite',
+              }}
+            />
+          </div>
+        )}
+
         {/* AI Try-On Button */}
         <Button
           variant="instagram"
-          className="w-full h-11 text-base"
+          className="w-full h-11 text-base relative overflow-hidden"
           onClick={handleAITryOn}
-          disabled={isProcessing || !bodyImage || selectedItems.length === 0}
+          disabled={isProcessing || cooldownRemaining > 0 || !bodyImage || selectedItems.length === 0 || (!hasQuotaRemaining && !isUnlimited)}
         >
-          {isProcessing ? (
+          {isProcessing || cooldownRemaining > 0 ? (
             <>
               <Loader2 size={20} className="animate-spin" />
-              {t('tryon_processing')}
+              {cooldownRemaining > 0 ? (
+                <span>Đang xử lý... ({cooldownRemaining}s)</span>
+              ) : (
+                t('tryon_processing')
+              )}
+            </>
+          ) : !hasQuotaRemaining && !isUnlimited ? (
+            <>
+              <Crown size={20} />
+              Nâng cấp để tiếp tục
             </>
           ) : (
             <>
@@ -1179,7 +1317,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       <FindSimilarItemsSheet
         isOpen={showFindSimilarSheet}
         onClose={() => setShowFindSimilarSheet(false)}
-        products={SAMPLE_AFFILIATE_PRODUCTS}
+        imageUrl={aiResultImage || undefined}
       />
     </div>
   );

@@ -250,28 +250,9 @@ export const BodyImageSourceDialog = ({
     try {
       const base64Image = await fetchImageAsBase64(urlInput);
 
-      const { data, error } = await supabase.functions.invoke('analyze-body-image', {
-        body: { imageBase64: base64Image },
-      });
-
-      if (error) {
-        throw new Error('analysis_failed');
-      }
-
-      if (!data.isPerson) {
-        setUrlError(t('url_not_person'));
-        return;
-      }
-
-      if (!data.isFullBody) {
-        setUrlError(t('url_not_fullbody'));
-        return;
-      }
-
-      if (data.quality === 'poor') {
-        setUrlError(t('url_poor_quality') + ': ' + (data.issues?.join(', ') || ''));
-        return;
-      }
+      // Skip AI analysis to reduce costs - directly use the image
+      // The virtual-try-on model will handle validation internally
+      console.log('Skipping AI body image analysis for URL to reduce costs');
 
       onSelectFromHistory(base64Image);
       onOpenChange(false);

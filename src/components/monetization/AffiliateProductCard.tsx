@@ -1,19 +1,11 @@
 import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useVisualSearch, AffiliateProduct } from '@/hooks/useVisualSearch';
 
-export interface AffiliateProduct {
-  id: string;
-  name: string;
-  imageUrl: string;
-  price: string;
-  currency: string;
-  shopUrl: string;
-  platform: 'amazon' | 'shopee' | 'lazada' | 'zalora' | 'other';
-}
+// Re-export the type for backward compatibility
+export type { AffiliateProduct };
 
 interface AffiliateProductCardProps {
   product: AffiliateProduct;
@@ -38,6 +30,17 @@ const PLATFORM_NAMES: Record<string, string> = {
   other: 'Shop',
 };
 
+// Format price based on currency
+function formatPrice(price: number, currency: string): string {
+  if (currency === 'VND' || currency === '₫') {
+    return new Intl.NumberFormat('vi-VN').format(price) + '₫';
+  }
+  if (currency === 'USD' || currency === '$') {
+    return '$' + price.toFixed(2);
+  }
+  return `${currency} ${price}`;
+}
+
 export function AffiliateProductCard({
   product,
   source = 'search',
@@ -45,30 +48,19 @@ export function AffiliateProductCard({
   className,
 }: AffiliateProductCardProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { trackClick } = useVisualSearch();
 
   const handleShopNow = async () => {
     // Track the click
-    try {
-      await supabase.from('affiliate_clicks').insert({
-        user_id: user?.id || null,
-        product_id: product.id,
-        product_name: product.name,
-        platform: product.platform,
-        affiliate_url: product.shopUrl,
-        source,
-        try_on_result_id: tryOnResultId,
-      });
-    } catch (error) {
-      console.error('Failed to track affiliate click:', error);
-    }
+    await trackClick(product.id, product.productUrl);
 
     // Open the affiliate link
-    window.open(product.shopUrl, '_blank', 'noopener,noreferrer');
+    window.open(product.productUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const platformLabel = t(`affiliate_on_${product.platform}`) || 
-    `on ${PLATFORM_NAMES[product.platform]}`;
+  const platformLabel = PLATFORM_NAMES[product.platform] 
+    ? `on ${PLATFORM_NAMES[product.platform]}`
+    : 'Shop';
 
   return (
     <div className={cn(
@@ -89,6 +81,12 @@ export function AffiliateProductCard({
         )}>
           {PLATFORM_NAMES[product.platform]}
         </div>
+        {/* Similarity badge */}
+        {product.similarity > 0 && (
+          <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 text-xs text-white">
+            {Math.round(product.similarity * 100)}% match
+          </div>
+        )}
       </div>
 
       {/* Product Info */}
@@ -97,7 +95,7 @@ export function AffiliateProductCard({
           {product.name}
         </h3>
         <div className="text-lg font-bold text-primary mb-2">
-          {product.currency} {product.price}
+          {formatPrice(product.price, product.currency)}
         </div>
         
         <Button

@@ -16,11 +16,15 @@ interface AIProgressBarProps {
 const lottieAnimations = {
   compressing: 'https://lottie.host/0c5e8c0a-6af5-4b32-bdbd-25d0d04f7980/W8dWzCXoD9.lottie', // clothes hanger
   uploading: 'https://lottie.host/1d9c8fa8-1f07-4e26-a906-46a6f76c1c54/qGQNKNuMJM.lottie', // cloud upload
+  scanning: 'https://lottie.host/c2e8b9fc-c7ae-4eab-9b54-5f0f67e9c548/GWEqPF1Tza.lottie', // body scan
   processing: 'https://lottie.host/c2e8b9fc-c7ae-4eab-9b54-5f0f67e9c548/GWEqPF1Tza.lottie', // washing machine
+  warping: 'https://lottie.host/d10e8b97-a4d3-4f9e-b0f8-7e9cdef05ec8/5EF3wJWe17.lottie', // cloth warping
   generating: 'https://lottie.host/d10e8b97-a4d3-4f9e-b0f8-7e9cdef05ec8/5EF3wJWe17.lottie', // magic wand / sparkles
+  finalizing: 'https://lottie.host/d10e8b97-a4d3-4f9e-b0f8-7e9cdef05ec8/5EF3wJWe17.lottie', // finalizing
   complete: 'https://lottie.host/5be1e31c-5cb4-4c8e-bc69-ff456b4cc7c0/YmWTlWOYdM.lottie', // celebration
   error: 'https://lottie.host/77bd4b33-f8d0-4c08-9e4d-4a45d4e9e556/T5lmKhJlLP.lottie', // sad face
   cancelled: 'https://lottie.host/77bd4b33-f8d0-4c08-9e4d-4a45d4e9e556/T5lmKhJlLP.lottie',
+  timeout: 'https://lottie.host/c2e8b9fc-c7ae-4eab-9b54-5f0f67e9c548/GWEqPF1Tza.lottie', // still processing
 };
 
 // Funny messages that change over time for each stage
@@ -36,6 +40,12 @@ const funnyMessages = {
     { text: '📨 Gửi thư bồ câu đi...', subtext: 'Bồ câu đang bay thật nhanh!' },
     { text: '🎈 Thả bóng bay lên trời...', subtext: 'Bay cao, bay xa!' },
   ],
+  scanning: [
+    { text: '📷 Scanning Body...', subtext: 'Đang quét cơ thể của bạn!' },
+    { text: '👀 Đang ngắm nghía bạn...', subtext: 'Ôi, đẹp thế này cơ à!' },
+    { text: '🔍 Phân tích dáng người...', subtext: 'Tìm tỷ lệ hoàn hảo!' },
+    { text: '📐 Đo đạc kích thước...', subtext: 'Chính xác từng milimet!' },
+  ],
   processing: [
     { text: '🧠 AI đang suy nghĩ...', subtext: 'Hmm, để xem nào...' },
     { text: '👀 Đang ngắm nghía bạn...', subtext: 'Ôi, đẹp thế này cơ à!' },
@@ -44,6 +54,12 @@ const funnyMessages = {
     { text: '🧹 Đang giặt ủi đồ cho bạn...', subtext: 'Thơm tho, sạch sẽ!' },
     { text: '🎨 Họa sĩ AI đang vẽ...', subtext: 'Nghệ thuật cần thời gian!' },
   ],
+  warping: [
+    { text: '👗 Warping Cloth...', subtext: 'Đang điều chỉnh quần áo!' },
+    { text: '✂️ Cắt may theo dáng bạn...', subtext: 'Vừa vặn như đo!' },
+    { text: '🪡 Đang khâu vá tinh tế...', subtext: 'Từng đường kim mũi chỉ!' },
+    { text: '👔 Ướm thử lên người...', subtext: 'Sắp xong rồi đó!' },
+  ],
   generating: [
     { text: '✨ Phép màu đang diễn ra...', subtext: 'Bibbidi Bobbidi Boo!' },
     { text: '🪄 Gậy thần đang làm việc!', subtext: 'Abracadabra!' },
@@ -51,6 +67,12 @@ const funnyMessages = {
     { text: '🎭 Đang biến hình...', subtext: 'Sailor Moon biến hình!' },
     { text: '💫 Ma thuật thời trang!', subtext: 'Expecto Patronum!' },
     { text: '🦋 Đang hóa bướm...', subtext: 'Từ kén bước ra!' },
+  ],
+  finalizing: [
+    { text: '🎬 Finalizing...', subtext: 'Đang hoàn thiện tác phẩm!' },
+    { text: '💅 Chỉnh sửa chi tiết cuối...', subtext: 'Hoàn hảo từng pixel!' },
+    { text: '🖼️ Đóng khung tác phẩm...', subtext: 'Sắp xong rồi!' },
+    { text: '✅ Kiểm tra lần cuối...', subtext: 'Đảm bảo chất lượng!' },
   ],
   complete: [
     { text: '🎉 Hoàn thành rồi nè!', subtext: 'Woohooo! Đẹp quá đi!' },
@@ -63,6 +85,11 @@ const funnyMessages = {
   ],
   cancelled: [
     { text: '⏹️ Đã dừng lại rồi!', subtext: 'Khi nào sẵn sàng, quay lại nhé!' },
+  ],
+  timeout: [
+    { text: '⏳ Vẫn đang xử lý...', subtext: 'Xin đợi thêm một chút!' },
+    { text: '🐢 Chậm mà chắc...', subtext: 'Đang cố gắng hết sức!' },
+    { text: '💪 Kiên nhẫn nhé!', subtext: 'Sắp xong rồi đó!' },
   ],
 };
 
@@ -283,16 +310,21 @@ export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarPr
         {/* Stage indicator with cute icons */}
         <div className="flex justify-center gap-1 pt-3">
           {[
-            { stage: 'uploading', icon: '☁️', label: 'Tải' },
-            { stage: 'processing', icon: '🧠', label: 'Xử lý' },
+            { stage: 'scanning', icon: '📷', label: 'Quét' },
+            { stage: 'warping', icon: '👗', label: 'Điều chỉnh' },
             { stage: 'generating', icon: '✨', label: 'Tạo' },
+            { stage: 'finalizing', icon: '🎬', label: 'Hoàn thiện' },
             { stage: 'complete', icon: '🎉', label: 'Xong' },
           ].map((item, index) => {
-            const stages = ['uploading', 'processing', 'generating', 'complete'];
+            const stages = ['uploading', 'scanning', 'warping', 'generating', 'finalizing', 'complete'];
             const currentIndex = stages.indexOf(progress.stage);
+            const itemIndex = stages.indexOf(item.stage);
             const isActive = progress.stage === item.stage || 
-                            (progress.stage === 'compressing' && item.stage === 'uploading');
-            const isComplete = currentIndex > index || progress.stage === 'complete';
+                            (progress.stage === 'compressing' && item.stage === 'scanning') ||
+                            (progress.stage === 'uploading' && item.stage === 'scanning') ||
+                            (progress.stage === 'processing' && item.stage === 'warping') ||
+                            (progress.stage === 'timeout' && itemIndex <= currentIndex);
+            const isComplete = currentIndex > itemIndex || progress.stage === 'complete';
             
             return (
               <div key={item.stage} className="flex items-center">
@@ -317,7 +349,7 @@ export const AIProgressBar = ({ progress, isVisible, onCancel }: AIProgressBarPr
                     {item.label}
                   </span>
                 </div>
-                {index < 3 && (
+                {index < 4 && (
                   <div className={cn(
                     "w-4 h-0.5 mx-0.5 mt-[-12px]",
                     isComplete ? "bg-green-500" : "bg-muted"

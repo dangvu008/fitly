@@ -69,6 +69,17 @@ export default {
           purple: "hsl(var(--ig-purple))",
           blue: "hsl(var(--ig-blue))",
         },
+        // Magic gradient colors
+        magic: {
+          from: "hsl(var(--magic-from))",
+          to: "hsl(var(--magic-to))",
+        },
+        // Gem colors
+        gem: {
+          DEFAULT: "hsl(var(--gem))",
+          light: "hsl(var(--gem-light))",
+          dark: "hsl(var(--gem-dark))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

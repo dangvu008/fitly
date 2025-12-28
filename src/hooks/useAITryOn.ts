@@ -10,7 +10,7 @@ interface TryOnResult {
 }
 
 export interface TryOnProgress {
-  stage: 'idle' | 'compressing' | 'uploading' | 'processing' | 'generating' | 'complete' | 'error' | 'cancelled';
+  stage: 'idle' | 'compressing' | 'uploading' | 'scanning' | 'processing' | 'warping' | 'generating' | 'finalizing' | 'complete' | 'error' | 'cancelled' | 'timeout';
   progress: number;
   message: string;
 }
@@ -51,30 +51,55 @@ export const useAITryOn = () => {
   ): Promise<TryOnResult | null> => {
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
+    const startTime = Date.now();
     
     setIsProcessing(true);
     setResult(null);
-    updateProgress('uploading', 10, 'Đang gửi dữ liệu...');
+    updateProgress('uploading', 5, 'Đang gửi dữ liệu...');
 
     try {
       console.log('Starting AI virtual try-on with', clothingItems.length, 'items...');
       
-      updateProgress('processing', 30, 'Đang kết nối AI...');
+      updateProgress('scanning', 15, 'Scanning Body...');
       
-      // Simulate progress during API call
+      // Simulate progress during API call with new stages
       progressIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        
         setProgress(prev => {
-          if (prev.stage === 'processing' && prev.progress < 70) {
-            return { ...prev, progress: prev.progress + 5, message: 'AI đang phân tích hình ảnh...' };
+          // Timeout handling after 30 seconds
+          if (elapsed > 30000 && prev.stage !== 'timeout' && prev.stage !== 'complete' && prev.stage !== 'error') {
+            return { stage: 'timeout', progress: prev.progress, message: 'Vẫn đang xử lý...' };
           }
-          if (prev.stage === 'generating' && prev.progress < 95) {
-            return { ...prev, progress: prev.progress + 2, message: 'Đang tạo hình ảnh kết quả...' };
+          
+          // Progress through stages
+          if (prev.stage === 'scanning' && prev.progress < 30) {
+            return { ...prev, progress: prev.progress + 3, message: 'Đang quét cơ thể...' };
+          }
+          if (prev.stage === 'scanning' && prev.progress >= 30) {
+            return { stage: 'warping', progress: 35, message: 'Warping Cloth...' };
+          }
+          if (prev.stage === 'warping' && prev.progress < 60) {
+            return { ...prev, progress: prev.progress + 4, message: 'Đang điều chỉnh quần áo...' };
+          }
+          if (prev.stage === 'warping' && prev.progress >= 60) {
+            return { stage: 'generating', progress: 65, message: 'Đang tạo hình ảnh...' };
+          }
+          if (prev.stage === 'generating' && prev.progress < 85) {
+            return { ...prev, progress: prev.progress + 3, message: 'AI đang tạo hình ảnh...' };
+          }
+          if (prev.stage === 'generating' && prev.progress >= 85) {
+            return { stage: 'finalizing', progress: 88, message: 'Finalizing...' };
+          }
+          if (prev.stage === 'finalizing' && prev.progress < 95) {
+            return { ...prev, progress: prev.progress + 1, message: 'Đang hoàn thiện...' };
+          }
+          if (prev.stage === 'timeout' && prev.progress < 98) {
+            return { ...prev, progress: prev.progress + 0.5, message: 'Vẫn đang xử lý, xin đợi...' };
           }
           return prev;
         });
-      }, 800);
-
-      updateProgress('processing', 40, 'AI đang phân tích hình ảnh...');
+      }, 600);
 
       const { data, error } = await supabase.functions.invoke('virtual-try-on', {
         body: {

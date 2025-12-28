@@ -1,38 +1,35 @@
-import { Gem, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Gem } from 'lucide-react';
 import { useUserGems } from '@/hooks/useUserGems';
 import { cn } from '@/lib/utils';
 
 interface GemsCounterProps {
   onPurchaseClick: () => void;
   className?: string;
-  showAddButton?: boolean;
 }
 
 export function GemsCounter({ 
   onPurchaseClick, 
   className,
-  showAddButton = true 
 }: GemsCounterProps) {
   const { balance, isLoading } = useUserGems();
 
   return (
-    <div className={cn('flex items-center gap-1', className)}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onPurchaseClick}
-        className="flex items-center gap-1.5 px-2 h-8 hover:bg-accent/50"
-        aria-label={`${balance} gems. Click to purchase more`}
-      >
-        <Gem className="h-4 w-4 text-purple-500" />
-        <span className="font-medium text-sm">
-          {isLoading ? '...' : balance}
-        </span>
-        {showAddButton && (
-          <Plus className="h-3 w-3 text-muted-foreground" />
-        )}
-      </Button>
-    </div>
+    <button
+      onClick={onPurchaseClick}
+      className={cn(
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+        'bg-purple-100 dark:bg-purple-900/30',
+        'hover:bg-purple-200 dark:hover:bg-purple-900/50',
+        'transition-colors duration-200',
+        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+        className
+      )}
+      aria-label={`${balance} gems. Tap to purchase more`}
+    >
+      <Gem className="h-4 w-4 text-gem" />
+      <span className="font-semibold text-sm text-gem">
+        {isLoading ? '...' : balance}
+      </span>
+    </button>
   );
 }
