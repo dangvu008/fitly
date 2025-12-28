@@ -176,7 +176,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
     if (success) {
       setIsEditDialogOpen(false);
       setEditingItem(null);
-      toast.success(t('closet_updated') || 'Đã cập nhật quần áo');
+      toast.success(t('clothing_updated') || 'Đã cập nhật quần áo');
     }
     return success;
   };
