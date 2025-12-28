@@ -10,12 +10,14 @@ interface TryOnCanvasProps {
   bodyImageUrl?: string;
   onBodyImageChange?: (imageUrl: string) => void;
   onGenderDetected?: (gender: 'male' | 'female' | 'unknown') => void;
+  onOpenSourceDialog?: () => void;
 }
 
 export const TryOnCanvas = ({
   bodyImageUrl,
   onBodyImageChange,
   onGenderDetected,
+  onOpenSourceDialog,
 }: TryOnCanvasProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { validateAndProcessImage, isValidating, progress } = useImageValidation();
@@ -72,10 +74,25 @@ export const TryOnCanvas = ({
   };
 
   const handleUploadClick = () => {
+    if (isValidating) return;
+    
+    // If there's already a body image and we have the source dialog handler, show dialog
+    if (bodyImageUrl && onOpenSourceDialog) {
+      onOpenSourceDialog();
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Expose triggerFileInput for parent component to call
+  const triggerFileInput = () => {
     if (!isValidating) {
       fileInputRef.current?.click();
     }
   };
+
+  // Attach to window for parent access (temporary solution)
+  (window as any).__tryOnCanvasTriggerFileInput = triggerFileInput;
 
   const getProgressMessage = () => {
     if (!progress) return '';
@@ -165,7 +182,7 @@ export const TryOnCanvas = ({
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-xs">
               <Camera size={10} className="mr-1" />
-              Chạm để đổi ảnh
+              {t('tryon_change_photo')}
             </Badge>
           </div>
         </div>
@@ -186,7 +203,7 @@ export const TryOnCanvas = ({
           </div>
           <p className="text-sm font-medium text-foreground">{t('tryon_upload_body')}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Chụp ảnh hoặc chọn từ thư viện
+            {t('body_image_upload_new_desc')}
           </p>
         </div>
       )}
