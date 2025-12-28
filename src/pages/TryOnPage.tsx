@@ -876,6 +876,8 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           sampleClothing={clothing}
           onSelectItem={handleAddClothing}
           onAddClothingForCategory={handleAddClothingForCategory}
+          onEditClothing={handleEditClothing}
+          onDeleteClothing={handleDeleteSavedClothing}
         />
 
         {/* AI Try-On Button */}

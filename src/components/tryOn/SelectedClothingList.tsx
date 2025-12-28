@@ -1,11 +1,17 @@
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
-import { X, Sparkles, Filter, Plus, Shirt, Square, Crown, Footprints, Glasses, Upload } from 'lucide-react';
+import { X, Sparkles, Filter, Plus, Shirt, Square, Crown, Footprints, Glasses, Upload, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SelectedClothingListProps {
   items: ClothingItem[];
@@ -14,6 +20,8 @@ interface SelectedClothingListProps {
   sampleClothing?: ClothingItem[];
   onSelectItem?: (item: ClothingItem) => void;
   onAddClothingForCategory?: (category: ClothingCategory) => void;
+  onEditClothing?: (item: ClothingItem) => void;
+  onDeleteClothing?: (id: string) => void;
 }
 
 type OutfitCategory = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory';
@@ -57,7 +65,9 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   savedClothing = [],
   sampleClothing = [],
   onSelectItem,
-  onAddClothingForCategory
+  onAddClothingForCategory,
+  onEditClothing,
+  onDeleteClothing
 }, ref) => {
   const { t } = useLanguage();
   
@@ -418,12 +428,16 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 gap-2">
-                          {categoryClothing.map((clothingItem) => (
-                            <button
-                              key={clothingItem.id}
+                          {categoryClothing.map((clothingItem) => {
+                            // Check if this is a saved item (has user ownership)
+                            const isSavedItem = savedClothing.some(s => s.id === clothingItem.id);
+                            
+                            return (
+                            <div key={clothingItem.id} className="relative group/item">
+                              <button
                               onClick={() => handleSelectFromDropdown(clothingItem)}
                               className={cn(
-                                "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 relative group",
+                                "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 relative w-full",
                                 items.some(i => i.id === clothingItem.id) 
                                   ? "border-primary ring-1 ring-primary" 
                                   : "border-transparent hover:border-primary/50"
@@ -436,14 +450,58 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                               />
                               {/* Color/style indicator */}
                               {(clothingItem.color || clothingItem.style) && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/70 to-transparent p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/70 to-transparent p-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                   <p className="text-[8px] text-background truncate text-center">
                                     {clothingItem.color || clothingItem.style}
                                   </p>
                                 </div>
                               )}
-                            </button>
-                          ))}
+                              </button>
+                              
+                              {/* Action menu for saved items */}
+                              {isSavedItem && (onEditClothing || onDeleteClothing) && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-foreground/60 text-background flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity hover:bg-foreground/80"
+                                    >
+                                      <MoreVertical size={12} />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-32">
+                                    {onEditClothing && (
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onEditClothing(clothingItem);
+                                          setExpandedCategory(null);
+                                        }}
+                                        className="text-xs"
+                                      >
+                                        <Edit2 size={12} className="mr-2" />
+                                        Sửa
+                                      </DropdownMenuItem>
+                                    )}
+                                    {onDeleteClothing && (
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onDeleteClothing(clothingItem.id);
+                                          setExpandedCategory(null);
+                                        }}
+                                        className="text-xs text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 size={12} className="mr-2" />
+                                        Xóa
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
