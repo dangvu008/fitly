@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_cache: {
+        Row: {
+          cache_key: string
+          cache_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          result: Json
+        }
+        Insert: {
+          cache_key: string
+          cache_type: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          result: Json
+        }
+        Update: {
+          cache_key?: string
+          cache_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          result?: Json
+        }
+        Relationships: []
+      }
       category_corrections: {
         Row: {
           ai_predicted_category: string | null
