@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Upload, Link2, ImagePlus, Check, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Upload, Link2, ImagePlus, Check, Loader2, ArrowLeft, Shield, AlertTriangle, FileWarning } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { FunLoading, FunProgressBar } from '@/components/ui/fun-loading';
 import { ClothingDetailsForm } from './ClothingDetailsForm';
+import { cn } from '@/lib/utils';
 
 interface AddClothingDialogProps {
   isOpen: boolean;
@@ -17,6 +18,173 @@ interface AddClothingDialogProps {
   onSaveToCollection?: (item: ClothingItem) => void;
   targetCategory?: ClothingCategory | null;
 }
+
+// File validation constants
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png', 
+  'image/gif',
+  'image/webp',
+  'image/bmp'
+];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MIN_FILE_SIZE = 1024; // 1KB minimum to avoid empty/corrupt files
+
+// Magic bytes signatures for image files
+const IMAGE_SIGNATURES: Record<string, number[][]> = {
+  jpeg: [[0xFF, 0xD8, 0xFF]],
+  png: [[0x89, 0x50, 0x4E, 0x47]],
+  gif: [[0x47, 0x49, 0x46, 0x38]],
+  webp: [[0x52, 0x49, 0x46, 0x46]], // RIFF header
+  bmp: [[0x42, 0x4D]],
+};
+
+// Blocked domains for URL validation
+const BLOCKED_DOMAINS = [
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '192.168.',
+  '10.0.',
+  '172.16.',
+];
+
+// Suspicious file patterns
+const SUSPICIOUS_PATTERNS = [
+  /\.exe$/i,
+  /\.bat$/i,
+  /\.cmd$/i,
+  /\.ps1$/i,
+  /\.vbs$/i,
+  /\.js$/i,
+  /\.php$/i,
+  /\.asp$/i,
+  /\.svg$/i, // SVG can contain scripts
+];
+
+// Validate file magic bytes
+const validateMagicBytes = (buffer: ArrayBuffer): boolean => {
+  const bytes = new Uint8Array(buffer);
+  
+  for (const [, signatures] of Object.entries(IMAGE_SIGNATURES)) {
+    for (const signature of signatures) {
+      let matches = true;
+      for (let i = 0; i < signature.length; i++) {
+        if (bytes[i] !== signature[i]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) return true;
+    }
+  }
+  return false;
+};
+
+// Validate file extension
+const validateExtension = (filename: string): { valid: boolean; error?: string } => {
+  const ext = filename.toLowerCase().split('.').pop();
+  if (!ext) {
+    return { valid: false, error: 'file_no_extension' };
+  }
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return { valid: false, error: 'file_invalid_extension' };
+  }
+  if (SUSPICIOUS_PATTERNS.some(pattern => pattern.test(filename))) {
+    return { valid: false, error: 'file_suspicious' };
+  }
+  return { valid: true };
+};
+
+// Validate MIME type
+const validateMimeType = (mimeType: string): { valid: boolean; error?: string } => {
+  if (!mimeType || !ALLOWED_MIME_TYPES.includes(mimeType)) {
+    return { valid: false, error: 'file_invalid_type' };
+  }
+  return { valid: true };
+};
+
+// Validate file size
+const validateFileSize = (size: number): { valid: boolean; error?: string } => {
+  if (size < MIN_FILE_SIZE) {
+    return { valid: false, error: 'file_too_small' };
+  }
+  if (size > MAX_FILE_SIZE) {
+    return { valid: false, error: 'file_too_large' };
+  }
+  return { valid: true };
+};
+
+// Validate URL security
+const validateUrlSecurity = (url: string): { valid: boolean; error?: string } => {
+  try {
+    const parsed = new URL(url);
+    
+    // Must be http or https
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return { valid: false, error: 'url_invalid_protocol' };
+    }
+    
+    // Check blocked domains
+    if (BLOCKED_DOMAINS.some(domain => parsed.hostname.includes(domain))) {
+      return { valid: false, error: 'url_blocked_domain' };
+    }
+    
+    // Check for suspicious patterns in path
+    if (SUSPICIOUS_PATTERNS.some(pattern => pattern.test(parsed.pathname))) {
+      return { valid: false, error: 'url_suspicious_file' };
+    }
+    
+    // Check extension if present
+    const pathname = parsed.pathname.toLowerCase();
+    if (pathname.includes('.')) {
+      const ext = pathname.split('.').pop();
+      if (ext && !ALLOWED_EXTENSIONS.includes(ext)) {
+        return { valid: false, error: 'url_invalid_extension' };
+      }
+    }
+    
+    return { valid: true };
+  } catch {
+    return { valid: false, error: 'url_invalid_format' };
+  }
+};
+
+// Comprehensive file validation
+const validateFile = async (file: File): Promise<{ valid: boolean; errors: string[] }> => {
+  const errors: string[] = [];
+  
+  // Extension check
+  const extResult = validateExtension(file.name);
+  if (!extResult.valid && extResult.error) {
+    errors.push(extResult.error);
+  }
+  
+  // MIME type check
+  const mimeResult = validateMimeType(file.type);
+  if (!mimeResult.valid && mimeResult.error) {
+    errors.push(mimeResult.error);
+  }
+  
+  // Size check
+  const sizeResult = validateFileSize(file.size);
+  if (!sizeResult.valid && sizeResult.error) {
+    errors.push(sizeResult.error);
+  }
+  
+  // Magic bytes check - read first 10 bytes
+  try {
+    const buffer = await file.slice(0, 10).arrayBuffer();
+    if (!validateMagicBytes(buffer)) {
+      errors.push('file_invalid_signature');
+    }
+  } catch {
+    errors.push('file_read_error');
+  }
+  
+  return { valid: errors.length === 0, errors };
+};
 
 export const AddClothingDialog = ({ 
   isOpen, 
@@ -30,6 +198,8 @@ export const AddClothingDialog = ({
   const [imageUrl, setImageUrl] = useState('');
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [securityStatus, setSecurityStatus] = useState<'idle' | 'checking' | 'safe' | 'warning'>('idle');
+  const [securityMessage, setSecurityMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // State for review mode
@@ -55,6 +225,8 @@ export const AddClothingDialog = ({
     setShowReviewForm(false);
     setDetectedItem(null);
     setOriginalImageUrl('');
+    setSecurityStatus('idle');
+    setSecurityMessage('');
     onClose();
   };
 
@@ -106,6 +278,8 @@ export const AddClothingDialog = ({
     setOriginalImageUrl(result.processedImageUrl || imageDataUrl);
     setDetectedItem(newItem);
     setShowReviewForm(true);
+    setSecurityStatus('safe');
+    setSecurityMessage(t('file_security_passed'));
   };
 
   const handleSaveClothing = (item: ClothingItem) => {
@@ -126,11 +300,43 @@ export const AddClothingDialog = ({
     setDetectedItem(null);
     setOriginalImageUrl('');
     setPreviewImage(null);
+    setSecurityStatus('idle');
+    setSecurityMessage('');
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    setSecurityStatus('checking');
+    setSecurityMessage(t('file_security_checking'));
+    
+    // Comprehensive file validation
+    const validation = await validateFile(file);
+    
+    if (!validation.valid) {
+      setSecurityStatus('warning');
+      const errorMessages = validation.errors.map(err => t(err as any) || err);
+      setSecurityMessage(errorMessages.join(', '));
+      toast.error(
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <FileWarning size={16} className="text-destructive" />
+            <p className="font-medium">{t('file_validation_failed')}</p>
+          </div>
+          <ul className="text-sm list-disc pl-4 space-y-1">
+            {errorMessages.map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      );
+      e.target.value = '';
+      return;
+    }
+    
+    setSecurityStatus('safe');
+    setSecurityMessage(t('file_security_passed'));
     
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -148,23 +354,77 @@ export const AddClothingDialog = ({
       return;
     }
 
-    try {
-      new URL(imageUrl);
-    } catch {
-      toast.error(t('add_clothing_url_invalid'));
+    // Security validation for URL
+    setSecurityStatus('checking');
+    setSecurityMessage(t('url_security_checking'));
+    
+    const urlValidation = validateUrlSecurity(imageUrl);
+    if (!urlValidation.valid) {
+      setSecurityStatus('warning');
+      const errorMsg = t(urlValidation.error as any) || urlValidation.error;
+      setSecurityMessage(errorMsg || '');
+      toast.error(
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={16} className="text-destructive" />
+          <span>{errorMsg}</span>
+        </div>
+      );
       return;
     }
 
     setIsLoadingUrl(true);
     
     try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error('Cannot load image');
+      const response = await fetch(imageUrl, {
+        headers: {
+          'Accept': 'image/*',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Cannot load image');
+      }
+      
+      // Validate content type from response
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.startsWith('image/')) {
+        setSecurityStatus('warning');
+        setSecurityMessage(t('url_not_image'));
+        toast.error(t('url_not_image'));
+        return;
+      }
+      
+      // Validate MIME type
+      const mimeCheck = validateMimeType(contentType);
+      if (!mimeCheck.valid) {
+        setSecurityStatus('warning');
+        setSecurityMessage(t(mimeCheck.error as any) || 'Invalid image type');
+        toast.error(t(mimeCheck.error as any) || 'Invalid image type');
+        return;
+      }
       
       const blob = await response.blob();
-      if (!blob.type.startsWith('image/')) {
-        throw new Error('Not an image');
+      
+      // Validate file size
+      const sizeCheck = validateFileSize(blob.size);
+      if (!sizeCheck.valid) {
+        setSecurityStatus('warning');
+        setSecurityMessage(t(sizeCheck.error as any) || 'Invalid file size');
+        toast.error(t(sizeCheck.error as any) || 'Invalid file size');
+        return;
       }
+      
+      // Validate magic bytes
+      const buffer = await blob.slice(0, 10).arrayBuffer();
+      if (!validateMagicBytes(buffer)) {
+        setSecurityStatus('warning');
+        setSecurityMessage(t('file_invalid_signature'));
+        toast.error(t('file_invalid_signature'));
+        return;
+      }
+      
+      setSecurityStatus('safe');
+      setSecurityMessage(t('url_security_passed'));
       
       const reader = new FileReader();
       reader.onload = async (event) => {
@@ -175,6 +435,8 @@ export const AddClothingDialog = ({
       reader.readAsDataURL(blob);
     } catch (error) {
       console.error('Error loading image from URL:', error);
+      setSecurityStatus('warning');
+      setSecurityMessage(t('add_clothing_url_error'));
       toast.error(t('add_clothing_url_error'));
     } finally {
       setIsLoadingUrl(false);
@@ -258,7 +520,7 @@ export const AddClothingDialog = ({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -276,6 +538,28 @@ export const AddClothingDialog = ({
                   </div>
                 </button>
 
+                {/* Security Status */}
+                {securityStatus !== 'idle' && (
+                  <div className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg text-sm",
+                    securityStatus === 'checking' && "bg-muted/50 text-muted-foreground",
+                    securityStatus === 'safe' && "bg-green-500/10 text-green-600 dark:text-green-400",
+                    securityStatus === 'warning' && "bg-destructive/10 text-destructive"
+                  )}>
+                    {securityStatus === 'checking' && <Loader2 size={16} className="animate-spin" />}
+                    {securityStatus === 'safe' && <Shield size={16} />}
+                    {securityStatus === 'warning' && <AlertTriangle size={16} />}
+                    <span>{securityMessage}</span>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                  <Shield size={16} className="text-primary mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    {t('file_security_note')}
+                  </p>
+                </div>
+
                 <p className="text-xs text-muted-foreground text-center">
                   {t('add_clothing_ai_detect')}
                 </p>
@@ -289,7 +573,11 @@ export const AddClothingDialog = ({
                       type="url"
                       placeholder="https://example.com/image.jpg"
                       value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
+                      onChange={(e) => {
+                        setImageUrl(e.target.value);
+                        setSecurityStatus('idle');
+                        setSecurityMessage('');
+                      }}
                       className="h-11"
                     />
                   </div>
@@ -304,6 +592,28 @@ export const AddClothingDialog = ({
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Security Status */}
+                {securityStatus !== 'idle' && (
+                  <div className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg text-sm",
+                    securityStatus === 'checking' && "bg-muted/50 text-muted-foreground",
+                    securityStatus === 'safe' && "bg-green-500/10 text-green-600 dark:text-green-400",
+                    securityStatus === 'warning' && "bg-destructive/10 text-destructive"
+                  )}>
+                    {securityStatus === 'checking' && <Loader2 size={16} className="animate-spin" />}
+                    {securityStatus === 'safe' && <Shield size={16} />}
+                    {securityStatus === 'warning' && <AlertTriangle size={16} />}
+                    <span>{securityMessage}</span>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                  <Shield size={16} className="text-primary mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    {t('url_security_note')}
+                  </p>
                 </div>
 
                 <Button onClick={handleUrlSubmit} disabled={!imageUrl.trim() || isLoadingUrl || isValidating} className="w-full h-11">
