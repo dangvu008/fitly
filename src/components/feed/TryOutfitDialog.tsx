@@ -192,13 +192,12 @@ export const TryOutfitDialog = ({
         imageUrl: item.imageUrl,
       }));
       
-      // Save with source outfit reference (Requirements 4.2)
+      // Save try-on result
       const saved = await saveTryOnResult(
         user.id,
         bodyImage,
         result.resultImageUrl,
-        clothingItemsData,
-        outfit.id // Pass source outfit ID
+        clothingItemsData
       );
       
       if (saved) {

@@ -61,36 +61,30 @@ export interface SaveTryOnOptions {
   bodyImage: string;
   resultImage: string;
   clothingItems: ClothingItemData[];
-  sourceOutfitId?: string | null;
 }
 
 /**
  * Prepares the try-on history record for database insertion.
  * This is a pure function that can be tested without database dependencies.
- * 
- * Requirements 4.2: Store result with reference to the original shared outfit
  */
 export interface TryOnHistoryRecord {
   user_id: string;
   body_image_url: string;
   result_image_url: string;
   clothing_items: Json;
-  source_outfit_id: string | null;
 }
 
 export function prepareTryOnHistoryRecord(
   userId: string,
   bodyImageUrl: string,
   resultImageUrl: string,
-  clothingItems: ClothingItemData[],
-  sourceOutfitId?: string | null
+  clothingItems: ClothingItemData[]
 ): TryOnHistoryRecord {
   return {
     user_id: userId,
     body_image_url: bodyImageUrl,
     result_image_url: resultImageUrl,
     clothing_items: JSON.parse(JSON.stringify(clothingItems)) as Json,
-    source_outfit_id: sourceOutfitId || null,
   };
 }
 
@@ -99,8 +93,7 @@ export const useTryOnHistory = () => {
     userId: string,
     bodyImage: string,
     resultImage: string,
-    clothingItems: ClothingItemData[],
-    sourceOutfitId?: string | null
+    clothingItems: ClothingItemData[]
   ): Promise<boolean> => {
     try {
       // Upload images to storage
@@ -114,14 +107,12 @@ export const useTryOnHistory = () => {
         return false;
       }
 
-      // Save to database with optional source outfit reference
-      // Requirements 4.2: Store result with reference to the original shared outfit
+      // Save to database
       const record = prepareTryOnHistoryRecord(
         userId,
         bodyImageUrl,
         resultImageUrl,
-        clothingItems,
-        sourceOutfitId
+        clothingItems
       );
       const { error } = await supabase.from('try_on_history').insert([record]);
 
