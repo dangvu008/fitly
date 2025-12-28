@@ -10,6 +10,9 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { sampleClothing } from '@/data/sampleClothing';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUserClothing } from '@/hooks/useUserClothing';
+import { ClothingItemActions } from '@/components/clothing/ClothingItemActions';
+import { EditClothingDialog } from '@/components/clothing/EditClothingDialog';
 
 interface OutfitHistory {
   id: string;
@@ -43,6 +46,15 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  
+  // Use the useUserClothing hook for clothing management
+  const { 
+    userClothing, 
+    isLoading: isLoadingUserClothing, 
+    isSaving, 
+    updateClothingItem, 
+    deleteClothingItem 
+  } = useUserClothing();
 
   const categories: CategoryOption[] = [
     { id: 'top', label: t('slot_top'), icon: <Shirt size={20} /> },
@@ -55,6 +67,10 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('top');
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
   
+  // Edit dialog state
+  const [editingItem, setEditingItem] = useState<ClothingItem | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
   const [userClothingItems, setUserClothingItems] = useState<UserClothingWithPurchased[]>([]);
   const [outfits, setOutfits] = useState<OutfitHistory[]>([]);
   const [isLoadingClothing, setIsLoadingClothing] = useState(true);
@@ -63,7 +79,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
   // Sample clothing data
   const allClothing = sampleClothing;
 
-  // Fetch user clothing
+  // Sync userClothingItems with useUserClothing hook data
   useEffect(() => {
     if (!user) {
       setUserClothingItems([]);
@@ -71,37 +87,14 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
       return;
     }
 
-    const fetchClothing = async () => {
-      setIsLoadingClothing(true);
-      const { data, error } = await supabase
-        .from('user_clothing')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching clothing:', error);
-        toast.error(t('closet_cannot_load'));
-      } else {
-        setUserClothingItems(data?.map(item => ({
-          id: item.id,
-          name: item.name,
-          category: item.category as ClothingCategory,
-          imageUrl: item.image_url,
-          color: item.color || undefined,
-          gender: item.gender as 'male' | 'female' | 'unisex' | undefined,
-          style: item.style || undefined,
-          pattern: item.pattern || undefined,
-          tags: item.tags || [],
-          is_purchased: item.is_purchased ?? false,
-          purchase_url: item.purchase_url || undefined,
-        })) || []);
-      }
-      setIsLoadingClothing(false);
-    };
-
-    fetchClothing();
-  }, [user]);
+    // Map userClothing from hook to UserClothingWithPurchased format
+    setUserClothingItems(userClothing.map(item => ({
+      ...item,
+      is_purchased: false, // Default value, can be enhanced later
+      purchase_url: undefined,
+    })));
+    setIsLoadingClothing(isLoadingUserClothing);
+  }, [user, userClothing, isLoadingUserClothing]);
 
   // Fetch outfit history
   useEffect(() => {
@@ -170,6 +163,33 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
       ));
       toast.success(currentStatus ? t('closet_removed_fav') : t('closet_added_fav'));
     }
+  };
+
+  // Edit handlers
+  const handleEditItem = (item: ClothingItem) => {
+    setEditingItem(item);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (id: string, updates: { name: string; tags: string[] }): Promise<boolean> => {
+    const success = await updateClothingItem(id, updates);
+    if (success) {
+      setIsEditDialogOpen(false);
+      setEditingItem(null);
+      toast.success(t('closet_updated') || 'Đã cập nhật quần áo');
+    }
+    return success;
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditDialogOpen(false);
+    setEditingItem(null);
+  };
+
+  // Delete handler
+  const handleDeleteItem = async (id: string): Promise<boolean> => {
+    const success = await deleteClothingItem(id);
+    return success;
   };
 
   // Get user owned item IDs
@@ -354,6 +374,18 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                           className="w-full h-full object-contain"
                         />
                         
+                        {/* Action Menu for owned items */}
+                        {isOwned && (
+                          <div className="absolute top-2 right-2">
+                            <ClothingItemActions
+                              item={item}
+                              onEdit={handleEditItem}
+                              onDelete={handleDeleteItem}
+                              showHiddenOption={false}
+                            />
+                          </div>
+                        )}
+                        
                         {/* Buy Link Badge */}
                         {!isOwned && purchaseUrl && (
                           <a
@@ -368,12 +400,12 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
                           </a>
                         )}
                         
-                        {/* Owned Badge */}
+                        {/* Owned Badge - moved to bottom right for owned items */}
                         {isOwned && (
                           <button
                             onClick={() => togglePurchased(item.id, (item as UserClothingWithPurchased).is_purchased)}
                             className={cn(
-                              "absolute top-2 right-2 p-1.5 rounded-full transition-colors",
+                              "absolute bottom-2 right-2 p-1.5 rounded-full transition-colors",
                               (item as UserClothingWithPurchased).is_purchased
                                 ? "bg-green-500 text-white" 
                                 : "bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-foreground"
@@ -490,6 +522,17 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Edit Clothing Dialog */}
+      {editingItem && (
+        <EditClothingDialog
+          item={editingItem}
+          isOpen={isEditDialogOpen}
+          isSaving={isSaving}
+          onClose={handleCloseEdit}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 };

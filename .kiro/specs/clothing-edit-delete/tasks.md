@@ -1,0 +1,49 @@
+# Implementation Plan
+
+- [x] 1. Update ClosetPage to integrate edit/delete functionality
+  - [x] 1.1 Import useUserClothing hook and required components
+    - Import `useUserClothing` hook
+    - Import `ClothingItemActions` component
+    - Import `EditClothingDialog` component
+    - _Requirements: 1.1, 2.1, 3.1_
+  - [x] 1.2 Add state management for edit dialog
+    - Add state for `editingItem` (ClothingItem | null)
+    - Add state for `isEditDialogOpen` (boolean)
+    - _Requirements: 1.2_
+  - [x] 1.3 Replace direct Supabase fetch with useUserClothing hook
+    - Use `userClothing`, `updateClothingItem`, `deleteClothingItem`, `isSaving` from hook
+    - Remove duplicate fetch logic
+    - _Requirements: 1.3, 2.2_
+  - [x] 1.4 Add ClothingItemActions to clothing grid items
+    - Add action menu button to each owned clothing item
+    - Pass `onEdit` and `onDelete` handlers
+    - Only show for items owned by user
+    - _Requirements: 1.1, 2.1, 3.1, 3.3_
+  - [x] 1.5 Implement edit handler functions
+    - Create `handleEditItem` to open edit dialog with selected item
+    - Create `handleSaveEdit` to call `updateClothingItem` and close dialog
+    - Create `handleCloseEdit` to close dialog without saving
+    - _Requirements: 1.2, 1.3, 1.4_
+  - [x] 1.6 Implement delete handler function
+    - Create `handleDeleteItem` to call `deleteClothingItem`
+    - Show confirmation or directly delete based on UX preference
+    - _Requirements: 2.2, 2.3_
+  - [x] 1.7 Add EditClothingDialog to component render
+    - Render dialog with `editingItem` data
+    - Connect `onSave` and `onClose` handlers
+    - _Requirements: 1.2, 1.3, 1.4_
+  - [x] 1.8 Write property test for edit preserves item identity
+    - **Property 1: Edit preserves item identity**
+    - **Validates: Requirements 1.3**
+  - [x] 1.9 Write property test for cancel edit preserves state
+    - **Property 2: Cancel edit preserves original state**
+    - **Validates: Requirements 1.4**
+  - [x] 1.10 Write property test for delete removes item
+    - **Property 3: Delete removes item from list**
+    - **Validates: Requirements 2.2, 2.3**
+  - [x] 1.11 Write property test for action menu ownership
+    - **Property 4: Action menu only for owned items**
+    - **Validates: Requirements 3.3**
+
+- [x] 2. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
