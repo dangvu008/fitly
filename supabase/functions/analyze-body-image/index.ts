@@ -185,8 +185,8 @@ Only respond with the JSON object, nothing else.`;
       };
     }
 
-    // Save to cache in background
-    EdgeRuntime.waitUntil(saveToCache(supabase, cacheKey, analysis));
+    // Save to cache (fire and forget)
+    saveToCache(supabase, cacheKey, analysis).catch(err => console.error('Cache save error:', err));
 
     return new Response(
       JSON.stringify({ ...analysis, cached: false }),
