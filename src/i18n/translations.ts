@@ -24,6 +24,10 @@ export const translations = {
     
     // Home sections
     trending_outfits: 'Trending Outfits',
+    trending_now: 'Xu hướng',
+    your_recent_looks: 'Lịch sử của bạn',
+    explore: 'Khám phá',
+    try_this: 'Thử ngay',
     outfits_loved: 'outfit được yêu thích',
     tryon_history: 'Lịch sử thử đồ',
     login_to_view_history: 'Đăng nhập để xem lịch sử thử đồ của bạn',
@@ -521,6 +525,10 @@ export const translations = {
     
     // Home sections
     trending_outfits: 'Trending Outfits',
+    trending_now: 'Trending Now',
+    your_recent_looks: 'Your Recent Looks',
+    explore: 'Explore',
+    try_this: 'Try This',
     outfits_loved: 'outfits loved',
     tryon_history: 'Try-On History',
     login_to_view_history: 'Login to view your try-on history',
@@ -1018,6 +1026,10 @@ export const translations = {
     
     // Home sections
     trending_outfits: '热门搭配',
+    trending_now: '热门趋势',
+    your_recent_looks: '最近试穿',
+    explore: '探索',
+    try_this: '试穿',
     outfits_loved: '人气搭配',
     tryon_history: '试衣历史',
     login_to_view_history: '登录查看您的试衣历史',
@@ -1515,6 +1527,10 @@ export const translations = {
     
     // Home sections
     trending_outfits: '인기 코디',
+    trending_now: '트렌드',
+    your_recent_looks: '최근 피팅',
+    explore: '탐색',
+    try_this: '입어보기',
     outfits_loved: '인기 코디',
     tryon_history: '피팅 기록',
     login_to_view_history: '피팅 기록을 보려면 로그인하세요',
@@ -2008,6 +2024,10 @@ export const translations = {
     
     // Home sections
     trending_outfits: '人気コーデ',
+    trending_now: 'トレンド',
+    your_recent_looks: '最近の試着',
+    explore: '探索',
+    try_this: '試着する',
     outfits_loved: '人気コーデ',
     tryon_history: '試着履歴',
     login_to_view_history: 'ログインして試着履歴を見る',
@@ -2501,6 +2521,10 @@ export const translations = {
     
     // Home sections
     trending_outfits: 'ชุดยอดนิยม',
+    trending_now: 'เทรนด์',
+    your_recent_looks: 'ประวัติล่าสุด',
+    explore: 'สำรวจ',
+    try_this: 'ลองใส่',
     outfits_loved: 'ชุดยอดนิยม',
     tryon_history: 'ประวัติการลอง',
     login_to_view_history: 'เข้าสู่ระบบเพื่อดูประวัติการลอง',

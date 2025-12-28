@@ -1,5 +1,5 @@
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
-import { X, Sparkles, Filter, Plus, Shirt, Square, Crown, Footprints, Glasses, Upload, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { X, Sparkles, Filter, Plus, Shirt, Footprints, Glasses, Upload, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import confetti from 'canvas-confetti';
@@ -12,6 +12,43 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// Custom Pants Icon
+const PantsIcon = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="1.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M6 4h12v2c0 1-0.5 2-1 3l-2 12h-2l-1-10-1 10h-2l-2-12c-0.5-1-1-2-1-3V4z" />
+    <path d="M6 4h12" />
+    <path d="M8 7h8" />
+  </svg>
+);
+
+// Custom Dress Icon
+const DressIcon = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="1.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2L10 4v2l-4 3v2l2 1v9h8v-9l2-1v-2l-4-3V4l-2-2z" />
+    <path d="M8 12h8" />
+  </svg>
+);
 
 interface SelectedClothingListProps {
   items: ClothingItem[];
@@ -28,8 +65,8 @@ type OutfitCategory = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory';
 
 const outfitSlots: { category: OutfitCategory; labelKey: TranslationKey; icon: React.ElementType }[] = [
   { category: 'top', labelKey: 'slot_top', icon: Shirt },
-  { category: 'bottom', labelKey: 'slot_bottom', icon: Square },
-  { category: 'dress', labelKey: 'slot_dress', icon: Crown },
+  { category: 'bottom', labelKey: 'slot_bottom', icon: PantsIcon },
+  { category: 'dress', labelKey: 'slot_dress', icon: DressIcon },
   { category: 'shoes', labelKey: 'slot_shoes', icon: Footprints },
   { category: 'accessory', labelKey: 'slot_accessory', icon: Glasses },
 ];
