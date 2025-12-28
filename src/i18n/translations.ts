@@ -46,6 +46,7 @@ export const translations = {
     nav_compare: 'So sánh',
     nav_suggest: 'Gợi ý',
     nav_wardrobe: 'Tủ đồ',
+    nav_community: 'Cộng đồng',
     
     // Auth
     login: 'Đăng nhập',
@@ -547,6 +548,7 @@ export const translations = {
     nav_compare: 'Compare',
     nav_suggest: 'Suggest',
     nav_wardrobe: 'Wardrobe',
+    nav_community: 'Community',
     
     // Auth
     login: 'Login',
@@ -1048,6 +1050,7 @@ export const translations = {
     nav_compare: '对比',
     nav_suggest: '推荐',
     nav_wardrobe: '衣柜',
+    nav_community: '社区',
     
     // Auth
     login: '登录',
@@ -1549,6 +1552,7 @@ export const translations = {
     nav_compare: '비교',
     nav_suggest: '추천',
     nav_wardrobe: '옷장',
+    nav_community: '커뮤니티',
     
     // Auth
     login: '로그인',
@@ -2046,6 +2050,7 @@ export const translations = {
     nav_compare: '比較',
     nav_suggest: 'おすすめ',
     nav_wardrobe: 'ワードローブ',
+    nav_community: 'コミュニティ',
     
     // Auth
     login: 'ログイン',
@@ -2543,6 +2548,7 @@ export const translations = {
     nav_compare: 'เปรียบเทียบ',
     nav_suggest: 'แนะนำ',
     nav_wardrobe: 'ตู้เสื้อผ้า',
+    nav_community: 'ชุมชน',
     
     // Auth
     login: 'เข้าสู่ระบบ',

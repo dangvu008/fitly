@@ -14,6 +14,7 @@ import { AuthPage } from './AuthPage';
 import { SharedOutfitDetailPage } from './SharedOutfitDetailPage';
 import { SavedOutfitsPage } from './SavedOutfitsPage';
 import { UserProfilePage } from './UserProfilePage';
+import CommunityFeedPage from './CommunityFeedPage';
 import { CompareProvider } from '@/contexts/CompareContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ClothingItem } from '@/types/clothing';
@@ -105,6 +106,8 @@ const MainApp = () => {
         return <ClosetPage onNavigateToTryOn={() => setActiveTab('tryOn')} />;
       case 'saved':
         return <SavedOutfitsPage onNavigateBack={() => setActiveTab('home')} />;
+      case 'community':
+        return <CommunityFeedPage />;
       default:
         return (
           <HomePage 
@@ -144,6 +147,7 @@ const Index = () => {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/outfit/:id" element={<SharedOutfitDetailPage />} />
           <Route path="/user/:userId" element={<UserProfilePage />} />
+          <Route path="/community" element={<CommunityFeedPage />} />
           <Route path="/*" element={<MainApp />} />
         </Routes>
       </CompareProvider>
