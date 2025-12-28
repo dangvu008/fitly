@@ -26,7 +26,7 @@ import { useCategoryCorrections } from '@/hooks/useCategoryCorrections';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useProSubscription } from '@/hooks/useProSubscription';
 import { ProSubscriptionDialog } from '@/components/monetization/ProSubscriptionDialog';
-import { FindSimilarItemsSheet } from '@/components/monetization/FindSimilarItemsSheet';
+import { FindSimilarItemsSheet, SAMPLE_AFFILIATE_PRODUCTS } from '@/components/monetization/FindSimilarItemsSheet';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1179,11 +1179,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       <FindSimilarItemsSheet
         isOpen={showFindSimilarSheet}
         onClose={() => setShowFindSimilarSheet(false)}
-        clothingItems={selectedItems.map(item => ({
-          name: item.name,
-          imageUrl: item.imageUrl,
-          category: item.category,
-        }))}
+        products={SAMPLE_AFFILIATE_PRODUCTS}
       />
     </div>
   );
