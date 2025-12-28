@@ -273,10 +273,10 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   };
 
   return (
-    <div ref={ref} className="space-y-3">
+    <div ref={ref} className="space-y-2">
       {/* Horizontally distributed outfit slots */}
       <div className="w-full" ref={dropdownRef}>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-1.5">
           {/* Category slots */}
           {outfitSlots.map((slot) => {
             const item = itemsByCategory[slot.category];
@@ -326,9 +326,9 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                               e.stopPropagation();
                               handleRemove(item.id);
                             }}
-                            className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-150 z-10 shadow-sm"
+                            className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-150 z-10 shadow-sm"
                           >
-                            <X size={12} />
+                            <X size={10} />
                           </button>
                           {/* Change button overlay */}
                           <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -337,8 +337,8 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                         </div>
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center hover:bg-primary/5 transition-colors">
-                          <IconComponent size={22} className="text-muted-foreground/60 mb-1" strokeWidth={1.5} />
-                          <Plus size={14} className="text-primary" />
+                          <IconComponent size={20} className="text-muted-foreground/60 mb-0.5" strokeWidth={1.5} />
+                          <Plus size={12} className="text-primary" />
                         </div>
                       )}
                     </button>
@@ -560,7 +560,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
 
       {/* Selected count indicator */}
       {selectedCount > 0 && (
-        <div className="flex items-center justify-center gap-2 py-1">
+        <div className="flex items-center justify-center gap-2">
           {isOutfitComplete && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-primary animate-scale-in">
               <Sparkles size={12} className="animate-pulse" />

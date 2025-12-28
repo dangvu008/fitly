@@ -875,9 +875,9 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
 
       {/* Main Content */}
-      <div className="px-4 space-y-4">
-        {/* Body Image Section - Compact */}
-        <div className="relative w-full aspect-[3/4] max-h-[45vh] rounded-xl overflow-hidden bg-secondary border border-border">
+      <div className="px-3 space-y-3">
+        {/* Body Image Section - Optimized for mobile */}
+        <div className="relative w-full aspect-[3/4] max-h-[40vh] rounded-xl overflow-hidden bg-secondary border border-border">
           <TryOnCanvas
             bodyImageUrl={bodyImage}
             onBodyImageChange={(imageUrl) => {
@@ -907,7 +907,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
           <button
             onClick={() => setQuality('standard')}
             className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all",
+              "flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all",
               quality === 'standard'
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-card text-muted-foreground hover:border-primary/50"
@@ -924,7 +924,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
               }
             }}
             className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+              "flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-1.5",
               quality === '4k'
                 ? "border-yellow-500 bg-yellow-500/10 text-yellow-600"
                 : "border-border bg-card text-muted-foreground hover:border-yellow-500/50"
@@ -938,7 +938,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         {/* AI Try-On Button */}
         <Button
           variant="instagram"
-          className="w-full h-12 text-base"
+          className="w-full h-11 text-base"
           onClick={handleAITryOn}
           disabled={isProcessing || !bodyImage || selectedItems.length === 0}
         >
@@ -960,7 +960,7 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
         {aiResultImage && (
           <Button
             variant="secondary"
-            className="w-full h-11"
+            className="w-full h-10"
             onClick={handleShare}
           >
             <Share2 size={18} />
