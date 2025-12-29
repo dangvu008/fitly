@@ -4,7 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProSubscription } from '@/hooks/useProSubscription';
 import { GemsCounter } from '@/components/monetization/GemsCounter';
-import logoImage from '@/assets/logo.png';
+import { FitlyLogo } from '@/components/ui/FitlyLogo';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 interface HeaderProps {
   title: string;
@@ -52,19 +53,15 @@ export const Header = ({
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border safe-top">
       <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
         {/* Logo - Far left */}
-        <div className="flex items-center gap-2.5">
-          <img 
-            src={logoImage} 
-            alt="TryOn Logo" 
-            className="w-8 h-8 object-contain"
-          />
-          <span className="font-display font-bold text-xl text-foreground">
-            TryOn
-          </span>
-        </div>
+        <FitlyLogo size="sm" />
         
         {/* Right actions - Gem Badge, Bookmark, Avatar with 16px gaps */}
         <div className="flex items-center gap-4">
+          {/* Language Switcher */}
+          {showLanguageSwitcher && (
+            <LanguageSwitcher />
+          )}
+          
           {/* Gems Counter - Pill Badge */}
           {showGems && (
             <GemsCounter onPurchaseClick={onGemsClick || (() => {})} />

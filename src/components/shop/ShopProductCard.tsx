@@ -31,26 +31,26 @@ export function ShopProductCard({
   const formattedPrice = formatShopPrice(product.price, product.currency);
 
   if (compact) {
-    // Compact variant for horizontal scroll
+    // Compact variant for horizontal scroll - optimized for mobile
     return (
       <div
         className={cn(
-          'flex-shrink-0 w-36 bg-card rounded-xl border overflow-hidden shadow-sm',
+          'flex-shrink-0 w-[140px] bg-card rounded-lg border overflow-hidden shadow-sm',
           className
         )}
       >
-        {/* Product Image */}
-        <div className="aspect-square relative overflow-hidden bg-muted">
+        {/* Product Image - taller aspect ratio for fashion */}
+        <div className="aspect-[3/4] relative overflow-hidden bg-muted">
           <img
             src={product.imageUrl}
             alt={product.name}
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          {/* Platform badge */}
+          {/* Platform badge - smaller */}
           <div
             className={cn(
-              'absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] text-white font-medium',
+              'absolute top-1 right-1 px-1.5 py-0.5 rounded text-[9px] text-white font-medium',
               PLATFORM_COLORS[product.platform]
             )}
           >
@@ -58,29 +58,29 @@ export function ShopProductCard({
           </div>
         </div>
 
-        {/* Product Info */}
-        <div className="p-2 space-y-1.5">
-          <p className="text-xs font-medium line-clamp-1">{product.brand || product.name}</p>
-          <p className="text-[10px] text-muted-foreground line-clamp-1">{product.name}</p>
+        {/* Product Info - more compact */}
+        <div className="p-1.5 space-y-1">
+          <p className="text-[11px] font-semibold line-clamp-1">{product.brand || product.name}</p>
+          <p className="text-[9px] text-muted-foreground line-clamp-1">{product.name}</p>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-1">
+          {/* Action Buttons - stacked */}
+          <div className="flex flex-col gap-0.5 pt-0.5">
             <Button
               size="sm"
               variant="default"
-              className="w-full h-7 text-[10px] bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+              className="w-full h-6 text-[10px] bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 px-2"
               onClick={() => onTryOn(product)}
             >
-              <Zap className="h-3 w-3 mr-0.5" />
+              <Zap className="h-2.5 w-2.5 mr-0.5" />
               Try On
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="w-full h-7 text-[10px]"
+              className="w-full h-6 text-[10px] px-2"
               onClick={() => onBuy(product)}
             >
-              <ShoppingCart className="h-3 w-3 mr-0.5" />
+              <ShoppingCart className="h-2.5 w-2.5 mr-0.5" />
               {formattedPrice}
             </Button>
           </div>
@@ -89,16 +89,16 @@ export function ShopProductCard({
     );
   }
 
-  // Full variant for grid view
+  // Full variant for grid view - optimized for mobile
   return (
     <div
       className={cn(
-        'flex flex-col bg-card rounded-xl border overflow-hidden shadow-sm',
+        'flex flex-col bg-card rounded-lg border overflow-hidden shadow-sm',
         className
       )}
     >
-      {/* Product Image */}
-      <div className="aspect-square relative overflow-hidden bg-muted">
+      {/* Product Image - taller for fashion */}
+      <div className="aspect-[3/4] relative overflow-hidden bg-muted">
         <img
           src={product.imageUrl}
           alt={product.name}
@@ -108,7 +108,7 @@ export function ShopProductCard({
         {/* Platform badge */}
         <div
           className={cn(
-            'absolute top-2 right-2 px-2 py-0.5 rounded text-xs text-white font-medium',
+            'absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] text-white font-medium',
             PLATFORM_COLORS[product.platform]
           )}
         >
@@ -117,30 +117,30 @@ export function ShopProductCard({
       </div>
 
       {/* Product Info */}
-      <div className="p-3 flex-1 flex flex-col">
+      <div className="p-2 flex-1 flex flex-col">
         {product.brand && (
-          <p className="text-xs text-muted-foreground mb-0.5">{product.brand}</p>
+          <p className="text-[10px] font-semibold text-foreground mb-0.5">{product.brand}</p>
         )}
-        <h3 className="font-medium text-sm line-clamp-2 mb-2">{product.name}</h3>
+        <h3 className="text-[11px] text-muted-foreground line-clamp-2 mb-1.5">{product.name}</h3>
 
         {/* Action Buttons */}
-        <div className="mt-auto space-y-2">
+        <div className="mt-auto space-y-1">
           <Button
             size="sm"
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+            className="w-full h-7 text-[11px] bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
             onClick={() => onTryOn(product)}
           >
-            <Zap className="h-4 w-4 mr-1" />
+            <Zap className="h-3 w-3 mr-1" />
             Try On
           </Button>
           <Button
             size="sm"
             variant="outline"
-            className="w-full"
+            className="w-full h-7 text-[11px]"
             onClick={() => onBuy(product)}
           >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Buy {formattedPrice}
+            <ShoppingCart className="h-3 w-3 mr-1" />
+            {formattedPrice}
           </Button>
         </div>
       </div>

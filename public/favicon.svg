@@ -1,0 +1,31 @@
+<svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fitlyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="50%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#F97316" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Hanger hook -->
+  <path
+    d="M24 4C24 4 24 8 24 10C24 12 26 14 28 14"
+    stroke="url(#fitlyGrad)"
+    stroke-width="3"
+    stroke-linecap="round"
+    fill="none"
+  />
+  
+  <!-- Hanger body - stylized shirt shape -->
+  <path
+    d="M10 18L24 14L38 18L36 38H12L10 18Z"
+    fill="url(#fitlyGrad)"
+  />
+  
+  <!-- Inner shirt detail -->
+  <path
+    d="M18 18L24 16L30 18L29 32H19L18 18Z"
+    fill="white"
+    opacity="0.3"
+  />
+</svg>

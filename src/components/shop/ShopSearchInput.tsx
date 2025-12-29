@@ -86,7 +86,7 @@ export function ShopSearchInput({
   }, [onUrlDetected]);
 
   return (
-    <form onSubmit={handleSubmit} className={cn('px-4', className)}>
+    <form onSubmit={handleSubmit} className={cn('', className)}>
       <div className="relative">
         {/* Icon - changes based on URL detection */}
         <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -107,7 +107,7 @@ export function ShopSearchInput({
           placeholder={placeholder}
           disabled={isLoading}
           className={cn(
-            'pl-10 pr-4 h-11 bg-secondary/50 border-0 rounded-xl',
+            'pl-9 pr-4 h-10 text-sm bg-secondary/50 border-0 rounded-xl',
             'focus-visible:ring-2 focus-visible:ring-primary/50',
             isUrl && 'ring-2 ring-primary/50'
           )}
@@ -115,9 +115,9 @@ export function ShopSearchInput({
 
         {/* URL indicator badge */}
         {isUrl && !isLoading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              URL detected
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <span className="text-[9px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+              URL
             </span>
           </div>
         )}

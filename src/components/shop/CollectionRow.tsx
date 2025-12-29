@@ -29,7 +29,7 @@ export function CollectionRow({
     <div className={cn('py-3', className)}>
       {/* Collection Header */}
       <div className="px-4 mb-3">
-        <h3 className="text-base font-semibold text-foreground">
+        <h3 className="text-sm font-bold text-foreground">
           {collection.title}
         </h3>
         {collection.subtitle && (
@@ -41,7 +41,7 @@ export function CollectionRow({
 
       {/* Horizontal Scrollable Products */}
       <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-3 px-4 pb-2">
+        <div className="flex gap-3 px-4 pb-1">
           {collection.products.map((product) => (
             <ShopProductCard
               key={product.id}

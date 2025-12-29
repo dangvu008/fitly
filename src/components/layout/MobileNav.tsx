@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Home, Search, Zap, Globe2, FolderOpen } from 'lucide-react';
+import { Home, ShoppingBag, Zap, Globe2, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
@@ -13,7 +13,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'home', icon: Home, labelKey: 'nav_home' },
-  { id: 'search', icon: Search, labelKey: 'nav_search' },
+  { id: 'search', icon: ShoppingBag, labelKey: 'nav_shop' },
   { id: 'studio', icon: Zap, labelKey: 'nav_studio', isFab: true },
   { id: 'community', icon: Globe2, labelKey: 'nav_community' },
   { id: 'wardrobe', icon: FolderOpen, labelKey: 'nav_wardrobe' },

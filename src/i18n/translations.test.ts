@@ -18,7 +18,8 @@ const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['vi', 'en', 'zh', 'ko', 'ja', 
 // Navigation keys that must be present in all languages
 const REQUIRED_NAV_KEYS = [
   'nav_home',
-  'nav_search', 
+  'nav_search',
+  'nav_shop',
   'nav_studio',
   'nav_community',
   'nav_wardrobe',

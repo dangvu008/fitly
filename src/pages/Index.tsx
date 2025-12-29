@@ -165,6 +165,7 @@ const MainApp = () => {
         <Header
           title="TryOn"
           showNotification={activeTab === 'home'}
+          showLanguageSwitcher={true}
           showGems={true}
           onAvatarClick={() => setActiveTab('profile')}
           onSavedClick={() => setActiveTab('saved')}

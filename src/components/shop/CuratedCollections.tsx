@@ -37,15 +37,15 @@ export function CuratedCollections({
 
   if (filteredCollections.length === 0) {
     return (
-      <div className="py-12 text-center text-muted-foreground">
-        <p>Không có sản phẩm trong danh mục này</p>
+      <div className="py-10 text-center text-muted-foreground">
+        <p className="text-sm">Không có sản phẩm trong danh mục này</p>
       </div>
     );
   }
 
   return (
-    <div className={cn('space-y-4', className)}>
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4">
+    <div className={cn('space-y-4 py-3', className)}>
+      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-4">
         Curated Collections
       </h3>
       {filteredCollections.map((collection) => (

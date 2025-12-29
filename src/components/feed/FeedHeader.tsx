@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { FitlyLogo } from '@/components/ui/FitlyLogo';
 
 /**
  * FeedHeader - Header component for Community Feed page
  * 
  * Displays:
- * - Title "Community Feed"
+ * - Fitly Logo
  * - Saved button (navigates to SavedOutfitsPage)
  * - User avatar (navigates to ProfilePage)
  * 
@@ -23,7 +24,7 @@ export const FeedHeader = () => {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="flex items-center justify-between px-4 h-14">
-        <h1 className="text-lg font-semibold">Community Feed</h1>
+        <FitlyLogo size="sm" />
         
         <div className="flex items-center gap-2">
           <Button

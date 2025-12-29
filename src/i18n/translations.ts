@@ -48,6 +48,7 @@ export const translations = {
     nav_wardrobe: 'Tủ đồ',
     nav_community: 'Cộng đồng',
     nav_search: 'Tìm kiếm',
+    nav_shop: 'Mua sắm',
     nav_studio: 'Studio',
     
     // Search page
@@ -590,6 +591,7 @@ export const translations = {
     nav_wardrobe: 'Wardrobe',
     nav_community: 'Community',
     nav_search: 'Search',
+    nav_shop: 'Shop',
     nav_studio: 'Studio',
     
     // Search page
@@ -1132,6 +1134,7 @@ export const translations = {
     nav_wardrobe: '衣柜',
     nav_community: '社区',
     nav_search: '搜索',
+    nav_shop: '购物',
     nav_studio: 'Studio',
     
     // Search page
@@ -1674,6 +1677,7 @@ export const translations = {
     nav_wardrobe: '옷장',
     nav_community: '커뮤니티',
     nav_search: '검색',
+    nav_shop: '쇼핑',
     nav_studio: 'Studio',
     
     // Search page
@@ -2212,6 +2216,7 @@ export const translations = {
     nav_wardrobe: 'ワードローブ',
     nav_community: 'コミュニティ',
     nav_search: '検索',
+    nav_shop: 'ショップ',
     nav_studio: 'Studio',
     
     // Search page
@@ -2750,6 +2755,7 @@ export const translations = {
     nav_wardrobe: 'ตู้เสื้อผ้า',
     nav_community: 'ชุมชน',
     nav_search: 'ค้นหา',
+    nav_shop: 'ช้อปปิ้ง',
     nav_studio: 'Studio',
     
     // Search page
