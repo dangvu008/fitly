@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProSubscription } from './useProSubscription';
 
@@ -10,35 +9,51 @@ export interface UserQuota {
 
 const DAILY_LIMIT = 3;
 
+/**
+ * Hook for managing user's daily try-on quota.
+ * Uses local storage for now; can be upgraded to database when needed.
+ */
 export function useUserQuota() {
   const { user } = useAuth();
   const { isPro } = useProSubscription();
   const queryClient = useQueryClient();
 
-  // Fetch user's quota using raw SQL since RPC types may not be generated yet
+  // Get today's date string
+  const getTodayString = () => new Date().toISOString().split('T')[0];
+
+  // Fetch user's quota from localStorage
   const { data: quota, isLoading, error, refetch } = useQuery({
     queryKey: ['user-quota', user?.id],
     queryFn: async (): Promise<UserQuota> => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!user?.id) {
+        return { daily_count: 0, last_reset_date: getTodayString() };
+      }
 
-      // Call the RPC function using raw invoke
-      const { data, error } = await supabase
-        .rpc('get_user_quota' as any, { p_user_id: user.id });
-
-      if (error) {
-        // If function doesn't exist yet, return default
-        if (error.code === '42883') {
-          return { daily_count: 0, last_reset_date: new Date().toISOString().split('T')[0] };
+      // Use localStorage for quota tracking
+      const storageKey = `quota_${user.id}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const today = getTodayString();
+          
+          // Reset if it's a new day
+          if (parsed.last_reset_date !== today) {
+            const newQuota = { daily_count: 0, last_reset_date: today };
+            localStorage.setItem(storageKey, JSON.stringify(newQuota));
+            return newQuota;
+          }
+          
+          return parsed;
+        } catch {
+          // Invalid stored data, reset
         }
-        throw error;
       }
       
-      // Handle the response - it returns a single row
-      const result = Array.isArray(data) ? data[0] : data;
-      return {
-        daily_count: result?.daily_count ?? 0,
-        last_reset_date: result?.last_reset_date ?? new Date().toISOString().split('T')[0],
-      };
+      const defaultQuota = { daily_count: 0, last_reset_date: getTodayString() };
+      localStorage.setItem(storageKey, JSON.stringify(defaultQuota));
+      return defaultQuota;
     },
     enabled: !!user?.id,
     staleTime: 30000, // 30 seconds
@@ -57,6 +72,23 @@ export function useUserQuota() {
     queryClient.invalidateQueries({ queryKey: ['user-quota', user?.id] });
   };
 
+  // Increment quota (call after successful try-on)
+  const incrementQuota = () => {
+    if (!user?.id) return;
+    
+    const storageKey = `quota_${user.id}`;
+    const today = getTodayString();
+    const currentQuota = quota ?? { daily_count: 0, last_reset_date: today };
+    
+    const newQuota = {
+      daily_count: currentQuota.daily_count + 1,
+      last_reset_date: today,
+    };
+    
+    localStorage.setItem(storageKey, JSON.stringify(newQuota));
+    refreshQuota();
+  };
+
   return {
     dailyCount,
     remaining,
@@ -67,5 +99,6 @@ export function useUserQuota() {
     error,
     refetch,
     refreshQuota,
+    incrementQuota,
   };
 }

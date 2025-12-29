@@ -115,18 +115,9 @@ export function useVisualSearch(): UseVisualSearchReturn {
   }, [performSearch]);
 
   const trackClick = useCallback(async (productId: string, productUrl: string) => {
-    try {
-      // Track affiliate click in database
-      await supabase.from('affiliate_clicks').insert({
-        user_id: user?.id || null,
-        product_id: productId,
-        affiliate_url: productUrl,
-        platform: 'other' as const,
-        clicked_at: new Date().toISOString()
-      });
-    } catch (err) {
-      console.error('Failed to track click:', err);
-    }
+    // Stub: Track click locally for now (affiliate_clicks table not yet created)
+    console.log('Affiliate click tracked:', { productId, productUrl, userId: user?.id });
+    // TODO: Implement when affiliate_clicks table is created
   }, [user?.id]);
 
   return {
