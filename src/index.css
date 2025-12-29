@@ -424,6 +424,35 @@
   }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% {
+    box-shadow: 0 4px 20px hsl(280 80% 60% / 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 30px hsl(280 80% 60% / 0.5);
+  }
+}
+
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Animation utilities for nav */
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-ping-slow {
+  animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* Custom scrollbar - Instagram style */
 ::-webkit-scrollbar {
   width: 8px;
