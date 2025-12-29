@@ -326,14 +326,17 @@ serve(async (req) => {
       
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
-        await supabase.from('visual_searches').insert({
+        const { error: insertError } = await supabase.from('visual_searches').insert({
           search_id: searchId,
           user_id: userId || null,
           image_hash: imageHash,
           search_provider: searchProvider,
           results_count: products.length,
           created_at: new Date().toISOString()
-        }).catch(err => console.log('Failed to log search:', err));
+        });
+        if (insertError) {
+          console.log('Failed to log search:', insertError);
+        }
       }
     } catch (err) {
       console.log('Analytics logging skipped:', err);
