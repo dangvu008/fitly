@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { translations, SupportedLanguage } from './translations';
+import { translations, Language } from './translations';
+
+type SupportedLanguage = Language;
 
 /**
  * Property 4: Translation Completeness
