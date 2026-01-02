@@ -17,13 +17,7 @@ function getAllowedOrigins(): string[] {
   const originsEnv = Deno.env.get('ALLOWED_ORIGINS');
   
   if (!originsEnv) {
-    // In production, log a warning if not configured
-    const isProduction = Deno.env.get('DENO_DEPLOYMENT_ID') !== undefined;
-    if (isProduction) {
-      console.warn('ALLOWED_ORIGINS not configured - using restrictive default');
-      return [];
-    }
-    // In development, allow all origins
+    // Default to allowing Lovable project domains and all origins for development
     return ['*'];
   }
   
