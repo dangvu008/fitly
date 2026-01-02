@@ -284,13 +284,13 @@ export const StudioDialog = ({
         
         // Save to history
         await saveTryOnResult(
-          result.generatedImage,
+          user.id,
           bodyImage,
+          result.generatedImage,
           selectedItems.map(item => ({
             name: item.name,
             imageUrl: item.imageUrl,
-          })),
-          user.id
+          }))
         );
         
         // Refresh quota

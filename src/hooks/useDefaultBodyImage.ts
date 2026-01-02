@@ -42,7 +42,7 @@ export function useDefaultBodyImage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('profiles')
-        .select('default_body_image_url, default_body_image_updated_at')
+        .select('default_body_image_url, updated_at')
         .eq('user_id', user.id)
         .single();
 
@@ -52,7 +52,7 @@ export function useDefaultBodyImage() {
 
       setDefaultBodyImage({
         imageUrl: data?.default_body_image_url ?? null,
-        updatedAt: data?.default_body_image_updated_at ?? null,
+        updatedAt: data?.updated_at ?? null,
       });
     } catch (err) {
       console.error('[useDefaultBodyImage] Error fetching default body image:', err);
@@ -84,7 +84,7 @@ export function useDefaultBodyImage() {
         .from('profiles')
         .update({
           default_body_image_url: imageUrl,
-          default_body_image_updated_at: now,
+          updated_at: now,
         })
         .eq('user_id', user.id);
 
@@ -124,7 +124,6 @@ export function useDefaultBodyImage() {
         .from('profiles')
         .update({
           default_body_image_url: null,
-          default_body_image_updated_at: null,
         })
         .eq('user_id', user.id);
 
