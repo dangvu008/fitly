@@ -12,7 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useProSubscription } from '@/hooks/useProSubscription';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useRevenueCat, PRODUCT_IDS } from '@/hooks/useRevenueCat';
-import { confettiService } from '@/services/confetti';
+import { confettiService } from '@/utils/confetti';
 import { toast } from 'sonner';
 
 interface ProSubscriptionDialogProps {

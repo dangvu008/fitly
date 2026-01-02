@@ -12,7 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserGems } from '@/hooks/useUserGems';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useRevenueCat, PRODUCT_IDS } from '@/hooks/useRevenueCat';
-import { confettiService } from '@/services/confetti';
+import { confettiService } from '@/utils/confetti';
 import { RewardedAdButton } from './RewardedAdButton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

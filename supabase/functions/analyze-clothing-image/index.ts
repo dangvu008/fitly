@@ -1,14 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 
 // Generate a simple hash for cache key
 function generateCacheKey(imageBase64: string): string {
-  // Use first and last portions of the image to create a unique key
   const sample = imageBase64.slice(0, 500) + imageBase64.slice(-500);
   let hash = 0;
   for (let i = 0; i < sample.length; i++) {
@@ -50,7 +45,7 @@ async function getFromCache(supabase: any, cacheKey: string): Promise<any | null
 async function saveToCache(supabase: any, cacheKey: string, result: any): Promise<void> {
   try {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Cache for 7 days
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
     await supabase
       .from('ai_cache')
@@ -67,10 +62,10 @@ async function saveToCache(supabase: any, cacheKey: string, result: any): Promis
   }
 }
 
+
 // Fetch learning data from user corrections
 async function getLearningContext(supabase: any): Promise<string> {
   try {
-    // Get recent corrections to learn from
     const { data: corrections, error } = await supabase
       .from('category_corrections')
       .select('ai_predicted_category, user_selected_category, image_features')
@@ -81,7 +76,6 @@ async function getLearningContext(supabase: any): Promise<string> {
       return '';
     }
 
-    // Build learning context from corrections
     const learningPatterns: Record<string, { correct: string; features: any[] }[]> = {};
     
     corrections.forEach((c: any) => {
@@ -100,7 +94,6 @@ async function getLearningContext(supabase: any): Promise<string> {
       return '';
     }
 
-    // Create learning hints for the AI
     const hints: string[] = [];
     
     for (const [predicted, corrections] of Object.entries(learningPatterns)) {
@@ -123,10 +116,13 @@ async function getLearningContext(supabase: any): Promise<string> {
   }
 }
 
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     console.log('Analyzing clothing image...');
@@ -154,7 +150,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check cache first
     const cacheKey = generateCacheKey(imageBase64);
     const cachedResult = await getFromCache(supabase, cacheKey);
     
@@ -165,7 +160,6 @@ serve(async (req) => {
       );
     }
 
-    // Get learning context from user corrections
     const learningContext = await getLearningContext(supabase);
     console.log('Learning context loaded:', learningContext ? 'Yes' : 'No');
 
@@ -261,7 +255,6 @@ Only respond with the JSON object, nothing else.`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     
-    // Parse the JSON response from AI
     let analysis;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -289,7 +282,6 @@ Only respond with the JSON object, nothing else.`;
 
     console.log('Clothing analysis result:', analysis);
 
-    // Save to cache (fire and forget)
     saveToCache(supabase, cacheKey, analysis).catch(err => console.error('Cache save error:', err));
 
     return new Response(

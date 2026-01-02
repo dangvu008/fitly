@@ -19,6 +19,12 @@ import CommunityFeedPage from './CommunityFeedPage';
 import { CompareProvider } from '@/contexts/CompareContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GemsPurchaseDialog } from '@/components/monetization/GemsPurchaseDialog';
+import { ClipboardLinkToast } from '@/components/smartPaste/ClipboardLinkToast';
+import { CrawlErrorToast } from '@/components/smartPaste/CrawlErrorToast';
+import { QuickTryFAB } from '@/components/smartPaste/QuickTryFAB';
+import { QuickTrySheet } from '@/components/smartPaste/QuickTrySheet';
+import { GemGate } from '@/components/tryOn/GemGate';
+import { useSmartPaste, CrawlError } from '@/hooks/useSmartPaste';
 import { ClothingItem } from '@/types/clothing';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
@@ -42,6 +48,37 @@ const MainApp = () => {
     bodyImageUrl: string;
     clothingItems: Array<{ name: string; imageUrl: string }>;
   } | undefined>();
+  
+  // Smart Paste / Quick Try state
+  const [quickTryGarmentUrl, setQuickTryGarmentUrl] = useState<string | undefined>();
+  const [quickTryGarmentId, setQuickTryGarmentId] = useState<string | undefined>();
+  const [quickTryAutoStart, setQuickTryAutoStart] = useState(false);
+
+  // Smart Paste hook for clipboard detection
+  const {
+    detectedLink,
+    isCrawling,
+    crawlError,
+    dismissLink,
+    handleTryFromLink,
+    crawlProductImage,
+    retryCrawl,
+    clearCrawlError,
+    // Gem gate state and actions (REQ-11.1, REQ-11.2)
+    showGemGate,
+    hasSufficientGems,
+    gemBalance,
+    gemCost,
+    closeGemGate,
+    onGemGateProceed,
+    onWatchAd,
+  } = useSmartPaste();
+
+  // Quick Try Sheet state
+  const [isQuickTrySheetOpen, setIsQuickTrySheetOpen] = useState(false);
+  
+  // Track if we should show manual upload after error
+  const [showManualUploadAfterError, setShowManualUploadAfterError] = useState(false);
 
   const handleSelectItem = (item: ClothingItem) => {
     setSelectedItem(item);
@@ -95,6 +132,25 @@ const MainApp = () => {
     setReuseBodyImage(undefined);
     setReuseClothingItems([]);
     setHistoryResult(undefined);
+    // Reset Quick Try state
+    setQuickTryGarmentUrl(undefined);
+    setQuickTryGarmentId(undefined);
+    setQuickTryAutoStart(false);
+  };
+
+  /**
+   * Quick Try - Open Studio with garment URL for Smart Paste flow
+   * Requirements: REQ-8.1, REQ-8.2
+   */
+  const handleQuickTry = (garmentUrl: string, garmentId?: string, autoStart = false) => {
+    setQuickTryGarmentUrl(garmentUrl);
+    setQuickTryGarmentId(garmentId);
+    setQuickTryAutoStart(autoStart);
+    setSelectedItem(undefined);
+    setReuseBodyImage(undefined);
+    setReuseClothingItems([]);
+    setHistoryResult(undefined);
+    setIsStudioOpen(true);
   };
 
   /**
@@ -115,6 +171,7 @@ const MainApp = () => {
             onNavigateToHistory={() => setActiveTab('history')}
             onSelectItem={handleSelectItem}
             onViewHistoryResult={handleViewHistoryResult}
+            onQuickTry={handleQuickTry}
           />
         );
       case 'search':
@@ -153,6 +210,7 @@ const MainApp = () => {
             onNavigateToHistory={() => setActiveTab('history')}
             onSelectItem={handleSelectItem}
             onViewHistoryResult={handleViewHistoryResult}
+            onQuickTry={handleQuickTry}
           />
         );
     }
@@ -204,6 +262,9 @@ const MainApp = () => {
             reuseBodyImage={reuseBodyImage}
             reuseClothingItems={reuseClothingItems}
             historyResult={historyResult}
+            initialGarmentUrl={quickTryGarmentUrl}
+            initialGarmentId={quickTryGarmentId}
+            autoStart={quickTryAutoStart}
           />
         </div>
       )}
@@ -212,6 +273,87 @@ const MainApp = () => {
       <GemsPurchaseDialog
         isOpen={isGemsPurchaseOpen}
         onClose={() => setIsGemsPurchaseOpen(false)}
+      />
+
+      {/* Smart Paste - Clipboard Link Toast */}
+      {detectedLink && !isStudioOpen && !crawlError && (
+        <ClipboardLinkToast
+          detectedLink={detectedLink}
+          isLoading={isCrawling}
+          onTryNow={() => {
+            handleTryFromLink(
+              detectedLink, 
+              (garmentUrl, garmentId) => {
+                handleQuickTry(garmentUrl, garmentId, true);
+              },
+              (error) => {
+                // Error will be shown via CrawlErrorToast
+                console.log('[Index] Crawl error:', error);
+              }
+            );
+          }}
+          onDismiss={dismissLink}
+        />
+      )}
+
+      {/* Smart Paste - Crawl Error Toast with Retry and Manual Upload */}
+      {crawlError && !isStudioOpen && (
+        <CrawlErrorToast
+          error={crawlError}
+          isRetrying={isCrawling}
+          onRetry={async () => {
+            const product = await retryCrawl();
+            if (product?.imageUrl) {
+              handleQuickTry(product.imageUrl, undefined, true);
+            }
+          }}
+          onManualUpload={() => {
+            clearCrawlError();
+            setIsQuickTrySheetOpen(true);
+          }}
+          onDismiss={clearCrawlError}
+        />
+      )}
+
+      {/* Quick Try Sheet */}
+      <QuickTrySheet
+        open={isQuickTrySheetOpen || showManualUploadAfterError}
+        onOpenChange={(open) => {
+          setIsQuickTrySheetOpen(open);
+          if (!open) {
+            setShowManualUploadAfterError(false);
+          }
+        }}
+        isProcessing={isCrawling}
+        onLinkSubmit={async (url) => {
+          const product = await crawlProductImage(url);
+          if (product?.imageUrl) {
+            setIsQuickTrySheetOpen(false);
+            setShowManualUploadAfterError(false);
+            handleQuickTry(product.imageUrl, undefined, false);
+          }
+          // If crawl fails, error toast will show and user can retry or upload manually
+        }}
+        onImageSelected={(imageDataUrl) => {
+          setIsQuickTrySheetOpen(false);
+          setShowManualUploadAfterError(false);
+          clearCrawlError();
+          handleQuickTry(imageDataUrl, undefined, false);
+        }}
+      />
+
+      {/* Smart Paste - Gem Gate Dialog (REQ-11.1, REQ-11.2) */}
+      <GemGate
+        isOpen={showGemGate}
+        requiredGems={gemCost}
+        balance={gemBalance}
+        onSufficientGems={onGemGateProceed}
+        onWatchAd={onWatchAd}
+        onPurchase={() => {
+          closeGemGate();
+          setIsGemsPurchaseOpen(true);
+        }}
+        onClose={closeGemGate}
       />
     </div>
   );

@@ -1,53 +1,101 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Users, Compass, Trophy } from 'lucide-react';
-import { FeedHeader } from '@/components/feed/FeedHeader';
-import { FeedTabs } from '@/components/feed/FeedTabs';
-import { FloatingCreateButton } from '@/components/feed/FloatingCreateButton';
-import { OutfitFeedCard } from '@/components/feed/OutfitFeedCard';
+import { 
+  Flame, 
+  Loader2,
+  Users,
+  TrendingUp,
+  Clock,
+  Sparkles,
+  Zap
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
-import { useCommunityFeed } from '@/hooks/useCommunityFeed';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { TryOutfitDialog } from '@/components/feed/TryOutfitDialog';
+import { CommunityFeedLayout } from '@/components/feed/CommunityFeedLayout';
+import { OutfitWithUser } from '@/components/feed/CommunityOutfitCard';
+import { useCommunityFeed, SharedOutfit } from '@/hooks/useCommunityFeed';
 
 /**
- * CommunityFeedPage - Main page for browsing community outfits
+ * Filter options for Community page
+ * Requirements: 6.2 - Filter chips at the top (Trending, Latest, Following)
+ */
+const filterOptions = [
+  { id: 'trending', icon: Flame, label: 'Trending' },
+  { id: 'latest', icon: Clock, label: 'Mới nhất' },
+  { id: 'following', icon: Users, label: 'Đang theo dõi' },
+] as const;
+
+type FilterId = typeof filterOptions[number]['id'];
+
+/**
+ * Convert SharedOutfit to OutfitWithUser format for CommunityOutfitCard
+ */
+const toOutfitWithUser = (outfit: SharedOutfit): OutfitWithUser => ({
+  id: outfit.id,
+  title: outfit.title,
+  description: outfit.description,
+  result_image_url: outfit.result_image_url,
+  likes_count: outfit.likes_count,
+  comments_count: outfit.comments_count,
+  is_featured: outfit.is_featured,
+  created_at: outfit.created_at,
+  user_id: outfit.user_id,
+  clothing_items: outfit.clothing_items,
+  user_profile: {
+    display_name: outfit.user_profile?.display_name || 'User',
+    avatar_url: outfit.user_profile?.avatar_url || null,
+  },
+  isLiked: outfit.isLiked,
+  isSaved: outfit.isSaved,
+});
+
+/**
+ * CommunityFeedPage - Redesigned community page with Instagram-style layout
+ * 
+ * Requirements:
+ * - 4.3: Prominently display likes and comments count
+ * - 4.4: Navigate to outfit detail page on tap
+ * - 4.5: NO History_Section (differentiating from Home)
+ * - 6.2: Filter chips at the top (Trending, Latest, Following)
  * 
  * Features:
- * - Three tabs: Following, Explore, Ranking
+ * - Single-column Instagram-style layout (default)
+ * - Filter chips for content filtering
+ * - CommunityOutfitCard with larger user info and captions
  * - Infinite scroll
- * - Outfit cards with interactions
- * - Floating create button
- * 
- * Requirements: 1.1, 1.2, 2.1, 2.2, 2.3, 2.4
  */
 const CommunityFeedPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const {
     outfits,
-    activeTab,
     setActiveTab,
     isLoading,
     isLoadingMore,
     hasMore,
     loadMore,
-    hideOutfit,
-    saveOutfit,
-    unsaveOutfit,
+    refresh,
   } = useCommunityFeed();
 
   const [commentsOutfitId, setCommentsOutfitId] = useState<string | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterId>('trending');
+  const [tryOutfitData, setTryOutfitData] = useState<SharedOutfit | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Infinite scroll observer - Requirements 2.1
+  // Map filter to tab
   useEffect(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
+    const tabMap: Record<FilterId, 'following' | 'explore' | 'ranking'> = {
+      trending: 'ranking',
+      latest: 'explore',
+      following: 'following',
+    };
+    setActiveTab(tabMap[activeFilter]);
+  }, [activeFilter, setActiveTab]);
 
-    observerRef.current = new IntersectionObserver(
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
           loadMore();
@@ -57,134 +105,179 @@ const CommunityFeedPage = () => {
     );
 
     if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
+      observer.observe(loadMoreRef.current);
     }
 
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
+    return () => observer.disconnect();
   }, [hasMore, isLoadingMore, loadMore]);
 
-  const handleOpenComments = useCallback((outfitId: string) => {
-    setCommentsOutfitId(outfitId);
-  }, []);
+  // Convert outfits to OutfitWithUser format
+  const outfitsWithUser = useMemo(() => 
+    outfits.map(toOutfitWithUser),
+    [outfits]
+  );
 
-  const handleShare = useCallback((outfitId: string) => {
-    // Copy link to clipboard
-    const url = `${window.location.origin}/outfit/${outfitId}`;
-    navigator.clipboard.writeText(url);
-    toast.success('Đã sao chép link outfit');
-  }, []);
+  // Sort outfits based on filter
+  const sortedOutfits = useMemo(() => {
+    const sorted = [...outfitsWithUser];
+    if (activeFilter === 'trending') {
+      return sorted.sort((a, b) => b.likes_count - a.likes_count);
+    }
+    return sorted.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [outfitsWithUser, activeFilter]);
 
-  const handleViewDetail = useCallback((outfitId: string) => {
+  const handleOutfitClick = useCallback((outfitId: string) => {
     navigate(`/outfit/${outfitId}`);
   }, [navigate]);
 
-  // Empty state messages - Requirements 2.4
-  const renderEmptyState = () => {
-    const emptyStates = {
-      following: {
-        icon: Users,
-        title: 'Chưa có outfit nào',
-        description: 'Follow người dùng khác để xem outfit của họ',
-      },
-      explore: {
-        icon: Compass,
-        title: 'Chưa có outfit nào',
-        description: 'Hãy là người đầu tiên chia sẻ outfit!',
-      },
-      ranking: {
-        icon: Trophy,
-        title: 'Chưa có outfit nào',
-        description: 'Các outfit phổ biến sẽ xuất hiện ở đây',
-      },
+  const handleLike = useCallback((outfitId: string) => {
+    // Like functionality handled by CommunityOutfitCard internally
+    console.log('Like outfit:', outfitId);
+  }, []);
+
+  const handleComment = useCallback((outfitId: string) => {
+    setCommentsOutfitId(outfitId);
+  }, []);
+
+  const handleTryOutfit = useCallback((outfit: OutfitWithUser) => {
+    // Convert back to SharedOutfit format for TryOutfitDialog
+    const sharedOutfit: SharedOutfit = {
+      id: outfit.id,
+      title: outfit.title,
+      description: outfit.description,
+      result_image_url: outfit.result_image_url,
+      clothing_items: outfit.clothing_items,
+      user_id: outfit.user_id,
+      created_at: outfit.created_at,
+      likes_count: outfit.likes_count,
+      comments_count: outfit.comments_count,
+      is_featured: outfit.is_featured,
     };
-
-    const state = emptyStates[activeTab];
-    const Icon = state.icon;
-
-    return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-          <Icon size={32} className="text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-medium mb-2">{state.title}</h3>
-        <p className="text-muted-foreground text-sm">{state.description}</p>
-      </div>
-    );
-  };
+    setTryOutfitData(sharedOutfit);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <FeedHeader />
-      <FeedTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* Feed List */}
-      <div className="max-w-lg mx-auto">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    <div className="min-h-screen bg-background pb-24 pt-16" data-testid="community-feed-page">
+      <div className="max-w-lg mx-auto px-4">
+        {/* Page Header */}
+        <div className="py-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-bold text-foreground">Cộng đồng</h1>
           </div>
-        ) : outfits.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <>
-            {outfits.map((outfit) => (
-              <OutfitFeedCard
-                key={outfit.id}
-                outfit={{
-                  id: outfit.id,
-                  title: outfit.title,
-                  description: outfit.description || undefined,
-                  result_image_url: outfit.result_image_url,
-                  likes_count: outfit.likes_count,
-                  comments_count: outfit.comments_count,
-                  is_featured: outfit.is_featured,
-                  created_at: outfit.created_at,
-                  user_id: outfit.user_id,
-                  clothing_items: outfit.clothing_items,
-                  inspired_by_outfit_id: outfit.inspired_by_outfit_id,
-                }}
-                userProfile={outfit.user_profile}
-                inspiredByOutfit={outfit.inspired_by_outfit}
-                isLiked={outfit.isLiked}
-                isSaved={outfit.isSaved}
-                onOpenComments={handleOpenComments}
-                onShare={handleShare}
-                onViewDetail={handleViewDetail}
-                onSave={saveOutfit}
-                onUnsave={unsaveOutfit}
-                onHide={hideOutfit}
-              />
+          <p className="text-xs text-muted-foreground">
+            Khám phá outfit từ cộng đồng và lấy cảm hứng
+          </p>
+        </div>
+
+        {/* Filter Chips - Requirements 6.2 */}
+        <div 
+          className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1"
+          data-testid="filter-chips"
+        >
+          {filterOptions.map((filter) => {
+            const Icon = filter.icon;
+            const isActive = activeFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                data-testid={`filter-${filter.id}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-card border border-border text-foreground hover:border-primary/50'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Stats Bar */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          <div className="flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              {sortedOutfits.length} outfit
+            </span>
+          </div>
+        </div>
+
+        {/* Outfit Feed - Requirements 4.5: NO History Section */}
+        {isLoading ? (
+          <div className="flex flex-col gap-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="aspect-[4/5] rounded-xl" />
             ))}
-
-            {/* Load more trigger - Requirements 2.1, 2.2 */}
-            <div ref={loadMoreRef} className="py-4">
-              {isLoadingMore && (
-                <div className="flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              )}
-              {!hasMore && outfits.length > 0 && (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  Bạn đã xem hết tất cả outfit 🎉
-                </p>
-              )}
+          </div>
+        ) : sortedOutfits.length === 0 ? (
+          <div className="text-center py-16 bg-card border border-border rounded-xl">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-muted-foreground" />
             </div>
-          </>
+            <h3 className="text-base font-medium mb-2">Chưa có outfit nào</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {activeFilter === 'following' 
+                ? 'Follow người dùng khác để xem outfit của họ'
+                : 'Hãy là người đầu tiên chia sẻ outfit!'}
+            </p>
+            <Button 
+              onClick={() => navigate('/try-on')}
+              className="bg-gradient-to-r from-primary to-accent"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Tạo outfit mới
+            </Button>
+          </div>
+        ) : (
+          /* Single-column layout as default - Requirements 4.1 */
+          <CommunityFeedLayout
+            outfits={sortedOutfits}
+            layout="single-column"
+            onOutfitClick={handleOutfitClick}
+            onLike={handleLike}
+            onComment={handleComment}
+            onTry={handleTryOutfit}
+            data-testid="community-feed-layout"
+          />
         )}
-      </div>
 
-      <FloatingCreateButton />
+        {/* Load More */}
+        <div ref={loadMoreRef} className="py-6 text-center">
+          {isLoadingMore ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Đang tải...</span>
+            </div>
+          ) : hasMore && sortedOutfits.length > 0 ? (
+            <p className="text-xs text-muted-foreground">Cuộn để xem thêm</p>
+          ) : sortedOutfits.length > 0 ? (
+            <p className="text-xs text-muted-foreground">Bạn đã xem hết 🎉</p>
+          ) : null}
+        </div>
+      </div>
 
       {/* Comments Sheet */}
       <CommentsSheet
         outfitId={commentsOutfitId}
         isOpen={!!commentsOutfitId}
         onClose={() => setCommentsOutfitId(null)}
+        onCommentAdded={refresh}
       />
+
+      {/* Try Outfit Dialog */}
+      {tryOutfitData && (
+        <TryOutfitDialog
+          outfit={tryOutfitData}
+          open={!!tryOutfitData}
+          onOpenChange={(open) => !open && setTryOutfitData(null)}
+        />
+      )}
     </div>
   );
 };

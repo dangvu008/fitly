@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { haptics, HapticType } from '@/services/haptics';
+import { haptics, HapticType } from '@/utils/haptics';
 
 /**
  * Hook for haptic feedback

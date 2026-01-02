@@ -78,7 +78,7 @@ export const MobileNav = ({ activeTab, onTabChange, onOpenStudio = () => {} }: M
           }}
         />
 
-        {navItems.map((item, index) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           
           // FAB (Floating Action Button) - center button for Studio
@@ -113,7 +113,6 @@ export const MobileNav = ({ activeTab, onTabChange, onOpenStudio = () => {} }: M
           
           // Regular tab buttons
           const isActive = activeTab === item.id;
-          const nonFabIndex = navItems.filter((n, i) => i < index && !n.isFab).length;
           
           return (
             <button

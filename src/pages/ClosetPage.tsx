@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Shirt, Heart, ShoppingBag, Check, Plus, Loader2, ExternalLink } from 'lucide-react';
+import { Shirt, Heart, ShoppingBag, Check, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { ClothingItem, ClothingCategory } from '@/types/clothing';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -233,9 +234,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <LoadingState variant="page" message={t('loading')} className="min-h-[60vh]" />
     );
   }
 
@@ -344,9 +343,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
             {/* Clothing Grid */}
             {isLoadingClothing ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
+              <LoadingState variant="skeleton" skeletonCount={6} />
             ) : filteredClothing.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
                 <Shirt size={48} className="text-muted-foreground" />
@@ -459,9 +456,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
             {/* Outfits Grid */}
             {isLoadingOutfits ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
+              <LoadingState variant="skeleton" skeletonCount={4} />
             ) : filteredOutfits.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
                 <Heart size={48} className="text-muted-foreground" />

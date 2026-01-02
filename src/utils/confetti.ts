@@ -53,6 +53,7 @@ class ConfettiService {
         colors,
       });
 
+
       if (Date.now() < end) {
         requestAnimationFrame(frame);
       }

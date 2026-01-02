@@ -143,7 +143,7 @@ export const ShareResultDialog = ({
       id: 'facebook',
       label: 'Facebook',
       icon: <Facebook size={18} />,
-      color: 'bg-[#1877F2]',
+      color: 'bg-social-facebook',
       onClick: () => {
         window.open(
           `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
@@ -156,7 +156,7 @@ export const ShareResultDialog = ({
       id: 'messenger',
       label: 'Messenger',
       icon: <MessageCircle size={18} />,
-      color: 'bg-gradient-to-r from-[#00B2FF] to-[#006AFF]',
+      color: 'bg-gradient-to-r from-social-messenger to-social-facebook',
       onClick: () => {
         window.open(
           `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=291494419107518&redirect_uri=${encodedUrl}`,
@@ -173,7 +173,7 @@ export const ShareResultDialog = ({
           <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 17.703c-.063.063-.188.125-.375.125H6.856c-.375 0-.563-.25-.563-.563V6.734c0-.375.25-.563.563-.563h10.663c.188 0 .313.063.375.125.063.063.106.188.106.313v10.781c0 .125-.063.25-.106.313z" />
         </svg>
       ),
-      color: 'bg-[#0068FF]',
+      color: 'bg-social-zalo',
       onClick: () => {
         window.open(`https://zalo.me/share?url=${encodedUrl}`, '_blank', 'width=600,height=400');
       },
@@ -182,7 +182,7 @@ export const ShareResultDialog = ({
       id: 'twitter',
       label: 'Twitter',
       icon: <Twitter size={18} />,
-      color: 'bg-[#1DA1F2]',
+      color: 'bg-social-twitter',
       onClick: () => {
         window.open(
           `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`,

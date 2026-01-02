@@ -287,6 +287,34 @@ export const OutfitFeedCard = ({
             ✨ Featured
           </div>
         )}
+
+        {/* Quick Actions Overlay - Save & Hide */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSave();
+            }}
+            disabled={isSaving}
+            className={cn(
+              "p-2 rounded-full bg-black/50 backdrop-blur-sm transition-all active:scale-90",
+              saved ? "text-primary" : "text-white hover:bg-black/70"
+            )}
+            title={saved ? "Bỏ lưu" : "Lưu outfit"}
+          >
+            <Bookmark size={20} className={saved ? "fill-current" : ""} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHide();
+            }}
+            className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-all active:scale-90"
+            title="Ẩn outfit này"
+          >
+            <EyeOff size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Actions */}

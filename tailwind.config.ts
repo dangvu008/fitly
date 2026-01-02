@@ -80,6 +80,22 @@ export default {
           light: "hsl(var(--gem-light))",
           dark: "hsl(var(--gem-dark))",
         },
+        // Social media brand colors (for sharing buttons)
+        social: {
+          facebook: "#1877F2",
+          twitter: "#1DA1F2",
+          messenger: "#00B2FF",
+          zalo: "#0068FF",
+        },
+        // Status colors
+        success: {
+          DEFAULT: "hsl(142 76% 36%)",
+          foreground: "hsl(0 0% 100%)",
+        },
+        warning: {
+          DEFAULT: "hsl(38 92% 50%)",
+          foreground: "hsl(0 0% 0%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -3,7 +3,8 @@ import { ClothingItem } from '@/types/clothing';
 import { ClothingItemActions } from './ClothingItemActions';
 import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/useMobile';
+import { QuickTryButton } from '@/components/tryOn/QuickTryButton';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -12,9 +13,11 @@ interface ClothingCardProps {
   onToggleHidden?: (id: string) => Promise<boolean>;
   onDelete?: (id: string) => Promise<boolean>;
   onEdit?: (item: ClothingItem) => void;
+  onQuickTry?: (item: ClothingItem) => void;
   size?: 'sm' | 'md' | 'lg';
   isSelected?: boolean;
   showActions?: boolean;
+  showQuickTry?: boolean;
 }
 
 export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
@@ -24,9 +27,11 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
   onToggleHidden,
   onDelete,
   onEdit,
+  onQuickTry,
   size = 'md',
   isSelected = false,
   showActions = false,
+  showQuickTry = false,
 }, ref) => {
   const isMobile = useIsMobile();
 
@@ -73,6 +78,19 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
         {item.isFavorite && (
           <div className="absolute top-1 left-1">
             <Heart size={14} className="fill-destructive text-destructive" />
+          </div>
+        )}
+
+        {/* Quick Try Button - One-Tap Try-On Flow (Requirements 2.2) */}
+        {showQuickTry && size === 'lg' && (
+          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <QuickTryButton
+              clothingItem={item}
+              onTryStart={() => onQuickTry?.(item)}
+              size="sm"
+              variant="overlay"
+              data-testid="quick-try-button-clothing"
+            />
           </div>
         )}
       </button>

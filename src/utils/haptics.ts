@@ -54,6 +54,7 @@ class HapticsService {
   trigger(type: HapticType): void {
     if (!this.supported) return;
 
+
     try {
       const pattern = HAPTIC_PATTERNS[type];
       navigator.vibrate(pattern);

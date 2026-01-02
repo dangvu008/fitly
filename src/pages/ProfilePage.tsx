@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SettingsDialog } from '@/components/settings/SettingsDialog';
 
 interface Profile {
   display_name: string | null;
@@ -23,6 +24,7 @@ export const ProfilePage = ({ onNavigateToHistory }: ProfilePageProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [historyCount, setHistoryCount] = useState(0);
   const [collectionsCount, setCollectionsCount] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -66,6 +68,8 @@ export const ProfilePage = ({ onNavigateToHistory }: ProfilePageProps) => {
   const handleMenuClick = (key: string) => {
     if (key === 'history' && onNavigateToHistory) {
       onNavigateToHistory();
+    } else if (key === 'settings') {
+      setSettingsOpen(true);
     } else {
       toast.info(`${t('profile_developing')} ${menuItems.find(m => m.key === key)?.label}`);
     }
@@ -203,6 +207,9 @@ export const ProfilePage = ({ onNavigateToHistory }: ProfilePageProps) => {
         <p>{t('profile_version')} 1.0.0</p>
         <p className="mt-1">© 2024 Virtual Try-On</p>
       </section>
+
+      {/* Settings Dialog */}
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 };

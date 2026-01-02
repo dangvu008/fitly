@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Save, Share2, Sparkles, Loader2, X, Heart, Trash2, Edit2, ImagePlus, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Search, Wand2, Bookmark, ArrowUpDown } from 'lucide-react';
+import { Camera, Share2, Sparkles, Loader2, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ClothingCard } from '@/components/clothing/ClothingCard';
 import { TryOnCanvas } from '@/components/tryOn/TryOnCanvas';
 import { SelectedClothingList } from '@/components/tryOn/SelectedClothingList';
 import { AIProgressBar } from '@/components/tryOn/AIProgressBar';
 import { EditResultDialog } from '@/components/tryOn/EditResultDialog';
+import { ClothingValidationOverlay } from '@/components/tryOn/ClothingValidationOverlay';
+import { AIResultModal } from '@/components/tryOn/AIResultModal';
+import { ClothingPanel } from '@/components/tryOn/ClothingPanel';
 import { EditClothingDetailsDialog } from '@/components/clothing/EditClothingDetailsDialog';
 import { AddClothingDialog } from '@/components/clothing/AddClothingDialog';
 import { ShareOutfitDialog } from '@/components/outfit/ShareOutfitDialog';
@@ -31,10 +33,7 @@ import { ProSubscriptionDialog } from '@/components/monetization/ProSubscription
 import { FindSimilarItemsSheet } from '@/components/monetization/FindSimilarItemsSheet';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 // Category definitions
 const categories: { id: ClothingCategory; icon: React.ElementType; label: string }[] = [
@@ -59,9 +58,23 @@ interface TryOnPageProps {
   reuseBodyImage?: string;
   reuseClothingItems?: ClothingItem[];
   historyResult?: HistoryResultData;
+  /** URL of garment image for Smart Paste / Quick Try flow */
+  initialGarmentUrl?: string;
+  /** ID of garment if from internal DB */
+  initialGarmentId?: string;
+  /** Auto-start try-on when garment and body image are ready */
+  autoStart?: boolean;
 }
 
-export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = [], historyResult }: TryOnPageProps) => {
+export const TryOnPage = ({ 
+  initialItem, 
+  reuseBodyImage, 
+  reuseClothingItems = [], 
+  historyResult,
+  initialGarmentUrl,
+  initialGarmentId,
+  autoStart = false,
+}: TryOnPageProps) => {
   const [bodyImage, setBodyImage] = useState<string | undefined>(() => {
     if (historyResult?.bodyImageUrl) return historyResult.bodyImageUrl;
     if (reuseBodyImage) return reuseBodyImage;
@@ -202,6 +215,55 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       setBodyImage(profile.default_body_image_url);
     }
   }, [profile?.default_body_image_url, bodyImage, reuseBodyImage, historyResult?.bodyImageUrl]);
+
+  // Smart Paste / Quick Try: Auto-load garment from URL
+  // REQ-7.2, REQ-7.3, REQ-7.4
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  
+  useEffect(() => {
+    if (initialGarmentUrl && !hasAutoStarted) {
+      // 1. Create garment item from URL
+      const garmentItem: ClothingItem = {
+        id: initialGarmentId || `quick-${Date.now()}`,
+        name: 'Quick Try Item',
+        imageUrl: initialGarmentUrl,
+        category: 'all' as const, // AI will detect actual category
+      };
+      setSelectedItems([garmentItem]);
+      
+      // 2. Load default body image if available
+      if (profile?.default_body_image_url && !bodyImage) {
+        setBodyImage(profile.default_body_image_url);
+        toast.success(t('quick_try_ready') || 'Outfit loaded! Ready to generate.');
+      } else if (!bodyImage) {
+        // Show body image prompt if no default
+        setShowBodyImageSourceDialog(true);
+        toast.info(t('quick_try_need_body') || 'Please select a body image first.');
+      }
+    }
+  }, [initialGarmentUrl, initialGarmentId, profile?.default_body_image_url, hasAutoStarted]);
+
+  // Smart Paste: Auto-start try-on when ready
+  // REQ-7.5
+  useEffect(() => {
+    if (
+      autoStart && 
+      initialGarmentUrl && 
+      bodyImage && 
+      selectedItems.length > 0 && 
+      !hasAutoStarted &&
+      !isProcessing &&
+      user &&
+      hasQuotaRemaining
+    ) {
+      setHasAutoStarted(true);
+      // Small delay to ensure UI is ready
+      const timer = setTimeout(() => {
+        handleAITryOn();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoStart, initialGarmentUrl, bodyImage, selectedItems.length, hasAutoStarted, isProcessing, user, hasQuotaRemaining]);
 
   // Get clothing based on source and filter by search
   const displayedClothing = clothingSource === 'saved' ? userClothing : clothing;
@@ -686,94 +748,10 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       <AIProgressBar progress={aiProgress} isVisible={isProcessing} onCancel={cancelProcessing} />
 
       {/* Clothing Validation Overlay - Fun Animation */}
-      {isValidatingClothing && clothingProgress && (
-        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-xl p-6 max-w-xs w-full shadow-medium space-y-4 border border-border">
-            {/* Lottie Animation */}
-            <div className="flex justify-center">
-              <div className="w-24 h-24 relative">
-                <DotLottieReact
-                  src="https://lottie.host/0c5e8c0a-6af5-4b32-bdbd-25d0d04f7980/W8dWzCXoD9.lottie"
-                  loop
-                  autoplay
-                  style={{ width: '100%', height: '100%' }}
-                />
-                <div className="absolute -top-1 -right-1 text-xl animate-bounce">
-                  {clothingProgress.stage === 'analyzing' ? '🔍' : 
-                   clothingProgress.stage === 'removing_background' ? '✂️' : '👗'}
-                </div>
-              </div>
-            </div>
-            
-            {/* Messages */}
-            <div className="text-center space-y-2">
-              <p className="font-semibold text-foreground text-lg">
-                {clothingProgress.stage === 'analyzing' ? '🧠 AI đang ngắm nghía...' :
-                 clothingProgress.stage === 'removing_background' ? '✨ Đang tách nền xinh xắn...' :
-                 clothingProgress.stage === 'checking_size' ? '📏 Đang đo đạc...' :
-                 '👗 Đang xử lý quần áo...'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {clothingProgress.stage === 'analyzing' ? 'Hmm, món đồ này đẹp thế!' :
-                 clothingProgress.stage === 'removing_background' ? 'Cắt cho gọn gàng nào!' :
-                 clothingProgress.stage === 'checking_size' ? 'Kiểm tra kích thước...' :
-                 'Sắp xong rồi đó!'}
-              </p>
-            </div>
-            
-            {/* Fun Progress Bar */}
-            <div className="space-y-2">
-              <div className="relative h-4 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
-                  style={{
-                    width: `${clothingProgress.progress}%`,
-                    background: 'linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6)',
-                  }}
-                >
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-                      animation: 'shimmer 1.5s infinite',
-                    }}
-                  />
-                </div>
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 text-sm transition-all duration-500"
-                  style={{ left: `calc(${Math.max(8, clothingProgress.progress)}% - 10px)` }}
-                >
-                  {clothingProgress.progress < 100 ? '👕' : '🎉'}
-                </div>
-              </div>
-              <p className="text-xs text-center text-muted-foreground font-medium">
-                {clothingProgress.progress}%
-              </p>
-            </div>
-            
-            {/* Animated dots */}
-            <div className="flex justify-center gap-1.5 pt-2">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-primary"
-                  style={{
-                    animation: 'bounce 1s infinite',
-                    animationDelay: `${i * 0.15}s`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-          
-          <style>{`
-            @keyframes shimmer {
-              0% { transform: translateX(-100%); }
-              100% { transform: translateX(100%); }
-            }
-          `}</style>
-        </div>
-      )}
+      <ClothingValidationOverlay 
+        isVisible={isValidatingClothing} 
+        progress={clothingProgress} 
+      />
 
       <input
         ref={fileInputRef}
@@ -792,111 +770,29 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
 
       {/* AI Result Modal */}
       {aiResultImage && (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col animate-fade-in">
-          {/* Modal Header */}
-          <div className="flex items-center justify-between px-4 h-14 border-b border-border">
-            <button onClick={handleCloseResult} className="text-foreground press-effect">
-              <X size={24} />
-            </button>
-            <span className="font-semibold text-foreground">{t('tryon_result_title')}</span>
-            <div className="w-6" />
-          </div>
-
-          {/* Result Image - Single image only */}
-          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-            <img 
-              src={aiResultImage} 
-              alt="AI Try-On Result" 
-              className="max-w-full max-h-full object-contain rounded-xl"
-            />
-          </div>
-
-          {/* Action Bar - Reorganized */}
-          <div className="border-t border-border p-4 space-y-3 safe-bottom">
-            {/* Primary actions row */}
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  if (!user) {
-                    setShowLoginDialog(true);
-                    return;
-                  }
-                  setShowSaveOutfitDialog(true);
-                }}
-              >
-                <Bookmark size={18} />
-                Lưu riêng
-              </Button>
-              <Button
-                variant="instagram"
-                className="flex-1"
-                onClick={handleShareToPublic}
-              >
-                <Share2 size={18} />
-                Đăng lên
-              </Button>
-            </div>
-            
-            {/* Secondary actions row */}
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowEditResultDialog(true)}
-              >
-                <Wand2 size={18} />
-                Chỉnh sửa
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  handleCloseResult();
-                  handleAITryOn();
-                }}
-              >
-                <Sparkles size={18} />
-                Thử lại
-              </Button>
-            </div>
-            
-            {/* Tertiary actions row */}
-            <div className="flex gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-muted-foreground"
-                onClick={() => {
-                  handleCloseResult();
-                  handleAddBodyImage();
-                }}
-              >
-                <Camera size={16} />
-                Đổi ảnh
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-muted-foreground"
-                onClick={() => setShowFindSimilarSheet(true)}
-              >
-                <Search size={16} />
-                Tìm đồ tương tự
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-muted-foreground"
-                onClick={handleShare}
-              >
-                <Share2 size={16} />
-                Chia sẻ
-              </Button>
-            </div>
-          </div>
-        </div>
+        <AIResultModal
+          resultImage={aiResultImage}
+          onClose={handleCloseResult}
+          onSavePrivate={() => {
+            if (!user) {
+              setShowLoginDialog(true);
+              return;
+            }
+            setShowSaveOutfitDialog(true);
+          }}
+          onShareToPublic={handleShareToPublic}
+          onEdit={() => setShowEditResultDialog(true)}
+          onRetry={() => {
+            handleCloseResult();
+            handleAITryOn();
+          }}
+          onChangePhoto={() => {
+            handleCloseResult();
+            handleAddBodyImage();
+          }}
+          onFindSimilar={() => setShowFindSimilarSheet(true)}
+          onShare={handleShare}
+        />
       )}
 
       {/* Share Dialog */}
@@ -1108,107 +1004,28 @@ export const TryOnPage = ({ initialItem, reuseBodyImage, reuseClothingItems = []
       </div>
 
       {/* Clothing Panel - Bottom Sheet */}
-      {showClothingPanel && (
-        <div className="fixed inset-0 z-40 animate-fade-in">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
-            onClick={() => setShowClothingPanel(false)}
-          />
-          
-          {/* Panel */}
-          <div className="absolute inset-x-0 bottom-0 bg-card border-t border-border rounded-t-2xl max-h-[60vh] flex flex-col animate-slide-in-up safe-bottom">
-            {/* Handle */}
-            <div className="flex justify-center py-2">
-              <div className="w-10 h-1 rounded-full bg-border" />
-            </div>
-            
-            {/* Panel Header */}
-            <div className="flex items-center justify-between px-4 pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">
-                  {categories.find(c => c.id === activeCategory)?.label || t('clothing_sample')}
-                </span>
-                {user && (
-                  <Tabs value={clothingSource} onValueChange={(v) => setClothingSource(v as 'sample' | 'saved')}>
-                    <TabsList className="h-7 p-0.5">
-                      <TabsTrigger value="sample" className="text-xs h-6 px-2">
-                        {t('clothing_sample')}
-                      </TabsTrigger>
-                      <TabsTrigger value="saved" className="text-xs h-6 px-2">
-                        {t('clothing_saved')} ({userClothing.length})
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                )}
-              </div>
-              <button
-                onClick={() => setShowClothingPanel(false)}
-                className="p-2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            {/* Search Bar + Sort */}
-            <div className="px-4 py-3 flex gap-2">
-              <div className="relative flex-1">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder={t('search_clothing')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10"
-                />
-              </div>
-              {clothingSource === 'saved' && (
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'color')}
-                  className="h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="date">{t('sort_by_date')}</option>
-                  <option value="name">{t('sort_by_name')}</option>
-                  <option value="color">{t('sort_by_color')}</option>
-                </select>
-              )}
-            </div>
-            
-            {/* Clothing Grid */}
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
-              {sortedClothing.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">
-                    {clothingSource === 'saved' ? t('no_saved_clothing') : t('no_clothing')}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-3">
-                  {sortedClothing.map((item) => (
-                    <ClothingCard
-                      key={item.id}
-                      item={item}
-                      size="md"
-                      onSelect={(item) => {
-                        handleAddClothing(item);
-                        setShowClothingPanel(false);
-                      }}
-                      isSelected={selectedItems.some(i => i.id === item.id)}
-                      showActions={clothingSource === 'saved'}
-                      onEdit={clothingSource === 'saved' ? handleEditClothing : undefined}
-                      onDelete={clothingSource === 'saved' ? async (id) => {
-                        handleDeleteSavedClothing(id);
-                        return true;
-                      } : undefined}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ClothingPanel
+        isOpen={showClothingPanel}
+        onClose={() => setShowClothingPanel(false)}
+        activeCategory={activeCategory}
+        clothingSource={clothingSource}
+        onClothingSourceChange={(source) => setClothingSource(source)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        clothing={sortedClothing}
+        selectedItems={selectedItems}
+        userClothingCount={userClothing.length}
+        isLoggedIn={!!user}
+        onSelectItem={handleAddClothing}
+        onEditItem={handleEditClothing}
+        onDeleteItem={async (id) => {
+          handleDeleteSavedClothing(id);
+          return true;
+        }}
+        categories={categories.map(c => ({ id: c.id, label: c.label }))}
+      />
 
       {/* Edit Clothing Dialog */}
       {editingClothing && (

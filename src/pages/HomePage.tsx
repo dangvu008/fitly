@@ -1,26 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClothingItem } from '@/types/clothing';
-import { useOutfitFeed } from '@/hooks/useOutfitFeed';
+import { useNewArrivals, useTrendingOutfits, useForYouOutfits, HomeOutfitItem } from '@/hooks/useHomeOutfits';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
-import { toast } from 'sonner';
+import { HorizontalScrollSection, OutfitItem } from '@/components/home/HorizontalScrollSection';
+import { HomeOutfitCard } from '@/components/home/HomeOutfitCard';
 import { 
   Flame, 
-  Shirt, 
-  Building2, 
-  Footprints, 
   Sparkles,
   Plus,
   Clock,
   ChevronRight,
-  Heart,
-  MessageCircle,
-  Zap,
-  Loader2
+  Star
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow, Locale } from 'date-fns';
@@ -38,6 +32,8 @@ interface HomePageProps {
     created_at: string;
     clothing_items: Array<{ name: string; imageUrl: string }>;
   }) => void;
+  /** Quick Try handler for Smart Paste flow */
+  onQuickTry?: (garmentUrl: string, garmentId?: string, autoStart?: boolean) => void;
 }
 
 interface TryOnHistoryItem {
@@ -57,46 +53,73 @@ const localeMap: Record<string, Locale> = {
   th: th,
 };
 
-// Explore categories
-const exploreCategories = [
-  { id: 'hot', icon: Flame, label: 'Hot', color: 'from-orange-500 to-red-500' },
-  { id: 'dress', icon: Shirt, label: 'Dress', color: 'from-pink-500 to-rose-500' },
-  { id: 'office', icon: Building2, label: 'Office', color: 'from-blue-500 to-indigo-500' },
-  { id: 'shoes', icon: Footprints, label: 'Shoes', color: 'from-purple-500 to-violet-500' },
-  { id: 'casual', icon: Sparkles, label: 'Casual', color: 'from-green-500 to-emerald-500' },
-];
-
+/**
+ * HomePage component with redesigned layout
+ * 
+ * Requirements:
+ * - 1.1: History Section at top
+ * - 2.1: "New Arrivals" HorizontalScrollSection
+ * - 2.2: "Trending Styles" HorizontalScrollSection
+ * - 2.3: "For You" 2-column grid at bottom
+ * - 6.1: Section headers with icons
+ */
 export const HomePage = ({ 
   onNavigateToTryOn, 
   onNavigateToHistory, 
   onSelectItem, 
-  onViewHistoryResult 
+  onViewHistoryResult,
+  onQuickTry,
 }: HomePageProps) => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  
+  // Use dedicated hooks for each section with React Query caching (Requirements 2.1, 2.2)
   const { 
-    outfits, 
-    isLoading, 
-    isLoadingMore, 
-    hasMore, 
-    loadMore, 
-    refresh, 
-    hideOutfit, 
-    saveOutfit, 
-    unsaveOutfit 
-  } = useOutfitFeed();
+    data: newArrivals = [], 
+    isLoading: isLoadingNewArrivals,
+    refetch: refetchNewArrivals,
+  } = useNewArrivals(10);
+  
+  const { 
+    data: trendingStyles = [], 
+    isLoading: isLoadingTrending,
+    refetch: refetchTrending,
+  } = useTrendingOutfits(10);
+  
+  // Calculate IDs to exclude from "For You" section to avoid repetition
+  const excludeIds = useMemo(() => {
+    const ids = new Set<string>();
+    newArrivals.slice(0, 6).forEach(o => ids.add(o.id));
+    trendingStyles.slice(0, 6).forEach(o => ids.add(o.id));
+    return Array.from(ids);
+  }, [newArrivals, trendingStyles]);
+  
+  const { 
+    data: forYouOutfits = [], 
+    isLoading: isLoadingForYou,
+    refetch: refetchForYou,
+  } = useForYouOutfits(excludeIds, 20);
+  
+  // Combined loading state
+  const isLoading = isLoadingNewArrivals || isLoadingTrending || isLoadingForYou;
   
   const [commentsOutfitId, setCommentsOutfitId] = useState<string | null>(null);
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('hot');
   
-  // Infinite scroll observer
+  // Infinite scroll observer for "For You" section
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const dateLocale = localeMap[language] || enUS;
+  
+  // Refresh all sections
+  const refresh = () => {
+    refetchNewArrivals();
+    refetchTrending();
+    refetchForYou();
+  };
 
-  // Fetch try-on history
+  // Fetch try-on history (max 10 items per Requirements 1.5)
   useEffect(() => {
     const fetchHistory = async () => {
       if (!user) {
@@ -134,60 +157,44 @@ export const HomePage = ({
     fetchHistory();
   }, [user]);
 
-  // Infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
-          loadMore();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, loadMore]);
+  // Convert HomeOutfitItem to OutfitItem format for HorizontalScrollSection
+  const toOutfitItem = (outfit: HomeOutfitItem): OutfitItem => ({
+    id: outfit.id,
+    title: outfit.title,
+    result_image_url: outfit.result_image_url,
+    likes_count: outfit.likes_count,
+    comments_count: outfit.comments_count,
+    clothing_items: outfit.clothing_items,
+    user_profile: outfit.user_profile,
+    created_at: outfit.created_at,
+  });
 
   const handleViewOutfitDetail = (outfitId: string) => {
     navigate(`/outfit/${outfitId}`);
   };
 
-  const handleOpenComments = (outfitId: string) => {
-    setCommentsOutfitId(outfitId);
-  };
-
-  const handleShare = async (outfitId: string) => {
-    const url = `${window.location.origin}/outfit/${outfitId}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Check out this outfit!', url });
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          await navigator.clipboard.writeText(url);
-          toast.success(t('copied_link'));
-        }
+  const handleTryOutfit = (outfit: OutfitItem) => {
+    if (outfit.clothing_items && outfit.clothing_items.length > 0) {
+      const firstItem = outfit.clothing_items[0];
+      if (onQuickTry) {
+        onQuickTry(firstItem.imageUrl, `outfit-${outfit.id}-0`, false);
+      } else {
+        onSelectItem({
+          id: `outfit-${outfit.id}-0`,
+          name: firstItem.name,
+          imageUrl: firstItem.imageUrl,
+          category: 'top',
+        });
+        onNavigateToTryOn();
       }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success(t('copied_link'));
     }
   };
-
-  // Get trending outfits (sorted by likes)
-  const trendingOutfits = [...outfits]
-    .sort((a, b) => b.likes_count - a.likes_count)
-    .slice(0, 10);
 
   return (
     <div className="pb-24 pt-16 max-w-lg mx-auto bg-background min-h-screen">
       <div className="animate-fade-in">
         
-        {/* YOUR RECENT LOOKS - History Section */}
+        {/* YOUR RECENT LOOKS - History Section (Requirements 1.1, 1.2, 1.3, 1.4, 1.5) */}
         <section className="py-4">
           <div className="flex items-center justify-between px-4 mb-3">
             <div className="flex items-center gap-2">
@@ -218,10 +225,11 @@ export const HomePage = ({
               </div>
             ) : (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-                {/* New Try-On Button */}
+                {/* New Try-On Button (Requirements 1.3) */}
                 <button
                   onClick={onNavigateToTryOn}
                   className="flex-shrink-0 w-20 h-28 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary transition-all"
+                  data-testid="new-tryon-button"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     <Plus className="w-5 h-5 text-primary" />
@@ -229,12 +237,13 @@ export const HomePage = ({
                   <span className="text-[10px] font-medium text-primary">NEW</span>
                 </button>
 
-                {/* History Items */}
+                {/* History Items (Requirements 1.4) */}
                 {history.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => onViewHistoryResult?.(item)}
                     className="flex-shrink-0 w-20 rounded-xl overflow-hidden bg-card border border-border shadow-soft hover:border-primary/50 hover:shadow-medium transition-all"
+                    data-testid={`history-item-${item.id}`}
                   >
                     <div className="relative h-28">
                       <img
@@ -262,41 +271,37 @@ export const HomePage = ({
           </div>
         </section>
 
-        {/* EXPLORE Section */}
-        <section className="py-3 px-4">
-          <h2 className="text-sm font-bold text-foreground mb-3">{t('explore')}</h2>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {exploreCategories.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    isActive
-                      ? `bg-gradient-to-r ${cat.color} text-white shadow-md`
-                      : 'bg-card border border-border text-foreground hover:border-primary/50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* NEW ARRIVALS - Horizontal Scroll Section (Requirements 2.1, 2.5, 6.1) */}
+        <HorizontalScrollSection
+          title={t('new_arrivals')}
+          icon={Sparkles}
+          items={newArrivals.map(toOutfitItem)}
+          onItemClick={(item) => handleViewOutfitDetail(item.id)}
+          onTryItem={handleTryOutfit}
+          showViewAll={true}
+          onViewAll={() => navigate('/community')}
+          isLoading={isLoading}
+          data-testid="new-arrivals-section"
+        />
 
-        {/* TRENDING NOW - Grid 2 columns */}
+        {/* TRENDING STYLES - Horizontal Scroll Section (Requirements 2.2, 2.5, 6.1) */}
+        <HorizontalScrollSection
+          title={t('trending_styles')}
+          icon={Flame}
+          items={trendingStyles.map(toOutfitItem)}
+          onItemClick={(item) => handleViewOutfitDetail(item.id)}
+          onTryItem={handleTryOutfit}
+          showViewAll={true}
+          onViewAll={() => navigate('/community')}
+          isLoading={isLoading}
+          data-testid="trending-styles-section"
+        />
+
+        {/* FOR YOU - 2-Column Grid Section (Requirements 2.3) */}
         <section className="py-4 px-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-500" />
-              <h2 className="text-sm font-bold text-foreground">{t('trending_now')}</h2>
-            </div>
-            <span className="text-[10px] text-muted-foreground">
-              {trendingOutfits.length} {t('outfits_loved')}
-            </span>
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-bold text-foreground">{t('for_you')}</h2>
           </div>
 
           {isLoading ? (
@@ -305,110 +310,30 @@ export const HomePage = ({
                 <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
               ))}
             </div>
-          ) : trendingOutfits.length === 0 ? (
+          ) : forYouOutfits.length === 0 ? (
             <div className="text-center py-8 bg-card border border-border rounded-xl">
               <Sparkles className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">{t('no_outfit_yet')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {trendingOutfits.map((outfit) => (
-                <div
+            <div className="grid grid-cols-2 gap-3" data-testid="for-you-grid">
+              {forYouOutfits.map((outfit) => (
+                <HomeOutfitCard
                   key={outfit.id}
-                  className="rounded-xl overflow-hidden bg-card border border-border shadow-soft hover:shadow-medium transition-all group"
-                >
-                  {/* Image */}
-                  <button
-                    onClick={() => handleViewOutfitDetail(outfit.id)}
-                    className="relative aspect-[3/4] w-full overflow-hidden"
-                  >
-                    <img
-                      src={outfit.result_image_url}
-                      alt={outfit.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                    
-                    {/* User info overlay */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                      <div className="w-6 h-6 rounded-full bg-card border border-border overflow-hidden">
-                        {outfit.user_profile?.avatar_url ? (
-                          <img 
-                            src={outfit.user_profile.avatar_url} 
-                            alt="" 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-[8px] font-bold text-primary">
-                              {(outfit.user_profile?.display_name || 'U')[0].toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-[10px] font-medium text-white drop-shadow-md">
-                        {outfit.user_profile?.display_name || t('user')}
-                      </span>
-                    </div>
-
-                    {/* Title and stats */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2">
-                      <p className="text-xs font-semibold text-white line-clamp-1 drop-shadow-md">
-                        {outfit.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-white/80 flex items-center gap-0.5">
-                          <Heart className="w-3 h-3" fill="currentColor" />
-                          {outfit.likes_count}
-                        </span>
-                        <span className="text-[10px] text-white/80 flex items-center gap-0.5">
-                          <MessageCircle className="w-3 h-3" />
-                          {outfit.comments_count || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* TRY Button */}
-                  <div className="p-2 border-t border-border">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="w-full h-8 text-xs gap-1.5 bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                      onClick={() => {
-                        // Navigate to try-on with this outfit's clothing items
-                        if (outfit.clothing_items && outfit.clothing_items.length > 0) {
-                          const firstItem = outfit.clothing_items[0];
-                          onSelectItem({
-                            id: `outfit-${outfit.id}-0`,
-                            name: firstItem.name,
-                            imageUrl: firstItem.imageUrl,
-                            category: 'top',
-                          });
-                        }
-                        onNavigateToTryOn();
-                      }}
-                    >
-                      <Zap className="w-3.5 h-3.5" />
-                      {t('try_this')}
-                    </Button>
-                  </div>
-                </div>
+                  outfit={toOutfitItem(outfit)}
+                  onTry={() => handleTryOutfit(toOutfitItem(outfit))}
+                  onClick={() => handleViewOutfitDetail(outfit.id)}
+                  variant="grid"
+                  data-testid={`for-you-card-${outfit.id}`}
+                />
               ))}
             </div>
           )}
         </section>
 
-        {/* Load More */}
+        {/* Load More indicator */}
         <div ref={loadMoreRef} className="py-6 text-center">
-          {isLoadingMore ? (
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">{t('loading_more')}</span>
-            </div>
-          ) : hasMore && outfits.length > 0 ? (
-            <p className="text-sm text-muted-foreground">{t('scroll_for_more')}</p>
-          ) : outfits.length > 0 ? (
+          {forYouOutfits.length > 0 ? (
             <p className="text-sm text-muted-foreground">{t('shown_all')}</p>
           ) : null}
         </div>

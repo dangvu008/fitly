@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 
 interface Product {
   id: string;
@@ -68,6 +64,7 @@ function addAffiliateTracking(url: string, platform: string, userId?: string): s
   }
 }
 
+
 // Google Vision Product Search
 async function searchWithGoogleVision(imageBase64: string): Promise<Product[]> {
   const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
@@ -79,7 +76,6 @@ async function searchWithGoogleVision(imageBase64: string): Promise<Product[]> {
   }
 
   try {
-    // Use Google Cloud Vision API for product search
     const response = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
       {
@@ -105,7 +101,6 @@ async function searchWithGoogleVision(imageBase64: string): Promise<Product[]> {
     const data = await response.json();
     const products: Product[] = [];
 
-    // Parse web detection results
     const webDetection = data.responses?.[0]?.webDetection;
     if (webDetection?.visuallySimilarImages) {
       webDetection.visuallySimilarImages.slice(0, 5).forEach((img: any, index: number) => {
@@ -122,7 +117,6 @@ async function searchWithGoogleVision(imageBase64: string): Promise<Product[]> {
       });
     }
 
-    // Parse product search results if available
     const productResults = data.responses?.[0]?.productSearchResults?.results;
     if (productResults) {
       productResults.forEach((result: any, index: number) => {
@@ -146,6 +140,7 @@ async function searchWithGoogleVision(imageBase64: string): Promise<Product[]> {
   }
 }
 
+
 // Bing Visual Search fallback
 async function searchWithBingVisual(imageBase64: string): Promise<Product[]> {
   const apiKey = Deno.env.get('BING_SEARCH_API_KEY');
@@ -156,7 +151,6 @@ async function searchWithBingVisual(imageBase64: string): Promise<Product[]> {
   }
 
   try {
-    // Convert base64 to blob for Bing API
     const imageData = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     const binaryData = Uint8Array.from(atob(imageData), c => c.charCodeAt(0));
     
@@ -167,9 +161,7 @@ async function searchWithBingVisual(imageBase64: string): Promise<Product[]> {
       'https://api.bing.microsoft.com/v7.0/images/visualsearch',
       {
         method: 'POST',
-        headers: {
-          'Ocp-Apim-Subscription-Key': apiKey,
-        },
+        headers: { 'Ocp-Apim-Subscription-Key': apiKey },
         body: formData
       }
     );
@@ -182,7 +174,6 @@ async function searchWithBingVisual(imageBase64: string): Promise<Product[]> {
     const data = await response.json();
     const products: Product[] = [];
 
-    // Parse Bing visual search results
     const tags = data.tags || [];
     for (const tag of tags) {
       const actions = tag.actions || [];
@@ -190,7 +181,6 @@ async function searchWithBingVisual(imageBase64: string): Promise<Product[]> {
         if (action.actionType === 'VisualSearch' || action.actionType === 'ProductVisualSearch') {
           const items = action.data?.value || [];
           items.slice(0, 5).forEach((item: any, index: number) => {
-            // Detect platform from URL
             let platform: 'amazon' | 'shopee' | 'other' = 'other';
             if (item.hostPageUrl?.includes('amazon')) platform = 'amazon';
             if (item.hostPageUrl?.includes('shopee')) platform = 'shopee';
@@ -253,17 +243,19 @@ function getFallbackProducts(): Product[] {
   ];
 }
 
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     console.log('Starting visual search...');
 
     const { imageUrl, imageBase64, userId } = await req.json();
     
-    // Get image data - either from URL or base64
     let imageData = imageBase64;
     if (!imageData && imageUrl) {
       try {
@@ -288,7 +280,6 @@ serve(async (req) => {
     let products: Product[] = [];
     let searchProvider: 'google' | 'bing' | 'fallback' = 'fallback';
 
-    // Try Google Vision first
     console.log('Trying Google Vision API...');
     products = await searchWithGoogleVision(imageData);
     if (products.length > 0) {
@@ -296,7 +287,6 @@ serve(async (req) => {
       console.log(`Google Vision found ${products.length} products`);
     }
 
-    // Fallback to Bing if Google fails
     if (products.length === 0) {
       console.log('Trying Bing Visual Search API...');
       products = await searchWithBingVisual(imageData);
@@ -306,20 +296,17 @@ serve(async (req) => {
       }
     }
 
-    // Use fallback products if both APIs fail
     if (products.length === 0) {
       console.log('Using fallback products');
       products = getFallbackProducts();
       searchProvider = 'fallback';
     }
 
-    // Add affiliate tracking to all product URLs
     products = products.map(product => ({
       ...product,
       productUrl: addAffiliateTracking(product.productUrl, product.platform, userId)
     }));
 
-    // Log search to database for analytics
     try {
       const supabaseUrl = Deno.env.get('SUPABASE_URL');
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

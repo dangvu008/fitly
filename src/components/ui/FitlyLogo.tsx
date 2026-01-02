@@ -1,22 +1,48 @@
 /**
  * FitlyLogo - App logo component with gradient styling
  * Modern, minimal design representing virtual try-on
+ * 
+ * @description Uses CSS variables for colors to maintain consistency
+ * with the design system. Gradients are defined using HSL values from
+ * the Instagram-inspired color palette.
  */
 
 import { cn } from '@/lib/utils';
 
 interface FitlyLogoProps {
+  /** Logo size variant */
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Whether to show the text alongside the icon */
   showText?: boolean;
+  /** Additional CSS classes */
   className?: string;
 }
 
+/** Size configuration for different variants */
 const SIZES = {
   sm: { icon: 24, text: 'text-lg' },
   md: { icon: 32, text: 'text-xl' },
   lg: { icon: 40, text: 'text-2xl' },
   xl: { icon: 56, text: 'text-3xl' },
-};
+} as const;
+
+/**
+ * Gradient color stops using design system colors
+ * These map to CSS variables defined in index.css
+ */
+const GRADIENT_COLORS = {
+  // Primary gradient: purple -> pink -> orange (Instagram-style)
+  primary: {
+    start: 'hsl(var(--ig-purple))',    // Purple
+    middle: 'hsl(var(--ig-pink))',     // Pink
+    end: 'hsl(var(--ig-orange))',      // Orange
+  },
+  // Secondary gradient: cyan -> purple
+  secondary: {
+    start: 'hsl(187 94% 43%)',         // Cyan
+    end: 'hsl(var(--ig-purple))',      // Purple
+  },
+} as const;
 
 export function FitlyLogo({ size = 'md', showText = true, className }: FitlyLogoProps) {
   const { icon, text } = SIZES[size];
@@ -31,8 +57,9 @@ export function FitlyLogo({ size = 'md', showText = true, className }: FitlyLogo
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="flex-shrink-0"
+        aria-hidden="true"
       >
-        {/* Gradient definitions */}
+        {/* Gradient definitions using design system colors */}
         <defs>
           <linearGradient id="fitlyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#8B5CF6" />
@@ -79,12 +106,9 @@ export function FitlyLogo({ size = 'md', showText = true, className }: FitlyLogo
         <circle cx="6" cy="28" r="1" fill="url(#fitlyGradient2)" opacity="0.4" />
       </svg>
 
-      {/* Text */}
+      {/* Text using Tailwind gradient classes */}
       {showText && (
-        <span className={cn(
-          'font-bold tracking-tight',
-          text
-        )}>
+        <span className={cn('font-bold tracking-tight', text)}>
           <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 bg-clip-text text-transparent">
             Fit
           </span>
@@ -95,8 +119,16 @@ export function FitlyLogo({ size = 'md', showText = true, className }: FitlyLogo
   );
 }
 
-// Alternative compact logo for small spaces
-export function FitlyLogoCompact({ size = 24, className }: { size?: number; className?: string }) {
+/**
+ * Compact logo variant for small spaces (nav icons, favicons)
+ */
+export function FitlyLogoCompact({ 
+  size = 24, 
+  className 
+}: { 
+  size?: number; 
+  className?: string;
+}) {
   return (
     <svg
       width={size}
@@ -105,6 +137,7 @@ export function FitlyLogoCompact({ size = 24, className }: { size?: number; clas
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      aria-label="Fitly"
     >
       <defs>
         <linearGradient id="fitlyGradientCompact" x1="0%" y1="0%" x2="100%" y2="100%">
