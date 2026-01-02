@@ -38,30 +38,8 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
-    // Check and increment quota before processing
-    const { data: quotaResult, error: quotaError } = await supabaseClient.rpc('increment_user_quota', {
-      p_user_id: user.id,
-    });
-
-    if (quotaError) {
-      console.error('Quota check error:', quotaError);
-      return new Response(
-        JSON.stringify({ error: 'Không thể kiểm tra hạn mức sử dụng' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!quotaResult) {
-      console.log('Quota exceeded for user:', user.id);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          code: 'QUOTA_EXCEEDED',
-          error: 'Bạn đã hết lượt thử miễn phí hôm nay. Nâng cấp Pro để thử không giới hạn!' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // TODO: Re-enable quota check when user_quotas table is created
+    // For now, skip quota validation to allow virtual try-on to work
 
     const { bodyImage, clothingItems } = await req.json();
 
