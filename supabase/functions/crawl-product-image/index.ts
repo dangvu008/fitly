@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { validateCrawlUrl, sanitizeErrorMessage } from '../_shared/validation.ts';
 
 interface CrawlRequest {
   url: string;
@@ -29,7 +26,7 @@ async function removeImageBackground(imageUrl: string): Promise<string | null> {
   const huggingFaceApiKey = Deno.env.get('HUGGINGFACE_API_KEY');
   
   if (!huggingFaceApiKey) {
-    console.warn('[crawl-product-image] HUGGINGFACE_API_KEY not set, skipping background removal');
+    console.warn('[crawl-product-image] Background removal not available');
     return null;
   }
 
@@ -44,13 +41,13 @@ async function removeImageBackground(imageUrl: string): Promise<string | null> {
     });
 
     if (!imageResponse.ok) {
-      console.error(`[crawl-product-image] Failed to fetch image: ${imageResponse.status}`);
+      console.error(`[crawl-product-image] Failed to fetch image for processing`);
       return null;
     }
 
     const imageBlob = await imageResponse.blob();
     
-    console.log('[crawl-product-image] Calling Hugging Face RMBG API...');
+    console.log('[crawl-product-image] Processing image...');
     
     // Call Hugging Face Inference API with RMBG-1.4 model
     const hfResponse = await fetch(
@@ -65,12 +62,11 @@ async function removeImageBackground(imageUrl: string): Promise<string | null> {
     );
 
     if (!hfResponse.ok) {
-      const errorText = await hfResponse.text();
-      console.error(`[crawl-product-image] HF API error: ${hfResponse.status} - ${errorText}`);
+      console.error(`[crawl-product-image] Image processing failed`);
       
       // If model is loading, we could retry but for now just return null
       if (hfResponse.status === 503) {
-        console.warn('[crawl-product-image] Model is loading, skipping background removal');
+        console.warn('[crawl-product-image] Service loading, skipping');
       }
       return null;
     }
@@ -85,11 +81,11 @@ async function removeImageBackground(imageUrl: string): Promise<string | null> {
     const mimeType = resultBlob.type || 'image/png';
     const dataUrl = `data:${mimeType};base64,${base64}`;
     
-    console.log('[crawl-product-image] Background removal successful');
+    console.log('[crawl-product-image] Image processing successful');
     return dataUrl;
     
   } catch (error) {
-    console.error('[crawl-product-image] Background removal error:', error);
+    console.error('[crawl-product-image] Image processing error:', error);
     return null;
   }
 }
@@ -204,33 +200,26 @@ function extractProductPrice(html: string): string | null {
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { url, platform: providedPlatform, removeBackground: shouldRemoveBackground }: CrawlRequest = await req.json();
 
-    if (!url) {
+    // Validate URL input
+    const validation = validateCrawlUrl(url);
+    if (!validation.valid) {
       return new Response(
-        JSON.stringify({ success: false, error: 'URL is required', platform: 'unknown' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Validate URL
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url);
-    } catch {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid URL', platform: 'unknown' }),
+        JSON.stringify({ success: false, error: validation.error, platform: 'unknown' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const platform = providedPlatform || detectPlatform(url);
 
-    console.log(`[crawl-product-image] Crawling ${platform}: ${url}`);
+    console.log(`[crawl-product-image] Crawling ${platform}`);
 
     // Fetch the page
     const response = await fetch(url, {
@@ -243,11 +232,11 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      console.error(`[crawl-product-image] Fetch failed: ${response.status}`);
+      console.error(`[crawl-product-image] Fetch failed`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Failed to fetch page: ${response.status}`,
+          error: 'Unable to fetch product page',
           platform 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -273,7 +262,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[crawl-product-image] Found image: ${productImage.substring(0, 100)}...`);
+    console.log(`[crawl-product-image] Found image`);
 
     // Optionally remove background from the product image
     let backgroundRemovedImage: string | undefined;
@@ -304,7 +293,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: sanitizeErrorMessage(error),
         platform: 'unknown'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

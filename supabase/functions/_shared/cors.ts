@@ -1,27 +1,37 @@
 /**
  * Shared CORS configuration for Edge Functions
  * 
- * Uses ALLOWED_ORIGINS environment variable to restrict access.
- * Falls back to '*' only in development when not configured.
+ * Restricts access to Lovable domains by default for security.
+ * Set ALLOWED_ORIGINS environment variable to customize.
  */
 
 // Default allowed headers for Supabase client
 const ALLOWED_HEADERS = 'authorization, x-client-info, apikey, content-type';
 
+// Default allowed origins - Lovable domains only
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://*.lovable.app',
+  'https://*.lovableproject.com',
+  'https://lovable.dev',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+];
+
 /**
- * Get allowed origins from environment variable
+ * Get allowed origins from environment variable or use defaults
  * Format: comma-separated list of origins
  * Example: "https://myapp.com,https://staging.myapp.com"
  */
 function getAllowedOrigins(): string[] {
   const originsEnv = Deno.env.get('ALLOWED_ORIGINS');
   
-  if (!originsEnv) {
-    // Default to allowing Lovable project domains and all origins for development
-    return ['*'];
+  if (originsEnv) {
+    return originsEnv.split(',').map(origin => origin.trim()).filter(Boolean);
   }
   
-  return originsEnv.split(',').map(origin => origin.trim()).filter(Boolean);
+  // Default to Lovable domains and localhost for development
+  return DEFAULT_ALLOWED_ORIGINS;
 }
 
 /**
@@ -30,11 +40,13 @@ function getAllowedOrigins(): string[] {
 function isOriginAllowed(origin: string | null, allowedOrigins: string[]): boolean {
   if (!origin) return false;
   if (allowedOrigins.includes('*')) return true;
+  
   return allowedOrigins.some(allowed => {
-    // Support wildcard subdomains (e.g., "*.myapp.com")
-    if (allowed.startsWith('*.')) {
-      const domain = allowed.slice(2);
-      return origin.endsWith(domain) || origin === `https://${domain}` || origin === `http://${domain}`;
+    // Support wildcard subdomains (e.g., "https://*.myapp.com")
+    if (allowed.includes('*')) {
+      const pattern = allowed.replace(/\*/g, '.*');
+      const regex = new RegExp(`^${pattern}$`);
+      return regex.test(origin);
     }
     return origin === allowed;
   });
@@ -50,7 +62,7 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   
   // If origin is allowed, return it; otherwise return empty (browser will block)
   const allowedOrigin = isOriginAllowed(origin, allowedOrigins) 
-    ? (allowedOrigins.includes('*') ? '*' : origin!)
+    ? origin!
     : '';
   
   return {

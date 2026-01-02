@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { validateBase64Image, sanitizeErrorMessage } from '../_shared/validation.ts';
 
 // Generate a simple hash for cache key
 function generateCacheKey(imageBase64: string): string {
@@ -129,23 +130,33 @@ serve(async (req) => {
 
     const { imageBase64 } = await req.json();
     
-    if (!imageBase64) {
+    // Validate image input
+    const validation = validateBase64Image(imageBase64);
+    if (!validation.valid) {
       return new Response(
-        JSON.stringify({ error: 'Image is required' }),
+        JSON.stringify({ error: validation.error }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      console.error('LOVABLE_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({ error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration missing');
+      console.error('Supabase configuration missing');
+      return new Response(
+        JSON.stringify({ error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -235,21 +246,25 @@ Only respond with the JSON object, nothing else.`;
     });
 
     if (!response.ok) {
+      console.error('AI gateway error:', response.status);
+      
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Rate limited, please try again later' }),
+          JSON.stringify({ error: 'Too many requests, please try again later' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'Payment required' }),
+          JSON.stringify({ error: 'Service quota exceeded' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error('AI analysis failed');
+      
+      return new Response(
+        JSON.stringify({ error: 'Image analysis failed' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
@@ -264,7 +279,7 @@ Only respond with the JSON object, nothing else.`;
         throw new Error('No JSON found in response');
       }
     } catch (parseError) {
-      console.error('Failed to parse AI response:', content);
+      console.error('Failed to parse AI response');
       analysis = {
         isClothing: false,
         isFullyVisible: false,
@@ -291,7 +306,7 @@ Only respond with the JSON object, nothing else.`;
   } catch (error) {
     console.error('Error in analyze-clothing-image:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: sanitizeErrorMessage(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

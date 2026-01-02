@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightRequest, corsJsonResponse } from '../_shared/cors.ts';
+import { validateBase64Image, sanitizeErrorMessage } from '../_shared/validation.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -29,7 +30,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
-      console.error('Authentication failed:', authError?.message);
+      console.error('Authentication failed');
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -37,9 +38,6 @@ serve(async (req) => {
     }
 
     console.log('Authenticated user:', user.id);
-
-    // TODO: Re-enable quota check when user_quotas table is created
-    // For now, skip quota validation to allow virtual try-on to work
 
     const { bodyImage, clothingItems } = await req.json();
 
@@ -53,9 +51,33 @@ serve(async (req) => {
       );
     }
 
+    // Validate body image
+    const bodyValidation = validateBase64Image(bodyImage);
+    if (!bodyValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: bodyValidation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate clothing item images
+    for (const item of items) {
+      const itemValidation = validateBase64Image(item.imageUrl);
+      if (!itemValidation.valid) {
+        return new Response(
+          JSON.stringify({ error: `Invalid clothing image: ${itemValidation.error}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      console.error('LOVABLE_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({ error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('Starting virtual try-on process...');
@@ -127,7 +149,7 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
 
     for (let i = 0; i < attempts.length; i++) {
       const { model } = attempts[i];
-      console.log(`AI attempt ${i + 1}/${attempts.length} with model:`, model);
+      console.log(`AI attempt ${i + 1}/${attempts.length}`);
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -148,31 +170,30 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI Gateway error:', response.status, errorText);
+        console.error('AI processing error:', response.status);
 
-        // Surface these to the client as JSON (avoid non-2xx so the client can read the message)
+        // Surface these to the client as JSON
         if (response.status === 429) {
           return new Response(
-            JSON.stringify({ success: false, code: 429, error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' }),
+            JSON.stringify({ success: false, code: 429, error: 'Too many requests, please try again later' }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         if (response.status === 402) {
           return new Response(
-            JSON.stringify({ success: false, code: 402, error: 'Hết hạn mức sử dụng AI, vui lòng nạp thêm credits.' }),
+            JSON.stringify({ success: false, code: 402, error: 'Service quota exceeded' }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
-        // If the first model fails (e.g., 400), try the fallback model once.
+        // If the first model fails, try the fallback model once.
         if (i < attempts.length - 1) {
-          console.log('Retrying with fallback model due to non-OK response...');
+          console.log('Retrying with fallback...');
           continue;
         }
 
         return new Response(
-          JSON.stringify({ success: false, error: `AI Gateway error: ${response.status}` }),
+          JSON.stringify({ success: false, error: 'Image processing failed' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -182,13 +203,13 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
       console.log('Raw response length:', responseText.length);
       
       if (!responseText || responseText.trim() === '') {
-        console.error('Empty response from AI Gateway');
+        console.error('Empty response');
         if (i < attempts.length - 1) {
-          console.log('Retrying with fallback model due to empty response...');
+          console.log('Retrying with fallback...');
           continue;
         }
         return new Response(
-          JSON.stringify({ success: false, error: 'AI trả về kết quả rỗng. Vui lòng thử lại.' }),
+          JSON.stringify({ success: false, error: 'Empty response from AI, please try again' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -197,13 +218,13 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error('Failed to parse AI response:', parseError, 'Response:', responseText.substring(0, 500));
+        console.error('Failed to parse response');
         if (i < attempts.length - 1) {
-          console.log('Retrying with fallback model due to JSON parse error...');
+          console.log('Retrying with fallback...');
           continue;
         }
         return new Response(
-          JSON.stringify({ success: false, error: 'Không thể đọc kết quả từ AI. Vui lòng thử lại.' }),
+          JSON.stringify({ success: false, error: 'Unable to process AI response, please try again' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -226,13 +247,13 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
           JSON.stringify({
             success: true,
             generatedImage,
-            message: lastTextResponse || 'Đã tạo hình ảnh thử đồ thành công!',
+            message: 'Try-on image generated successfully!',
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.error('No image generated in response:', JSON.stringify(data));
+      console.error('No image generated in response');
       
       // Check for specific error messages in the response
       const errorContent = message?.content?.toLowerCase() || '';
@@ -243,7 +264,7 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Không tìm thấy người trong ảnh. Vui lòng tải lên ảnh rõ nét hơn với người đứng thẳng, toàn thân.',
+            error: 'Could not detect person in image. Please upload a clear full-body photo.',
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -251,16 +272,15 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
 
       // If we have more attempts left, try again.
       if (i < attempts.length - 1) {
-        console.log('No image returned; retrying with fallback model/prompt...');
+        console.log('No image returned; retrying...');
         continue;
       }
 
-      // Surface AI failure as a readable JSON response (non-2xx would hide body from the client SDK)
+      // Surface AI failure as a readable JSON response
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Không thể tạo hình ảnh thử đồ. Vui lòng thử lại.',
-          textResponse: lastTextResponse,
+          error: 'Unable to generate try-on image. Please try again.',
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -268,15 +288,14 @@ OUTPUT: Generate ONE photorealistic image showing the person WEARING all specifi
 
     // Should never reach here
     return new Response(
-      JSON.stringify({ success: false, error: 'Không thể tạo hình ảnh thử đồ. Vui lòng thử lại.' }),
+      JSON.stringify({ success: false, error: 'Unable to generate try-on image. Please try again.' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in virtual-try-on function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi xử lý hình ảnh';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: sanitizeErrorMessage(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
