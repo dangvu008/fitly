@@ -244,6 +244,14 @@ const MainApp = () => {
         />
       )}
 
+      {/* Quick Try FAB - shown on main screens, hidden when Studio is open */}
+      {!isStudioOpen && ['home', 'search', 'community', 'closet'].includes(activeTab) && (
+        <QuickTryFAB
+          onClick={() => setIsQuickTrySheetOpen(true)}
+          className="bottom-20 left-1/2 -translate-x-1/2"
+        />
+      )}
+
       {/* Studio Overlay - Full screen TryOnPage */}
       {isStudioOpen && (
         <div className="fixed inset-0 z-50 bg-background">
