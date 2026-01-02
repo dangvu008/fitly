@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 import { validateCrawlUrl, sanitizeErrorMessage } from '../_shared/validation.ts';
+import { verifyAuth } from '../_shared/auth.ts';
 
 interface CrawlRequest {
   url: string;
@@ -206,6 +207,15 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) {
+      return new Response(
+        JSON.stringify({ success: false, error: auth.error, platform: 'unknown' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { url, platform: providedPlatform, removeBackground: shouldRemoveBackground }: CrawlRequest = await req.json();
 
     // Validate URL input
@@ -219,7 +229,7 @@ serve(async (req) => {
 
     const platform = providedPlatform || detectPlatform(url);
 
-    console.log(`[crawl-product-image] Crawling ${platform}`);
+    console.log(`[crawl-product-image] Crawling ${platform} for user:`, auth.userId);
 
     // Fetch the page
     const response = await fetch(url, {

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { verifyAuth } from '../_shared/auth.ts';
 
 interface Product {
   id: string;
@@ -252,9 +253,19 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    console.log('Starting visual search...');
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) {
+      return new Response(
+        JSON.stringify({ error: auth.error }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const { imageUrl, imageBase64, userId } = await req.json();
+    console.log('Starting visual search for user:', auth.userId);
+
+    const { imageUrl, imageBase64 } = await req.json();
+    const userId = auth.userId; // Use authenticated user ID
     
     let imageData = imageBase64;
     if (!imageData && imageUrl) {

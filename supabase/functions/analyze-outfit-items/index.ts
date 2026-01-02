@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { verifyAuth } from '../_shared/auth.ts';
 
 interface DetectedItem {
   name: string;
@@ -18,6 +19,15 @@ serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) {
+      return new Response(
+        JSON.stringify({ error: auth.error }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { imageUrl } = await req.json();
 
     if (!imageUrl) {
@@ -26,6 +36,8 @@ serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Analyzing outfit for user:', auth.userId);
 
     // Use OpenAI Vision API or similar to analyze the outfit
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');

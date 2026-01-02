@@ -1,16 +1,28 @@
 project_id = "tipuqpvbagzlgxxnosos"
 
 [functions.analyze-clothing-image]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-body-image]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-outfit-items]
-verify_jwt = false
+verify_jwt = true
 
 [functions.virtual-try-on]
-verify_jwt = false
+verify_jwt = true
 
 [functions.edit-try-on-result]
-verify_jwt = false
+verify_jwt = true
+
+[functions.crawl-product-image]
+verify_jwt = true
+
+[functions.smart-crop-clothing]
+verify_jwt = true
+
+[functions.visual-search]
+verify_jwt = true
+
+[functions.cleanup-temp-images]
+verify_jwt = true
