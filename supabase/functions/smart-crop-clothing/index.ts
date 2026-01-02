@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightRequest, corsJsonResponse } from '../_shared/cors.ts';
+import { verifyAuth } from '../_shared/auth.ts';
 
 interface SmartCropRequest {
   imageBase64: string;
@@ -245,6 +246,15 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) {
+      return corsJsonResponse(req, { 
+        success: false, 
+        error: auth.error 
+      }, 401);
+    }
+
     const { imageBase64, removeBackground: shouldRemoveBackground }: SmartCropRequest = await req.json();
 
     if (!imageBase64) {
@@ -262,7 +272,7 @@ serve(async (req) => {
       }, 400);
     }
 
-    console.log('[smart-crop-clothing] Processing image...');
+    console.log('[smart-crop-clothing] Processing image for user:', auth.userId);
 
     // Step 1: Detect clothing items using AI
     const { detectedItems, bestItem } = await detectClothingWithAI(imageBase64);

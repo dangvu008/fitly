@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 import { validateBase64Image, sanitizeErrorMessage } from '../_shared/validation.ts';
+import { verifyAuth } from '../_shared/auth.ts';
 
 // Generate a simple hash for cache key
 function generateCacheKey(imageBase64: string): string {
@@ -72,7 +73,16 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    console.log('Analyzing body image...');
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated) {
+      return new Response(
+        JSON.stringify({ error: auth.error }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Analyzing body image for user:', auth.userId);
 
     const { imageBase64 } = await req.json();
     
