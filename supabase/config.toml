@@ -10,7 +10,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.virtual-try-on]
-verify_jwt = true
+verify_jwt = false
 
 [functions.edit-try-on-result]
 verify_jwt = true
