@@ -72,7 +72,7 @@ export const ComparePage = () => {
   };
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto">
+    <div className="pb-24 pt-16 px-4 max-w-lg mx-auto">
       {/* Header */}
       <section className="text-center mb-6 animate-slide-up">
         <div className="w-14 h-14 rounded-2xl gradient-primary mx-auto flex items-center justify-center mb-3 shadow-glow">

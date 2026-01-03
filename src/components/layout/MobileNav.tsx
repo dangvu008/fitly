@@ -3,6 +3,7 @@ import { Home, ShoppingBag, Zap, Globe2, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
 
 interface NavItem {
   id: string;
@@ -25,11 +26,20 @@ interface MobileNavProps {
   onOpenStudio?: () => void;
 }
 
-export const MobileNav = ({ activeTab, onTabChange, onOpenStudio = () => {} }: MobileNavProps) => {
+export const MobileNav = ({ activeTab, onTabChange, onOpenStudio }: MobileNavProps) => {
   const { t } = useLanguage();
+  const { openDialog } = useTryOnDialog();
   const navRef = useRef<HTMLDivElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Handle studio button click - use TryOnDialog instead of navigation
+  const handleStudioClick = () => {
+    // Call the legacy callback if provided (for backwards compatibility)
+    onOpenStudio?.();
+    // Open the TryOnDialog
+    openDialog();
+  };
 
   // Calculate indicator position based on active tab
   useEffect(() => {
@@ -86,7 +96,7 @@ export const MobileNav = ({ activeTab, onTabChange, onOpenStudio = () => {} }: M
             return (
               <button
                 key={item.id}
-                onClick={onOpenStudio}
+                onClick={handleStudioClick}
                 aria-label={t(item.labelKey)}
                 className={cn(
                   "relative flex items-center justify-center",
@@ -146,20 +156,6 @@ export const MobileNav = ({ activeTab, onTabChange, onOpenStudio = () => {} }: M
                     isActive && "drop-shadow-sm"
                   )}
                 />
-                
-                {/* Active dot indicator with pulse animation */}
-                <div className={cn(
-                  "absolute -bottom-1.5 left-1/2 -translate-x-1/2",
-                  "w-1 h-1 rounded-full bg-primary",
-                  "transition-all duration-300 ease-out",
-                  isActive 
-                    ? "opacity-100 scale-100" 
-                    : "opacity-0 scale-0"
-                )}>
-                  {isActive && (
-                    <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75" />
-                  )}
-                </div>
               </div>
               
               {/* Label with fade animation */}

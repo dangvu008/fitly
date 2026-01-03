@@ -57,7 +57,7 @@ export const SuggestPage = ({ onSelectItem }: SuggestPageProps) => {
   ];
 
   return (
-    <div className="pb-24 pt-16 px-4 space-y-6 max-w-md mx-auto">
+    <div className="pb-24 pt-16 px-4 space-y-6 max-w-lg mx-auto">
       {/* Header section */}
       <section className="text-center animate-slide-up">
         <div className="w-16 h-16 rounded-2xl gradient-primary mx-auto flex items-center justify-center mb-4 shadow-glow">

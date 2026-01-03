@@ -273,10 +273,10 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
   };
 
   return (
-    <div ref={ref} className="space-y-2">
-      {/* Horizontally distributed outfit slots */}
+    <div ref={ref} className="space-y-1.5">
+      {/* Horizontally distributed outfit slots - Compact for mobile */}
       <div className="w-full" ref={dropdownRef}>
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-5 gap-1">
           {/* Category slots */}
           {outfitSlots.map((slot) => {
             const item = itemsByCategory[slot.category];
@@ -287,7 +287,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
             const IconComponent = slot.icon;
             
               return (
-                <div key={slot.category} className="flex flex-col items-center gap-1">
+                <div key={slot.category} className="flex flex-col items-center gap-0.5">
                 <Popover 
                   open={isExpanded} 
                   onOpenChange={(open) => {
@@ -301,7 +301,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                   <PopoverTrigger asChild>
                       <button
                         className={cn(
-                          "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300",
+                          "relative w-full aspect-square rounded-lg overflow-hidden transition-all duration-300",
                         item 
                           ? "ring-2 ring-primary shadow-glow" 
                           : "border-2 border-dashed border-border bg-card",
@@ -326,19 +326,19 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                               e.stopPropagation();
                               handleRemove(item.id);
                             }}
-                            className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-150 z-10 shadow-sm"
+                            className="absolute top-0 right-0 w-3.5 h-3.5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-150 z-10 shadow-sm"
                           >
-                            <X size={10} />
+                            <X size={8} />
                           </button>
                           {/* Change button overlay */}
                           <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <span className="text-[10px] font-medium text-background">Đổi</span>
+                            <span className="text-[9px] font-medium text-background">Đổi</span>
                           </div>
                         </div>
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center hover:bg-primary/5 transition-colors">
-                          <IconComponent size={20} className="text-muted-foreground/60 mb-0.5" strokeWidth={1.5} />
-                          <Plus size={12} className="text-primary" />
+                          <IconComponent size={16} className="text-muted-foreground/60 mb-0.5" strokeWidth={1.5} />
+                          <Plus size={10} className="text-primary" />
                         </div>
                       )}
                     </button>
@@ -346,19 +346,19 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                   
                   <PopoverContent 
                     side="top" 
-                    sideOffset={8}
+                    sideOffset={6}
                     align="center"
-                    className="w-72 p-0 z-50 bg-card border border-border rounded-xl shadow-lg"
+                    className="w-64 p-0 z-50 bg-card border border-border rounded-xl shadow-lg"
                   >
                     {/* Header with upload button */}
-                    <div className="p-3 border-b border-border flex items-center justify-between bg-muted/30 rounded-t-xl">
-                      <p className="text-sm font-semibold text-foreground">{t(slot.labelKey)}</p>
-                      <div className="flex items-center gap-2">
+                    <div className="p-2 border-b border-border flex items-center justify-between bg-muted/30 rounded-t-xl">
+                      <p className="text-xs font-semibold text-foreground">{t(slot.labelKey)}</p>
+                      <div className="flex items-center gap-1.5">
                         <button
                           onClick={(e) => handleUploadForCategory(slot.category, e)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/90 transition-colors"
                         >
-                          <Upload size={12} />
+                          <Upload size={10} />
                           Upload
                         </button>
                         <button
@@ -367,24 +367,24 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                             setShowFilters(!showFilters);
                           }}
                           className={cn(
-                            "p-1.5 rounded-lg transition-colors",
+                            "p-1 rounded-lg transition-colors",
                             showFilters || activeFiltersCount > 0
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted text-muted-foreground hover:bg-muted/80"
                           )}
                         >
-                          <Filter size={12} />
+                          <Filter size={10} />
                         </button>
                       </div>
                     </div>
                     
                     {/* Filters panel */}
                     {showFilters && (
-                      <div className="p-3 border-b border-border space-y-3 bg-muted/20">
+                      <div className="p-2 border-b border-border space-y-2 bg-muted/20">
                         {/* Color filter */}
                         <div>
-                          <p className="text-[10px] font-medium text-muted-foreground mb-2">Màu sắc</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <p className="text-[9px] font-medium text-muted-foreground mb-1.5">Màu sắc</p>
+                          <div className="flex flex-wrap gap-1">
                             {commonColors.slice(0, 8).map((color) => (
                               <button
                                 key={color.id}
@@ -393,10 +393,10 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                                   setSelectedColor(color.id);
                                 }}
                                 className={cn(
-                                  "w-6 h-6 rounded-full transition-all",
+                                  "w-5 h-5 rounded-full transition-all",
                                   color.color,
                                   selectedColor === color.id 
-                                    ? "ring-2 ring-primary ring-offset-2 ring-offset-card scale-110" 
+                                    ? "ring-2 ring-primary ring-offset-1 ring-offset-card scale-110" 
                                     : "hover:scale-110"
                                 )}
                                 title={color.label}
@@ -407,8 +407,8 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                         
                         {/* Style filter */}
                         <div>
-                          <p className="text-[10px] font-medium text-muted-foreground mb-2">Phong cách</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <p className="text-[9px] font-medium text-muted-foreground mb-1.5">Phong cách</p>
+                          <div className="flex flex-wrap gap-1">
                             {commonStyles.map((style) => (
                               <button
                                 key={style.id}
@@ -417,7 +417,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                                   setSelectedStyle(style.id);
                                 }}
                                 className={cn(
-                                  "px-2.5 py-1 rounded-full text-[10px] font-medium transition-all",
+                                  "px-2 py-0.5 rounded-full text-[9px] font-medium transition-all",
                                   selectedStyle === style.id 
                                     ? "bg-primary text-primary-foreground" 
                                     : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -437,7 +437,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                               setSelectedColor('all');
                               setSelectedStyle('all');
                             }}
-                            className="w-full text-xs text-destructive hover:underline"
+                            className="w-full text-[10px] text-destructive hover:underline"
                           >
                             Xóa bộ lọc
                           </button>
@@ -446,25 +446,25 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                     )}
                     
                     {/* Clothing grid */}
-                    <div className="max-h-60 overflow-y-auto p-3">
+                    <div className="max-h-48 overflow-y-auto p-2">
                       {categoryClothing.length === 0 ? (
-                        <div className="text-center py-6">
-                          <IconComponent size={32} className="text-muted-foreground/40 mx-auto mb-2" strokeWidth={1} />
-                          <p className="text-xs text-muted-foreground mb-3">
+                        <div className="text-center py-4">
+                          <IconComponent size={24} className="text-muted-foreground/40 mx-auto mb-1.5" strokeWidth={1} />
+                          <p className="text-[10px] text-muted-foreground mb-2">
                             {activeFiltersCount > 0 
                               ? 'Không tìm thấy phù hợp' 
                               : `Chưa có ${t(slot.labelKey).toLowerCase()}`}
                           </p>
                           <button
                             onClick={(e) => handleUploadForCategory(slot.category, e)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors mx-auto"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/90 transition-colors mx-auto"
                           >
-                            <Upload size={14} />
-                            Upload {t(slot.labelKey)}
+                            <Upload size={12} />
+                            Upload
                           </button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-1.5">
                           {categoryClothing.map((clothingItem) => {
                             // Check if this is a saved item (has user ownership)
                             const isSavedItem = savedClothing.some(s => s.id === clothingItem.id);
@@ -487,8 +487,8 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                               />
                               {/* Color/style indicator */}
                               {(clothingItem.color || clothingItem.style) && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/70 to-transparent p-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                  <p className="text-[8px] text-background truncate text-center">
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/70 to-transparent p-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                  <p className="text-[7px] text-background truncate text-center">
                                     {clothingItem.color || clothingItem.style}
                                   </p>
                                 </div>
@@ -501,12 +501,12 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                                   <DropdownMenuTrigger asChild>
                                     <button
                                       onClick={(e) => e.stopPropagation()}
-                                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-foreground/60 text-background flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity hover:bg-foreground/80"
+                                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-foreground/60 text-background flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity hover:bg-foreground/80"
                                     >
-                                      <MoreVertical size={12} />
+                                      <MoreVertical size={10} />
                                     </button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-32">
+                                  <DropdownMenuContent align="end" className="w-28">
                                     {onEditClothing && (
                                       <DropdownMenuItem
                                         onClick={(e) => {
@@ -514,9 +514,9 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                                           onEditClothing(clothingItem);
                                           setExpandedCategory(null);
                                         }}
-                                        className="text-xs"
+                                        className="text-[10px]"
                                       >
-                                        <Edit2 size={12} className="mr-2" />
+                                        <Edit2 size={10} className="mr-1.5" />
                                         Sửa
                                       </DropdownMenuItem>
                                     )}
@@ -527,9 +527,9 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                                           onDeleteClothing(clothingItem.id);
                                           setExpandedCategory(null);
                                         }}
-                                        className="text-xs text-destructive focus:text-destructive"
+                                        className="text-[10px] text-destructive focus:text-destructive"
                                       >
-                                        <Trash2 size={12} className="mr-2" />
+                                        <Trash2 size={10} className="mr-1.5" />
                                         Xóa
                                       </DropdownMenuItem>
                                     )}
@@ -547,7 +547,7 @@ export const SelectedClothingList = forwardRef<HTMLDivElement, SelectedClothingL
                 
                 {/* Label */}
                 <span className={cn(
-                  "text-[10px] font-medium transition-colors duration-200",
+                  "text-[9px] font-medium transition-colors duration-200",
                   item ? "text-primary" : "text-muted-foreground"
                 )}>
                   {t(slot.labelKey)}

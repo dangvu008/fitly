@@ -12,10 +12,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
-import { TryOutfitDialog } from '@/components/feed/TryOutfitDialog';
 import { CommunityFeedLayout } from '@/components/feed/CommunityFeedLayout';
 import { OutfitWithUser } from '@/components/feed/CommunityOutfitCard';
 import { useCommunityFeed, SharedOutfit } from '@/hooks/useCommunityFeed';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
 
 /**
  * Filter options for Community page
@@ -68,6 +68,7 @@ const toOutfitWithUser = (outfit: SharedOutfit): OutfitWithUser => ({
  */
 const CommunityFeedPage = () => {
   const navigate = useNavigate();
+  const { openDialog } = useTryOnDialog();
   const {
     outfits,
     setActiveTab,
@@ -76,11 +77,13 @@ const CommunityFeedPage = () => {
     hasMore,
     loadMore,
     refresh,
+    saveOutfit,
+    unsaveOutfit,
+    hideOutfit,
   } = useCommunityFeed();
 
   const [commentsOutfitId, setCommentsOutfitId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterId>('trending');
-  const [tryOutfitData, setTryOutfitData] = useState<SharedOutfit | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Map filter to tab
@@ -142,21 +145,22 @@ const CommunityFeedPage = () => {
   }, []);
 
   const handleTryOutfit = useCallback((outfit: OutfitWithUser) => {
-    // Convert back to SharedOutfit format for TryOutfitDialog
-    const sharedOutfit: SharedOutfit = {
-      id: outfit.id,
-      title: outfit.title,
-      description: outfit.description,
-      result_image_url: outfit.result_image_url,
-      clothing_items: outfit.clothing_items,
-      user_id: outfit.user_id,
-      created_at: outfit.created_at,
-      likes_count: outfit.likes_count,
-      comments_count: outfit.comments_count,
-      is_featured: outfit.is_featured,
-    };
-    setTryOutfitData(sharedOutfit);
-  }, []);
+    // Open TryOnDialog with outfit's clothing items
+    if (outfit.clothing_items && outfit.clothing_items.length > 0) {
+      const clothingItems = outfit.clothing_items.map((item, index) => ({
+        id: `outfit-${outfit.id}-${index}`,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        category: 'all' as const,
+        shopUrl: item.shopUrl,
+        price: item.price,
+      }));
+      
+      openDialog({
+        reuseClothingItems: clothingItems,
+      });
+    }
+  }, [openDialog]);
 
   return (
     <div className="min-h-screen bg-background pb-24 pt-16" data-testid="community-feed-page">
@@ -243,6 +247,9 @@ const CommunityFeedPage = () => {
             onLike={handleLike}
             onComment={handleComment}
             onTry={handleTryOutfit}
+            onSave={saveOutfit}
+            onUnsave={unsaveOutfit}
+            onHide={hideOutfit}
             data-testid="community-feed-layout"
           />
         )}
@@ -269,15 +276,6 @@ const CommunityFeedPage = () => {
         onClose={() => setCommentsOutfitId(null)}
         onCommentAdded={refresh}
       />
-
-      {/* Try Outfit Dialog */}
-      {tryOutfitData && (
-        <TryOutfitDialog
-          outfit={tryOutfitData}
-          open={!!tryOutfitData}
-          onOpenChange={(open) => !open && setTryOutfitData(null)}
-        />
-      )}
     </div>
   );
 };

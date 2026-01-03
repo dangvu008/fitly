@@ -1,10 +1,17 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Zap } from 'lucide-react';
+import { Heart, MessageCircle, Zap, Bookmark, EyeOff, MoreHorizontal } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 /**
  * Outfit data with user information for Community page
@@ -41,6 +48,12 @@ export interface CommunityOutfitCardProps {
   onTry: () => void;
   /** Callback when card is clicked (navigate to detail) */
   onClick: () => void;
+  /** Callback when save button is clicked */
+  onSave?: (outfitId: string) => Promise<boolean>;
+  /** Callback when unsave button is clicked */
+  onUnsave?: (outfitId: string) => Promise<boolean>;
+  /** Callback when hide button is clicked */
+  onHide?: (outfitId: string) => Promise<boolean>;
   /** Layout mode - 'single-column' for Instagram-style, 'masonry' for Pinterest-style */
   layout: 'single-column' | 'masonry';
   /** Custom class name */
@@ -73,12 +86,17 @@ export const CommunityOutfitCard = ({
   onComment,
   onTry,
   onClick,
+  onSave,
+  onUnsave,
+  onHide,
   layout,
   className,
   'data-testid': testId,
 }: CommunityOutfitCardProps) => {
   const [isLiked, setIsLiked] = useState(outfit.isLiked ?? false);
   const [likesCount, setLikesCount] = useState(outfit.likes_count);
+  const [isSaved, setIsSaved] = useState(outfit.isSaved ?? false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isSingleColumn = layout === 'single-column';
 
@@ -97,6 +115,42 @@ export const CommunityOutfitCard = ({
   const handleTry = (e: React.MouseEvent) => {
     e.stopPropagation();
     onTry();
+  };
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isSaving) return;
+    setIsSaving(true);
+    
+    try {
+      if (isSaved) {
+        const success = await onUnsave?.(outfit.id);
+        if (success) {
+          setIsSaved(false);
+          toast.success('Đã bỏ lưu outfit');
+        }
+      } else {
+        const success = await onSave?.(outfit.id);
+        if (success) {
+          setIsSaved(true);
+          toast.success('Đã lưu outfit');
+        }
+      }
+    } catch (error) {
+      toast.error('Không thể thực hiện');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleHide = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const success = await onHide?.(outfit.id);
+    if (success) {
+      toast.success('Đã ẩn outfit này');
+    } else {
+      toast.error('Không thể ẩn outfit');
+    }
   };
 
   const timeAgo = formatDistanceToNow(new Date(outfit.created_at), {
@@ -130,6 +184,23 @@ export const CommunityOutfitCard = ({
           </p>
           <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
         </div>
+        
+        {/* More options menu with hide */}
+        {onHide && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal size={18} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleHide} className="gap-2 text-destructive">
+                <EyeOff size={16} />
+                Ẩn outfit này
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Outfit image with 4:5 or 1:1 aspect ratio */}
@@ -178,17 +249,34 @@ export const CommunityOutfitCard = ({
             </button>
           </div>
 
-          {/* Small outline "Try" button - Requirements 3.3, 5.2 */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleTry}
-            className="h-7 px-2.5 text-xs gap-1 border-primary/50 text-primary hover:bg-primary/10"
-            data-testid="try-button"
-          >
-            <Zap size={14} />
-            Try
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Save button */}
+            {(onSave || onUnsave) && (
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className={cn(
+                  'transition-all active:scale-90',
+                  isSaved ? 'text-primary' : 'text-foreground hover:text-muted-foreground'
+                )}
+                aria-label={isSaved ? 'Bỏ lưu' : 'Lưu outfit'}
+              >
+                <Bookmark size={22} className={isSaved ? 'fill-current' : ''} />
+              </button>
+            )}
+            
+            {/* Small outline "Try" button - Requirements 3.3, 5.2 */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTry}
+              className="h-7 px-2.5 text-xs gap-1 border-primary/50 text-primary hover:bg-primary/10"
+              data-testid="try-button"
+            >
+              <Zap size={14} />
+              Try
+            </Button>
+          </div>
         </div>
 
         {/* Likes and comments count - Requirements 4.3 */}

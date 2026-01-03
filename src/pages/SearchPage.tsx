@@ -3,8 +3,7 @@
  * Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 3.1, 4.1
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { GemsPurchaseDialog } from '@/components/monetization/GemsPurchaseDialog';
@@ -13,9 +12,10 @@ import { VisualCategories } from '@/components/shop/VisualCategories';
 import { CuratedCollections } from '@/components/shop/CuratedCollections';
 import { ShopProductCard } from '@/components/shop/ShopProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ShopCategory, ShopProduct } from '@/types/shop';
-import { getAllShopProducts, filterProductsByCategory } from '@/data/curatedCollections';
+import { ShopProduct } from '@/types/shop';
+import { useShopSearch } from '@/hooks/useShopSearch';
 import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
 import { toast } from 'sonner';
 
 interface SearchPageProps {
@@ -23,45 +23,31 @@ interface SearchPageProps {
 }
 
 export const SearchPage = ({ onSelectItem }: SearchPageProps) => {
-  const navigate = useNavigate();
   const { t } = useLanguage();
   const { trackAndOpen } = useAffiliateTracking();
+  const { openDialog } = useTryOnDialog();
 
-  const [selectedCategory, setSelectedCategory] = useState<ShopCategory>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const {
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    isSearching,
+    selectedCategory,
+    setSelectedCategory,
+    isLoadingCommunity,
+    communityClothing,
+  } = useShopSearch();
+
+  const [isSearchingLocal, setIsSearchingLocal] = useState(false);
   const [showGemsPurchase, setShowGemsPurchase] = useState(false);
-
-  // Get all products for search results
-  const allProducts = useMemo(() => getAllShopProducts(), []);
-
-  // Filter products based on search query and category
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-
-    const query = searchQuery.toLowerCase();
-    let results = allProducts.filter(
-      (product) =>
-        product.name.toLowerCase().includes(query) ||
-        product.brand?.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query)
-    );
-
-    // Apply category filter
-    if (selectedCategory !== 'all') {
-      results = filterProductsByCategory(results, selectedCategory);
-    }
-
-    return results;
-  }, [searchQuery, selectedCategory, allProducts]);
 
   // Handle keyword search
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    setIsSearching(true);
-    // Simulate search delay
-    setTimeout(() => setIsSearching(false), 500);
-  }, []);
+    setIsSearchingLocal(true);
+    // Brief delay for UX
+    setTimeout(() => setIsSearchingLocal(false), 300);
+  }, [setSearchQuery]);
 
   // Handle URL paste (visual search)
   const handleUrlDetected = useCallback((url: string) => {
@@ -70,22 +56,31 @@ export const SearchPage = ({ onSelectItem }: SearchPageProps) => {
     // TODO: Implement visual search with the URL
   }, []);
 
-  // Handle Try On button click
+  // Handle Try On button click - Opens TryOnDialog
   const handleTryOn = useCallback(
     (product: ShopProduct) => {
-      // Navigate to try-on page with product image
-      navigate('/try-on', {
-        state: {
-          initialItem: {
-            id: product.id,
-            name: product.name,
-            imageUrl: product.imageUrl,
-            category: product.category,
-          },
+      // Map ShopCategory to ClothingCategory
+      const categoryMap: Record<string, 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'all'> = {
+        'tops': 'top',
+        'pants': 'bottom',
+        'dresses': 'dress',
+        'outerwear': 'top',
+        'shoes': 'shoes',
+        'accessories': 'accessory',
+        'all': 'all',
+      };
+      
+      // Open TryOnDialog with product as initial item
+      openDialog({
+        initialItem: {
+          id: product.id,
+          name: product.name,
+          imageUrl: product.imageUrl,
+          category: categoryMap[product.category] || 'all',
         },
       });
     },
-    [navigate]
+    [openDialog]
   );
 
   // Handle Buy button click with affiliate tracking
@@ -99,6 +94,7 @@ export const SearchPage = ({ onSelectItem }: SearchPageProps) => {
   }, [searchQuery, trackAndOpen]);
 
   const isShowingSearchResults = searchQuery.trim().length > 0;
+  const isLoading = isSearchingLocal || isLoadingCommunity;
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-24 pt-16 max-w-lg mx-auto">
@@ -122,7 +118,7 @@ export const SearchPage = ({ onSelectItem }: SearchPageProps) => {
 
         {/* Content */}
         <ScrollArea className="flex-1">
-          {isSearching ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
@@ -152,12 +148,37 @@ export const SearchPage = ({ onSelectItem }: SearchPageProps) => {
               )}
             </div>
           ) : (
-            /* Curated Collections - Requirements 4.1 */
-            <CuratedCollections
-              selectedCategory={selectedCategory}
-              onTryOn={handleTryOn}
-              onBuy={handleBuy}
-            />
+            /* Curated Collections and Community Picks */
+            <div className="space-y-4">
+              {/* Curated Collections - Requirements 4.1 */}
+              <CuratedCollections
+                selectedCategory={selectedCategory}
+                onTryOn={handleTryOn}
+                onBuy={handleBuy}
+              />
+              
+              {/* Community Picks - Items from database */}
+              {communityClothing.length > 0 && (
+                <div className="py-3">
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-3">
+                    Từ cộng đồng
+                  </h3>
+                  <div className="px-4 grid grid-cols-2 gap-3">
+                    {communityClothing
+                      .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
+                      .slice(0, 6)
+                      .map((product) => (
+                        <ShopProductCard
+                          key={product.id}
+                          product={product}
+                          onTryOn={handleTryOn}
+                          onBuy={handleBuy}
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </ScrollArea>
       </div>

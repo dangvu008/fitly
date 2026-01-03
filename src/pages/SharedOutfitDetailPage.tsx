@@ -224,7 +224,7 @@ export const SharedOutfitDetailPage = () => {
     <div className="mobile-viewport bg-background pb-20">
       {/* Header - Instagram style */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border safe-top">
-        <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img 
               src={logoImage} 
@@ -241,7 +241,7 @@ export const SharedOutfitDetailPage = () => {
         </div>
       </header>
 
-      <div className="pt-16 px-4 max-w-md mx-auto space-y-6">
+      <div className="pt-16 px-4 max-w-lg mx-auto space-y-6">
         {/* Main outfit image */}
         <div className="rounded-xl overflow-hidden shadow-medium border border-border">
           <div className="aspect-[3/4] relative">

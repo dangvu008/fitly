@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
 import { useIsMobile } from '@/hooks/useMobile';
 import { QuickTryButton } from '@/components/tryOn/QuickTryButton';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -34,6 +35,15 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
   showQuickTry = false,
 }, ref) => {
   const isMobile = useIsMobile();
+  const { openDialog } = useTryOnDialog();
+
+  // Handle quick try - open TryOnDialog with the clothing item
+  const handleQuickTry = () => {
+    // Open TryOnDialog with the item pre-selected
+    openDialog({ initialItem: item });
+    // Also call the legacy callback if provided
+    onQuickTry?.(item);
+  };
 
   const sizeClasses = {
     sm: 'w-16 h-16',
@@ -86,7 +96,7 @@ export const ClothingCard = forwardRef<HTMLDivElement, ClothingCardProps>(({
           <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <QuickTryButton
               clothingItem={item}
-              onTryStart={() => onQuickTry?.(item)}
+              onTryStart={handleQuickTry}
               size="sm"
               variant="overlay"
               data-testid="quick-try-button-clothing"

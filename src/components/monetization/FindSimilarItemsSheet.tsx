@@ -37,7 +37,7 @@ export function FindSimilarItemsSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="h-[70vh] rounded-t-xl">
+      <SheetContent side="bottom" className="h-[70vh] rounded-t-xl" hideCloseButton>
         <SheetHeader className="flex flex-row items-center justify-between pb-4 border-b">
           <SheetTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5" />

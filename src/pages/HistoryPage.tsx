@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCompare, SavedOutfit } from '@/contexts/CompareContext';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -28,16 +29,15 @@ interface TryOnHistoryItem {
 
 interface HistoryPageProps {
   onNavigateToCompare?: () => void;
-  onNavigateToTryOn?: () => void;
-  onReuseHistory?: (bodyImageUrl: string, clothingItems: ClothingItem[]) => void;
 }
 
 const localeMap: Record<string, Locale> = { vi, en: enUS, zh: zhCN, ko, ja, th };
 
-export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHistory }: HistoryPageProps) => {
+export const HistoryPage = ({ onNavigateToCompare }: HistoryPageProps) => {
   const { user, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
   const { addToCompare, outfitsToCompare, isInCompare, clearCompare } = useCompare();
+  const { openDialog } = useTryOnDialog();
   const navigate = useNavigate();
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,26 +131,15 @@ export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHis
   };
 
   const handleReuse = async (item: TryOnHistoryItem) => {
-    if (!onReuseHistory || !onNavigateToTryOn) {
-      toast.error(t('history_cannot_reuse'));
-      return;
-    }
-
-    try {
-      const clothingItems: ClothingItem[] = item.clothing_items.map((ci, idx) => ({
-        id: `history-${item.id}-${idx}`,
-        name: ci.name,
-        category: 'top' as const,
-        imageUrl: ci.imageUrl,
-      }));
-
-      onReuseHistory(item.body_image_url, clothingItems);
-      onNavigateToTryOn();
-      toast.success(t('history_reloaded'));
-    } catch (error) {
-      console.error('Error reusing history:', error);
-      toast.error(t('history_cannot_reuse'));
-    }
+    // Open TryOnDialog with history result data
+    openDialog({
+      historyResult: {
+        resultImageUrl: item.result_image_url,
+        bodyImageUrl: item.body_image_url,
+        clothingItems: item.clothing_items,
+      },
+    });
+    toast.success(t('history_reloaded'));
   };
 
   const formatDate = (dateStr: string) => {
@@ -211,7 +200,7 @@ export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHis
   // Not logged in
   if (!authLoading && !user) {
     return (
-      <div className="pb-24 pt-16 px-4 max-w-md mx-auto">
+      <div className="pb-24 pt-16 px-4 max-w-lg mx-auto">
         <div className="text-center py-12">
           <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
             <History size={32} className="text-muted-foreground" />
@@ -233,7 +222,7 @@ export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHis
   // Loading state
   if (loading || authLoading) {
     return (
-      <div className="pb-24 pt-16 px-4 max-w-md mx-auto flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <div className="pb-24 pt-16 px-4 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <div className="w-24 h-24">
           <DotLottieReact
             src="https://lottie.host/0c5e8c0a-6af5-4b32-bdbd-25d0d04f7980/W8dWzCXoD9.lottie"
@@ -248,7 +237,7 @@ export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHis
   }
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto">
+    <div className="pb-24 pt-16 px-4 max-w-lg mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -283,7 +272,7 @@ export const HistoryPage = ({ onNavigateToCompare, onNavigateToTryOn, onReuseHis
 
       {/* Compare mode bar */}
       {compareMode && (
-        <div className="fixed bottom-20 left-4 right-4 z-40 bg-card border border-border rounded-2xl shadow-medium p-3 flex items-center justify-between animate-slide-up max-w-md mx-auto">
+        <div className="fixed bottom-20 left-4 right-4 z-40 bg-card border border-border rounded-2xl shadow-medium p-3 flex items-center justify-between animate-slide-up max-w-lg mx-auto">
           <div className="flex items-center gap-2">
             <Scale size={18} className="text-primary" />
             <span className="text-sm font-medium">

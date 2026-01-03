@@ -4,6 +4,8 @@ import { ClothingItem } from '@/types/clothing';
 import { useNewArrivals, useTrendingOutfits, useForYouOutfits, HomeOutfitItem } from '@/hooks/useHomeOutfits';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
+import { useOutfitActions } from '@/hooks/useOutfitActions';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
 import { HorizontalScrollSection, OutfitItem } from '@/components/home/HorizontalScrollSection';
 import { HomeOutfitCard } from '@/components/home/HomeOutfitCard';
@@ -73,6 +75,8 @@ export const HomePage = ({
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { openDialog } = useTryOnDialog();
+  const { isSaved, toggleSave, hideOutfit, hiddenOutfitIds } = useOutfitActions();
   
   // Use dedicated hooks for each section with React Query caching (Requirements 2.1, 2.2)
   const { 
@@ -169,25 +173,39 @@ export const HomePage = ({
     created_at: outfit.created_at,
   });
 
+  // Filter out hidden outfits
+  const filterHidden = (outfits: HomeOutfitItem[]) => 
+    outfits.filter(o => !hiddenOutfitIds.has(o.id));
+
   const handleViewOutfitDetail = (outfitId: string) => {
     navigate(`/outfit/${outfitId}`);
   };
 
   const handleTryOutfit = (outfit: OutfitItem) => {
     if (outfit.clothing_items && outfit.clothing_items.length > 0) {
-      const firstItem = outfit.clothing_items[0];
-      if (onQuickTry) {
-        onQuickTry(firstItem.imageUrl, `outfit-${outfit.id}-0`, false);
-      } else {
-        onSelectItem({
-          id: `outfit-${outfit.id}-0`,
-          name: firstItem.name,
-          imageUrl: firstItem.imageUrl,
-          category: 'top',
-        });
-        onNavigateToTryOn();
-      }
+      // Convert outfit clothing items to ClothingItem format
+      const clothingItems = outfit.clothing_items.map((item, index) => ({
+        id: `outfit-${outfit.id}-${index}`,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        category: 'all' as const,
+        shopUrl: item.shopUrl,
+        price: item.price,
+      }));
+      
+      // Open TryOnDialog with the clothing items
+      openDialog({
+        reuseClothingItems: clothingItems,
+      });
     }
+  };
+
+  const handleSaveOutfit = (outfit: OutfitItem) => {
+    toggleSave(outfit.id);
+  };
+
+  const handleHideOutfit = (outfit: OutfitItem) => {
+    hideOutfit(outfit.id);
   };
 
   return (
@@ -196,7 +214,7 @@ export const HomePage = ({
         
         {/* YOUR RECENT LOOKS - History Section (Requirements 1.1, 1.2, 1.3, 1.4, 1.5) */}
         <section className="py-4">
-          <div className="flex items-center justify-between px-4 mb-3">
+          <div className="flex items-center justify-between px-3 sm:px-4 mb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-bold text-foreground">{t('your_recent_looks')}</h2>
@@ -212,11 +230,11 @@ export const HomePage = ({
             )}
           </div>
 
-          <div className="px-4">
+          <div className="px-3 sm:px-4">
             {isLoadingHistory ? (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="flex-shrink-0 w-20 h-28 rounded-xl" />
+                  <Skeleton key={i} className="flex-shrink-0 w-[72px] sm:w-20 h-[100px] sm:h-28 rounded-xl" />
                 ))}
               </div>
             ) : !user ? (
@@ -224,17 +242,17 @@ export const HomePage = ({
                 <p className="text-muted-foreground text-sm">{t('login_to_view_history')}</p>
               </div>
             ) : (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide">
                 {/* New Try-On Button (Requirements 1.3) */}
                 <button
                   onClick={onNavigateToTryOn}
-                  className="flex-shrink-0 w-20 h-28 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary transition-all"
+                  className="flex-shrink-0 w-[72px] sm:w-20 h-[100px] sm:h-28 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-primary/10 hover:border-primary transition-all"
                   data-testid="new-tryon-button"
                 >
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Plus className="w-5 h-5 text-primary" />
+                  <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Plus className="w-4 sm:w-5 h-4 sm:h-5 text-primary" />
                   </div>
-                  <span className="text-[10px] font-medium text-primary">NEW</span>
+                  <span className="text-[9px] sm:text-[10px] font-medium text-primary">NEW</span>
                 </button>
 
                 {/* History Items (Requirements 1.4) */}
@@ -242,10 +260,10 @@ export const HomePage = ({
                   <button
                     key={item.id}
                     onClick={() => onViewHistoryResult?.(item)}
-                    className="flex-shrink-0 w-20 rounded-xl overflow-hidden bg-card border border-border shadow-soft hover:border-primary/50 hover:shadow-medium transition-all"
+                    className="flex-shrink-0 w-[72px] sm:w-20 rounded-xl overflow-hidden bg-card border border-border shadow-soft hover:border-primary/50 hover:shadow-medium transition-all"
                     data-testid={`history-item-${item.id}`}
                   >
-                    <div className="relative h-28">
+                    <div className="relative h-[100px] sm:h-28">
                       <img
                         src={item.result_image_url}
                         alt="Try-on result"
@@ -253,7 +271,7 @@ export const HomePage = ({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                       <div className="absolute bottom-1 left-1 right-1">
-                        <p className="text-[8px] text-muted-foreground text-center">
+                        <p className="text-[7px] sm:text-[8px] text-muted-foreground text-center">
                           {formatDistanceToNow(new Date(item.created_at), { locale: dateLocale, addSuffix: false })}
                         </p>
                       </div>
@@ -275,9 +293,12 @@ export const HomePage = ({
         <HorizontalScrollSection
           title={t('new_arrivals')}
           icon={Sparkles}
-          items={newArrivals.map(toOutfitItem)}
+          items={filterHidden(newArrivals).map(toOutfitItem)}
           onItemClick={(item) => handleViewOutfitDetail(item.id)}
           onTryItem={handleTryOutfit}
+          onSaveItem={handleSaveOutfit}
+          onHideItem={handleHideOutfit}
+          isItemSaved={isSaved}
           showViewAll={true}
           onViewAll={() => navigate('/community')}
           isLoading={isLoading}
@@ -288,9 +309,12 @@ export const HomePage = ({
         <HorizontalScrollSection
           title={t('trending_styles')}
           icon={Flame}
-          items={trendingStyles.map(toOutfitItem)}
+          items={filterHidden(trendingStyles).map(toOutfitItem)}
           onItemClick={(item) => handleViewOutfitDetail(item.id)}
           onTryItem={handleTryOutfit}
+          onSaveItem={handleSaveOutfit}
+          onHideItem={handleHideOutfit}
+          isItemSaved={isSaved}
           showViewAll={true}
           onViewAll={() => navigate('/community')}
           isLoading={isLoading}
@@ -298,14 +322,14 @@ export const HomePage = ({
         />
 
         {/* FOR YOU - 2-Column Grid Section (Requirements 2.3) */}
-        <section className="py-4 px-4">
+        <section className="py-4 px-3 sm:px-4">
           <div className="flex items-center gap-2 mb-3">
             <Star className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-bold text-foreground">{t('for_you')}</h2>
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               {[1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
               ))}
@@ -316,14 +340,17 @@ export const HomePage = ({
               <p className="text-sm text-muted-foreground">{t('no_outfit_yet')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3" data-testid="for-you-grid">
-              {forYouOutfits.map((outfit) => (
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3" data-testid="for-you-grid">
+              {filterHidden(forYouOutfits).map((outfit) => (
                 <HomeOutfitCard
                   key={outfit.id}
                   outfit={toOutfitItem(outfit)}
                   onTry={() => handleTryOutfit(toOutfitItem(outfit))}
                   onClick={() => handleViewOutfitDetail(outfit.id)}
                   variant="grid"
+                  isSaved={isSaved(outfit.id)}
+                  onSave={() => handleSaveOutfit(toOutfitItem(outfit))}
+                  onHide={() => handleHideOutfit(toOutfitItem(outfit))}
                   data-testid={`for-you-card-${outfit.id}`}
                 />
               ))}

@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { HomePage } from './HomePage';
-import { TryOnPage } from './TryOnPage';
 import { ComparePage } from './ComparePage';
 import { FavoritesPage } from './FavoritesPage';
 import { ProfilePage } from './ProfilePage';
@@ -18,17 +17,14 @@ import { SearchPage } from './SearchPage';
 import CommunityFeedPage from './CommunityFeedPage';
 import { CompareProvider } from '@/contexts/CompareContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { TryOnDialogProvider, useTryOnDialog } from '@/contexts/TryOnDialogContext';
 import { GemsPurchaseDialog } from '@/components/monetization/GemsPurchaseDialog';
 import { ClipboardLinkToast } from '@/components/smartPaste/ClipboardLinkToast';
 import { CrawlErrorToast } from '@/components/smartPaste/CrawlErrorToast';
-import { QuickTryFAB } from '@/components/smartPaste/QuickTryFAB';
-import { QuickTrySheet } from '@/components/smartPaste/QuickTrySheet';
 import { GemGate } from '@/components/tryOn/GemGate';
-import { useSmartPaste, CrawlError } from '@/hooks/useSmartPaste';
+import { useSmartPaste } from '@/hooks/useSmartPaste';
 import { ClothingItem } from '@/types/clothing';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 /**
  * Navigation tab type for the new navigation structure
@@ -38,21 +34,10 @@ type NavigationTab = 'home' | 'search' | 'community' | 'wardrobe' | 'profile' | 
 
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState<NavigationTab>('home');
-  const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [isGemsPurchaseOpen, setIsGemsPurchaseOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<ClothingItem | undefined>();
-  const [reuseBodyImage, setReuseBodyImage] = useState<string | undefined>();
-  const [reuseClothingItems, setReuseClothingItems] = useState<ClothingItem[]>([]);
-  const [historyResult, setHistoryResult] = useState<{
-    resultImageUrl: string;
-    bodyImageUrl: string;
-    clothingItems: Array<{ name: string; imageUrl: string }>;
-  } | undefined>();
   
-  // Smart Paste / Quick Try state
-  const [quickTryGarmentUrl, setQuickTryGarmentUrl] = useState<string | undefined>();
-  const [quickTryGarmentId, setQuickTryGarmentId] = useState<string | undefined>();
-  const [quickTryAutoStart, setQuickTryAutoStart] = useState(false);
+  // Use TryOnDialog hook for opening try-on popup
+  const { openDialog: openTryOnDialog } = useTryOnDialog();
 
   // Smart Paste hook for clipboard detection
   const {
@@ -61,12 +46,10 @@ const MainApp = () => {
     crawlError,
     dismissLink,
     handleTryFromLink,
-    crawlProductImage,
     retryCrawl,
     clearCrawlError,
     // Gem gate state and actions (REQ-11.1, REQ-11.2)
     showGemGate,
-    hasSufficientGems,
     gemBalance,
     gemCost,
     closeGemGate,
@@ -74,26 +57,9 @@ const MainApp = () => {
     onWatchAd,
   } = useSmartPaste();
 
-  // Quick Try Sheet state
-  const [isQuickTrySheetOpen, setIsQuickTrySheetOpen] = useState(false);
-  
-  // Track if we should show manual upload after error
-  const [showManualUploadAfterError, setShowManualUploadAfterError] = useState(false);
-
   const handleSelectItem = (item: ClothingItem) => {
-    setSelectedItem(item);
-    setReuseBodyImage(undefined);
-    setReuseClothingItems([]);
-    setHistoryResult(undefined);
-    setIsStudioOpen(true); // Open studio overlay instead of switching tab
+    openTryOnDialog({ initialItem: item });
     toast.success(`Đã chọn ${item.name} để thử`);
-  };
-
-  const handleReuseHistory = (bodyImageUrl: string, clothingItems: ClothingItem[]) => {
-    setReuseBodyImage(bodyImageUrl);
-    setReuseClothingItems(clothingItems);
-    setSelectedItem(undefined);
-    setHistoryResult(undefined);
   };
 
   const handleViewHistoryResult = (item: {
@@ -103,54 +69,33 @@ const MainApp = () => {
     created_at: string;
     clothing_items: Array<{ name: string; imageUrl: string }>;
   }) => {
-    setHistoryResult({
-      resultImageUrl: item.result_image_url,
-      bodyImageUrl: item.body_image_url,
-      clothingItems: item.clothing_items,
+    openTryOnDialog({
+      historyResult: {
+        resultImageUrl: item.result_image_url,
+        bodyImageUrl: item.body_image_url,
+        clothingItems: item.clothing_items,
+      },
     });
-    setSelectedItem(undefined);
-    setReuseBodyImage(undefined);
-    setReuseClothingItems([]);
-    setIsStudioOpen(true); // Open studio overlay
   };
 
   /**
-   * Open Studio overlay - FAB action
-   * Requirements: 4.4 - FAB opens Studio without changing active tab
+   * Open TryOn dialog - FAB action
+   * Requirements: 4.4 - FAB opens TryOn dialog without changing active tab
    */
-  const handleOpenStudio = () => {
-    setIsStudioOpen(true);
+  const handleOpenTryOn = () => {
+    openTryOnDialog();
   };
 
   /**
-   * Close Studio overlay
-   * Requirements: 8.4 - Closing Studio doesn't change active tab
-   */
-  const handleCloseStudio = () => {
-    setIsStudioOpen(false);
-    setSelectedItem(undefined);
-    setReuseBodyImage(undefined);
-    setReuseClothingItems([]);
-    setHistoryResult(undefined);
-    // Reset Quick Try state
-    setQuickTryGarmentUrl(undefined);
-    setQuickTryGarmentId(undefined);
-    setQuickTryAutoStart(false);
-  };
-
-  /**
-   * Quick Try - Open Studio with garment URL for Smart Paste flow
+   * Quick Try - Open TryOn dialog with garment URL for Smart Paste flow
    * Requirements: REQ-8.1, REQ-8.2
    */
   const handleQuickTry = (garmentUrl: string, garmentId?: string, autoStart = false) => {
-    setQuickTryGarmentUrl(garmentUrl);
-    setQuickTryGarmentId(garmentId);
-    setQuickTryAutoStart(autoStart);
-    setSelectedItem(undefined);
-    setReuseBodyImage(undefined);
-    setReuseClothingItems([]);
-    setHistoryResult(undefined);
-    setIsStudioOpen(true);
+    openTryOnDialog({
+      initialGarmentUrl: garmentUrl,
+      initialGarmentId: garmentId,
+      autoStart,
+    });
   };
 
   /**
@@ -166,7 +111,7 @@ const MainApp = () => {
       case 'home':
         return (
           <HomePage 
-            onNavigateToTryOn={handleOpenStudio}
+            onNavigateToTryOn={handleOpenTryOn}
             onNavigateToCompare={() => setActiveTab('compare')}
             onNavigateToHistory={() => setActiveTab('history')}
             onSelectItem={handleSelectItem}
@@ -185,19 +130,17 @@ const MainApp = () => {
       case 'favorites':
         return <FavoritesPage onSelectItem={handleSelectItem} />;
       case 'profile':
-        return <ProfilePage onNavigateToHistory={() => setActiveTab('history')} />;
+        return <ProfilePage onNavigateToHistory={() => setActiveTab('history')} onNavigateToSaved={() => setActiveTab('saved')} />;
       case 'history':
         return (
           <HistoryPage 
             onNavigateToCompare={() => setActiveTab('compare')} 
-            onNavigateToTryOn={handleOpenStudio}
-            onReuseHistory={handleReuseHistory}
           />
         );
       case 'wardrobe':
-        return <WardrobePage onNavigateToTryOn={handleOpenStudio} />;
+        return <WardrobePage onNavigateToTryOn={handleOpenTryOn} />;
       case 'closet':
-        return <ClosetPage onNavigateToTryOn={handleOpenStudio} />;
+        return <ClosetPage onNavigateToTryOn={handleOpenTryOn} />;
       case 'saved':
         return <SavedOutfitsPage onNavigateBack={() => setActiveTab('home')} />;
       case 'community':
@@ -205,7 +148,7 @@ const MainApp = () => {
       default:
         return (
           <HomePage 
-            onNavigateToTryOn={handleOpenStudio}
+            onNavigateToTryOn={handleOpenTryOn}
             onNavigateToCompare={() => setActiveTab('compare')}
             onNavigateToHistory={() => setActiveTab('history')}
             onSelectItem={handleSelectItem}
@@ -218,64 +161,27 @@ const MainApp = () => {
 
   return (
     <div className="mobile-viewport bg-background">
-      {/* Header - hidden when Studio is open */}
-      {!isStudioOpen && (
-        <Header
-          title="TryOn"
-          showNotification={activeTab === 'home'}
-          showLanguageSwitcher={true}
-          showGems={true}
-          onAvatarClick={() => setActiveTab('profile')}
-          onSavedClick={() => setActiveTab('saved')}
-          onGemsClick={handleGemsClick}
-        />
-      )}
+      {/* Header */}
+      <Header
+        title="TryOn"
+        showNotification={activeTab === 'home'}
+        showLanguageSwitcher={true}
+        showGems={true}
+        onAvatarClick={() => setActiveTab('profile')}
+        onSavedClick={() => setActiveTab('saved')}
+        onGemsClick={handleGemsClick}
+      />
 
       <main className="min-h-screen">
         {renderPage()}
       </main>
 
-      {/* Bottom Navigation - hidden when Studio is open */}
-      {!isStudioOpen && (
-        <MobileNav 
-          activeTab={activeTab} 
-          onTabChange={(tab) => setActiveTab(tab as NavigationTab)}
-          onOpenStudio={handleOpenStudio}
-        />
-      )}
-
-      {/* Quick Try FAB - shown on main screens, hidden when Studio is open */}
-      {!isStudioOpen && ['home', 'search', 'community', 'closet'].includes(activeTab) && (
-        <QuickTryFAB
-          onClick={() => setIsQuickTrySheetOpen(true)}
-          className="bottom-20 left-1/2 -translate-x-1/2"
-        />
-      )}
-
-      {/* Studio Overlay - Full screen TryOnPage */}
-      {isStudioOpen && (
-        <div className="fixed inset-0 z-50 bg-background">
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm"
-            onClick={handleCloseStudio}
-          >
-            <X size={24} />
-          </Button>
-          
-          <TryOnPage 
-            initialItem={selectedItem} 
-            reuseBodyImage={reuseBodyImage}
-            reuseClothingItems={reuseClothingItems}
-            historyResult={historyResult}
-            initialGarmentUrl={quickTryGarmentUrl}
-            initialGarmentId={quickTryGarmentId}
-            autoStart={quickTryAutoStart}
-          />
-        </div>
-      )}
+      {/* Bottom Navigation */}
+      <MobileNav 
+        activeTab={activeTab} 
+        onTabChange={(tab) => setActiveTab(tab as NavigationTab)}
+        onOpenStudio={handleOpenTryOn}
+      />
 
       {/* Gems Purchase Dialog */}
       <GemsPurchaseDialog
@@ -284,7 +190,7 @@ const MainApp = () => {
       />
 
       {/* Smart Paste - Clipboard Link Toast */}
-      {detectedLink && !isStudioOpen && !crawlError && (
+      {detectedLink && !crawlError && (
         <ClipboardLinkToast
           detectedLink={detectedLink}
           isLoading={isCrawling}
@@ -305,7 +211,7 @@ const MainApp = () => {
       )}
 
       {/* Smart Paste - Crawl Error Toast with Retry and Manual Upload */}
-      {crawlError && !isStudioOpen && (
+      {crawlError && (
         <CrawlErrorToast
           error={crawlError}
           isRetrying={isCrawling}
@@ -317,38 +223,12 @@ const MainApp = () => {
           }}
           onManualUpload={() => {
             clearCrawlError();
-            setIsQuickTrySheetOpen(true);
+            // Open TryOnDialog for manual upload
+            openTryOnDialog();
           }}
           onDismiss={clearCrawlError}
         />
       )}
-
-      {/* Quick Try Sheet */}
-      <QuickTrySheet
-        open={isQuickTrySheetOpen || showManualUploadAfterError}
-        onOpenChange={(open) => {
-          setIsQuickTrySheetOpen(open);
-          if (!open) {
-            setShowManualUploadAfterError(false);
-          }
-        }}
-        isProcessing={isCrawling}
-        onLinkSubmit={async (url) => {
-          const product = await crawlProductImage(url);
-          if (product?.imageUrl) {
-            setIsQuickTrySheetOpen(false);
-            setShowManualUploadAfterError(false);
-            handleQuickTry(product.imageUrl, undefined, false);
-          }
-          // If crawl fails, error toast will show and user can retry or upload manually
-        }}
-        onImageSelected={(imageDataUrl) => {
-          setIsQuickTrySheetOpen(false);
-          setShowManualUploadAfterError(false);
-          clearCrawlError();
-          handleQuickTry(imageDataUrl, undefined, false);
-        }}
-      />
 
       {/* Smart Paste - Gem Gate Dialog (REQ-11.1, REQ-11.2) */}
       <GemGate
@@ -371,13 +251,15 @@ const Index = () => {
   return (
     <AuthProvider>
       <CompareProvider>
-        <Routes>
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/outfit/:id" element={<SharedOutfitDetailPage />} />
-          <Route path="/user/:userId" element={<UserProfilePage />} />
-          <Route path="/community" element={<CommunityFeedPage />} />
-          <Route path="/*" element={<MainApp />} />
-        </Routes>
+        <TryOnDialogProvider>
+          <Routes>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/outfit/:id" element={<SharedOutfitDetailPage />} />
+            <Route path="/user/:userId" element={<UserProfilePage />} />
+            <Route path="/community" element={<CommunityFeedPage />} />
+            <Route path="/*" element={<MainApp />} />
+          </Routes>
+        </TryOnDialogProvider>
       </CompareProvider>
     </AuthProvider>
   );

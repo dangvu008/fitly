@@ -1,4 +1,12 @@
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Bookmark, MoreVertical, EyeOff } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +37,12 @@ export interface HomeOutfitCardProps {
   onClick: () => void;
   /** Card variant - 'horizontal' for scroll sections, 'grid' for 2-column grid */
   variant: 'horizontal' | 'grid';
+  /** Whether outfit is saved */
+  isSaved?: boolean;
+  /** Callback when save button is clicked */
+  onSave?: () => void;
+  /** Callback when hide is clicked */
+  onHide?: () => void;
   /** Custom class name */
   className?: string;
   /** Test ID for testing */
@@ -49,12 +63,26 @@ export const HomeOutfitCard = ({
   onTry,
   onClick,
   variant,
+  isSaved = false,
+  onSave,
+  onHide,
   className,
   'data-testid': testId,
 }: HomeOutfitCardProps) => {
   const { t } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isHorizontal = variant === 'horizontal';
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSave?.();
+  };
+
+  const handleHideClick = () => {
+    setMenuOpen(false);
+    onHide?.();
+  };
 
   return (
     <div
@@ -93,6 +121,46 @@ export const HomeOutfitCard = ({
             </Avatar>
           </div>
         )}
+
+        {/* Action buttons overlay - top right */}
+        <div className="absolute top-2 right-2 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {/* Save button */}
+          {onSave && (
+            <button
+              onClick={handleSaveClick}
+              className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                isSaved 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-background/60 backdrop-blur-sm text-foreground hover:bg-background/80"
+              )}
+              aria-label={isSaved ? t('unsave') : t('save')}
+            >
+              <Bookmark size={12} className={isSaved ? "fill-current" : ""} />
+            </button>
+          )}
+
+          {/* More menu */}
+          {onHide && (
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-6 h-6 rounded-full bg-background/60 backdrop-blur-sm flex items-center justify-center hover:bg-background/80 transition-colors"
+                  aria-label="More options"
+                >
+                  <MoreVertical size={12} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem onClick={handleHideClick} className="text-xs">
+                  <EyeOff size={14} className="mr-2" />
+                  {t('hide_outfit')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         {/* Title and stats at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-2">

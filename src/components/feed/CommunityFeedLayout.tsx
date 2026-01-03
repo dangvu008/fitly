@@ -18,6 +18,12 @@ export interface CommunityFeedLayoutProps {
   onComment: (id: string) => void;
   /** Callback when try button is clicked */
   onTry: (outfit: OutfitWithUser) => void;
+  /** Callback when save button is clicked */
+  onSave?: (outfitId: string) => Promise<boolean>;
+  /** Callback when unsave button is clicked */
+  onUnsave?: (outfitId: string) => Promise<boolean>;
+  /** Callback when hide button is clicked */
+  onHide?: (outfitId: string) => Promise<boolean>;
   /** Custom class name */
   className?: string;
   /** Test ID for testing */
@@ -39,6 +45,9 @@ export const CommunityFeedLayout = ({
   onLike,
   onComment,
   onTry,
+  onSave,
+  onUnsave,
+  onHide,
   className,
   'data-testid': testId,
 }: CommunityFeedLayoutProps) => {
@@ -64,6 +73,9 @@ export const CommunityFeedLayout = ({
           onComment={() => onComment(outfit.id)}
           onTry={() => onTry(outfit)}
           onClick={() => onOutfitClick(outfit.id)}
+          onSave={onSave}
+          onUnsave={onUnsave}
+          onHide={onHide}
           data-testid={`outfit-card-${outfit.id}`}
         />
       ))}

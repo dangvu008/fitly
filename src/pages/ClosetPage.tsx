@@ -240,7 +240,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
 
   if (!user) {
     return (
-      <div className="pb-24 pt-16 px-4 max-w-md mx-auto">
+      <div className="pb-24 pt-16 px-4 max-w-lg mx-auto">
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
           <ShoppingBag size={64} className="text-muted-foreground" />
           <h2 className="text-xl font-display font-bold">{t('closet_login_to_view')}</h2>
@@ -256,7 +256,7 @@ export const ClosetPage = ({ onNavigateToTryOn }: ClosetPageProps) => {
   }
 
   return (
-    <div className="pb-24 pt-16 max-w-md mx-auto">
+    <div className="pb-24 pt-16 max-w-lg mx-auto">
       <div className="px-4 space-y-4">
         {/* Main Tabs */}
         <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as 'clothing' | 'outfits')}>

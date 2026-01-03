@@ -1,7 +1,13 @@
-import { useRef } from 'react';
-import { ChevronLeft, ChevronRight, ChevronRight as ViewAllIcon, LucideIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, ChevronRight as ViewAllIcon, LucideIcon, Bookmark, MoreVertical, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +40,12 @@ export interface HorizontalScrollSectionProps {
   onItemClick: (item: OutfitItem) => void;
   /** Callback when "Try This" button is clicked */
   onTryItem: (item: OutfitItem) => void;
+  /** Callback when save button is clicked */
+  onSaveItem?: (item: OutfitItem) => void;
+  /** Callback when hide is clicked */
+  onHideItem?: (item: OutfitItem) => void;
+  /** Function to check if item is saved */
+  isItemSaved?: (itemId: string) => boolean;
   /** Whether to show "View All" link */
   showViewAll?: boolean;
   /** Callback when "View All" is clicked */
@@ -58,6 +70,9 @@ export const HorizontalScrollSection = ({
   items,
   onItemClick,
   onTryItem,
+  onSaveItem,
+  onHideItem,
+  isItemSaved,
   showViewAll = true,
   onViewAll,
   isLoading = false,
@@ -85,13 +100,13 @@ export const HorizontalScrollSection = ({
   if (isLoading) {
     return (
       <section className={cn('py-4', className)} data-testid={testId}>
-        <div className="flex items-center gap-2 px-4 mb-3">
+        <div className="flex items-center gap-2 px-3 sm:px-4 mb-3">
           <Icon className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-bold text-foreground">{title}</h2>
         </div>
-        <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2.5 sm:gap-3 px-3 sm:px-4 overflow-x-auto scrollbar-hide">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="flex-shrink-0 w-40 h-56 rounded-xl" />
+            <Skeleton key={i} className="flex-shrink-0 w-36 sm:w-44 h-52 sm:h-60 rounded-xl" />
           ))}
         </div>
       </section>
@@ -106,7 +121,7 @@ export const HorizontalScrollSection = ({
   return (
     <section className={cn('py-4 relative group', className)} data-testid={testId}>
       {/* Section Header */}
-      <div className="flex items-center justify-between px-4 mb-3">
+      <div className="flex items-center justify-between px-3 sm:px-4 mb-3">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-bold text-foreground">{title}</h2>
@@ -145,7 +160,7 @@ export const HorizontalScrollSection = ({
       {/* Horizontal Scroll Container with CSS scroll-snap */}
       <div
         ref={scrollRef}
-        className="flex gap-3 px-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
+        className="flex gap-2.5 sm:gap-3 px-3 sm:px-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
         role="list"
         aria-label={title}
       >
@@ -155,13 +170,16 @@ export const HorizontalScrollSection = ({
             item={item}
             onItemClick={onItemClick}
             onTryItem={onTryItem}
+            onSaveItem={onSaveItem}
+            onHideItem={onHideItem}
+            isSaved={isItemSaved?.(item.id) ?? false}
           />
         ))}
         
         {/* Peek indicator - shows there's more content */}
         {displayItems.length >= minItems && (
           <div 
-            className="flex-shrink-0 w-8 flex items-center justify-center"
+            className="flex-shrink-0 w-6 sm:w-8 flex items-center justify-center"
             aria-hidden="true"
           >
             <div className="w-1 h-16 bg-gradient-to-b from-transparent via-muted-foreground/20 to-transparent rounded-full" />
@@ -183,14 +201,28 @@ interface OutfitCardProps {
   item: OutfitItem;
   onItemClick: (item: OutfitItem) => void;
   onTryItem: (item: OutfitItem) => void;
+  onSaveItem?: (item: OutfitItem) => void;
+  onHideItem?: (item: OutfitItem) => void;
+  isSaved?: boolean;
 }
 
-const OutfitCard = ({ item, onItemClick, onTryItem }: OutfitCardProps) => {
+const OutfitCard = ({ item, onItemClick, onTryItem, onSaveItem, onHideItem, isSaved = false }: OutfitCardProps) => {
   const { t } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSaveItem?.(item);
+  };
+
+  const handleHideClick = () => {
+    setMenuOpen(false);
+    onHideItem?.(item);
+  };
 
   return (
     <div
-      className="flex-shrink-0 w-40 rounded-xl overflow-hidden bg-card border border-border shadow-soft hover:shadow-medium transition-all snap-start"
+      className="flex-shrink-0 w-36 sm:w-44 rounded-xl overflow-hidden bg-card border border-border shadow-soft hover:shadow-medium transition-all snap-start"
       role="listitem"
       data-testid={`outfit-card-${item.id}`}
     >
@@ -227,6 +259,46 @@ const OutfitCard = ({ item, onItemClick, onTryItem }: OutfitCardProps) => {
             </div>
           </div>
         )}
+
+        {/* Action buttons overlay - top right */}
+        <div className="absolute top-2 right-2 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {/* Save button */}
+          {onSaveItem && (
+            <button
+              onClick={handleSaveClick}
+              className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                isSaved 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-background/60 backdrop-blur-sm text-foreground hover:bg-background/80"
+              )}
+              aria-label={isSaved ? t('unsave') : t('save')}
+            >
+              <Bookmark size={12} className={isSaved ? "fill-current" : ""} />
+            </button>
+          )}
+
+          {/* More menu */}
+          {onHideItem && (
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-6 h-6 rounded-full bg-background/60 backdrop-blur-sm flex items-center justify-center hover:bg-background/80 transition-colors"
+                  aria-label="More options"
+                >
+                  <MoreVertical size={12} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem onClick={handleHideClick} className="text-xs">
+                  <EyeOff size={14} className="mr-2" />
+                  {t('hide_outfit')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         {/* Title and stats at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-2">

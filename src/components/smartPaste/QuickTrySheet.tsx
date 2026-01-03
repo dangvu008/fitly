@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { detectShoppingPlatform } from '@/hooks/useClipboardDetection';
 import { toast } from 'sonner';
+import { useTryOnDialog } from '@/contexts/TryOnDialogContext';
 
 interface QuickTrySheetProps {
   open: boolean;
@@ -13,6 +14,8 @@ interface QuickTrySheetProps {
   onLinkSubmit: (url: string) => void;
   onImageSelected: (imageDataUrl: string) => void;
   isProcessing?: boolean;
+  /** Whether to auto-start AI processing when garment is ready */
+  autoStart?: boolean;
 }
 
 type TabId = 'link' | 'gallery' | 'camera';
@@ -20,8 +23,9 @@ type TabId = 'link' | 'gallery' | 'camera';
 /**
  * Bottom sheet for Quick Try feature
  * Allows user to paste link, select from gallery, or take photo
+ * Now integrates with TryOnDialog for seamless try-on experience
  * 
- * @requirements REQ-4.2, REQ-4.3
+ * @requirements REQ-4.2, REQ-4.3, REQ-7.1, REQ-7.2
  */
 export function QuickTrySheet({
   open,
@@ -29,8 +33,10 @@ export function QuickTrySheet({
   onLinkSubmit,
   onImageSelected,
   isProcessing = false,
+  autoStart = false,
 }: QuickTrySheetProps) {
   const { t } = useLanguage();
+  const { openDialog } = useTryOnDialog();
   const [activeTab, setActiveTab] = useState<TabId>('link');
   const [linkInput, setLinkInput] = useState('');
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -86,7 +92,15 @@ export function QuickTrySheet({
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
+      // Call legacy callback
       onImageSelected(dataUrl);
+      // Open TryOnDialog with the image as garment URL
+      openDialog({ 
+        initialGarmentUrl: dataUrl, 
+        autoStart: autoStart 
+      });
+      // Close the sheet
+      onOpenChange(false);
     };
     reader.readAsDataURL(file);
 

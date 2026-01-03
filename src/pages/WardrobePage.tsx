@@ -329,7 +329,7 @@ export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
   // Not logged in
   if (!authLoading && !user) {
     return (
-      <div className="pb-24 pt-16 px-4 max-w-md mx-auto">
+      <div className="pb-24 pt-16 px-4 max-w-lg mx-auto">
         <div className="text-center py-12">
           <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
             <Shirt size={32} className="text-muted-foreground" />
@@ -351,7 +351,7 @@ export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
   // Loading
   if (loading || authLoading) {
     return (
-      <div className="pb-24 pt-16 px-4 max-w-md mx-auto flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <div className="pb-24 pt-16 px-4 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <div className="w-24 h-24">
           <DotLottieReact
             src="https://lottie.host/0c5e8c0a-6af5-4b32-bdbd-25d0d04f7980/W8dWzCXoD9.lottie"
@@ -366,7 +366,7 @@ export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
   }
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto space-y-4">
+    <div className="pb-24 pt-16 px-4 max-w-lg mx-auto space-y-4">
       {/* Stats Bar */}
       <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
         <div className="flex items-center gap-4">

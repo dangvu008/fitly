@@ -9,6 +9,8 @@ export const translations = {
     scroll_for_more: 'Cuộn để xem thêm',
     shown_all: 'Đã hiển thị tất cả',
     save: 'Lưu',
+    unsave: 'Bỏ lưu',
+    hide_outfit: 'Ẩn outfit',
     cancel: 'Hủy',
     delete: 'Xóa',
     share: 'Chia sẻ',
@@ -633,6 +635,15 @@ export const translations = {
     quick_try_tab_link: 'Dán Link',
     quick_try_tab_gallery: 'Từ Thư viện',
     quick_try_tab_camera: 'Chụp ảnh',
+
+    // TryOn Dialog
+    tryon_dialog_title: 'Thử đồ AI',
+    tryon_dialog_close: 'Đóng',
+    tryon_dialog_close_confirm_title: 'Bạn có chắc muốn đóng?',
+    tryon_dialog_close_confirm_desc: 'Kết quả thử đồ chưa được lưu. Bạn có muốn đóng và mất kết quả này không?',
+    tryon_dialog_continue: 'Tiếp tục',
+    tryon_dialog_upgrade_continue: 'Nâng cấp để tiếp tục',
+    tryon_dialog_outfit_title: 'Outfit thử đồ AI',
   },
   en: {
     // Common
@@ -642,6 +653,8 @@ export const translations = {
     scroll_for_more: 'Scroll for more',
     shown_all: 'All shown',
     save: 'Save',
+    unsave: 'Unsave',
+    hide_outfit: 'Hide outfit',
     cancel: 'Cancel',
     delete: 'Delete',
     share: 'Share',
@@ -1266,6 +1279,15 @@ export const translations = {
     quick_try_tab_link: 'Paste Link',
     quick_try_tab_gallery: 'From Gallery',
     quick_try_tab_camera: 'Take Photo',
+
+    // TryOn Dialog
+    tryon_dialog_title: 'AI Try-On',
+    tryon_dialog_close: 'Close',
+    tryon_dialog_close_confirm_title: 'Are you sure you want to close?',
+    tryon_dialog_close_confirm_desc: 'Your try-on result has not been saved. Do you want to close and lose this result?',
+    tryon_dialog_continue: 'Continue',
+    tryon_dialog_upgrade_continue: 'Upgrade to continue',
+    tryon_dialog_outfit_title: 'AI Try-On Outfit',
   },
   zh: {
     // Common
@@ -1275,6 +1297,8 @@ export const translations = {
     scroll_for_more: '滚动查看更多',
     shown_all: '已全部显示',
     save: '保存',
+    unsave: '取消保存',
+    hide_outfit: '隐藏搭配',
     cancel: '取消',
     delete: '删除',
     share: '分享',
@@ -1883,6 +1907,15 @@ export const translations = {
     quick_try_tab_link: '粘贴链接',
     quick_try_tab_gallery: '从相册',
     quick_try_tab_camera: '拍照',
+
+    // TryOn Dialog
+    tryon_dialog_title: 'AI试穿',
+    tryon_dialog_close: '关闭',
+    tryon_dialog_close_confirm_title: '确定要关闭吗？',
+    tryon_dialog_close_confirm_desc: '试穿结果尚未保存。您确定要关闭并丢失此结果吗？',
+    tryon_dialog_continue: '继续',
+    tryon_dialog_upgrade_continue: '升级以继续',
+    tryon_dialog_outfit_title: 'AI试穿搭配',
   },
   ko: {
     // Common
@@ -1892,6 +1925,8 @@ export const translations = {
     scroll_for_more: '스크롤하여 더 보기',
     shown_all: '모두 표시됨',
     save: '저장',
+    unsave: '저장 취소',
+    hide_outfit: '코디 숨기기',
     cancel: '취소',
     delete: '삭제',
     share: '공유',
@@ -2496,6 +2531,15 @@ export const translations = {
     quick_try_tab_link: '링크 붙여넣기',
     quick_try_tab_gallery: '갤러리에서',
     quick_try_tab_camera: '사진 찍기',
+
+    // TryOn Dialog
+    tryon_dialog_title: 'AI 피팅',
+    tryon_dialog_close: '닫기',
+    tryon_dialog_close_confirm_title: '정말 닫으시겠어요?',
+    tryon_dialog_close_confirm_desc: '피팅 결과가 저장되지 않았어요. 닫고 결과를 잃으시겠어요?',
+    tryon_dialog_continue: '계속',
+    tryon_dialog_upgrade_continue: '업그레이드하여 계속',
+    tryon_dialog_outfit_title: 'AI 피팅 코디',
   },
   ja: {
     // Common
@@ -2505,6 +2549,8 @@ export const translations = {
     scroll_for_more: 'スクロールして続きを見る',
     shown_all: 'すべて表示済み',
     save: '保存',
+    unsave: '保存解除',
+    hide_outfit: 'コーデを非表示',
     cancel: 'キャンセル',
     delete: '削除',
     share: '共有',
@@ -3109,6 +3155,15 @@ export const translations = {
     quick_try_tab_link: 'リンクを貼り付け',
     quick_try_tab_gallery: 'ギャラリーから',
     quick_try_tab_camera: '写真を撮る',
+
+    // TryOn Dialog
+    tryon_dialog_title: 'AI試着',
+    tryon_dialog_close: '閉じる',
+    tryon_dialog_close_confirm_title: '本当に閉じますか？',
+    tryon_dialog_close_confirm_desc: '試着結果がまだ保存されていません。閉じてこの結果を失いますか？',
+    tryon_dialog_continue: '続ける',
+    tryon_dialog_upgrade_continue: 'アップグレードして続ける',
+    tryon_dialog_outfit_title: 'AI試着コーデ',
   },
   th: {
     // Common
@@ -3118,6 +3173,8 @@ export const translations = {
     scroll_for_more: 'เลื่อนเพื่อดูเพิ่มเติม',
     shown_all: 'แสดงทั้งหมดแล้ว',
     save: 'บันทึก',
+    unsave: 'ยกเลิกบันทึก',
+    hide_outfit: 'ซ่อนชุด',
     cancel: 'ยกเลิก',
     delete: 'ลบ',
     share: 'แชร์',
@@ -3722,6 +3779,15 @@ export const translations = {
     quick_try_tab_link: 'วางลิงก์',
     quick_try_tab_gallery: 'จากแกลเลอรี',
     quick_try_tab_camera: 'ถ่ายรูป',
+
+    // TryOn Dialog
+    tryon_dialog_title: 'AI ลองเสื้อผ้า',
+    tryon_dialog_close: 'ปิด',
+    tryon_dialog_close_confirm_title: 'แน่ใจหรือไม่ว่าต้องการปิด?',
+    tryon_dialog_close_confirm_desc: 'ผลลัพธ์การลองยังไม่ได้บันทึก คุณต้องการปิดและสูญเสียผลลัพธ์นี้หรือไม่?',
+    tryon_dialog_continue: 'ดำเนินการต่อ',
+    tryon_dialog_upgrade_continue: 'อัปเกรดเพื่อดำเนินการต่อ',
+    tryon_dialog_outfit_title: 'ชุด AI ลองเสื้อผ้า',
   },
 } as const;
 
