@@ -353,7 +353,6 @@ const TryOnDialogContent = ({
   const [quality, setQuality] = useState<'standard' | '4k'>('standard');
   const [isEditingResult, setIsEditingResult] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
-  const [showProcessingSkeleton, setShowProcessingSkeleton] = useState(false);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [pendingUnknownItem, setPendingUnknownItem] = useState<{
     item: Omit<ClothingItem, 'category'>;
@@ -498,27 +497,31 @@ const TryOnDialogContent = ({
     }
   }, [initialGarmentUrl, initialGarmentId, profile?.default_body_image_url, hasAutoStarted, bodyImage, t]);
 
-  // Outfit Try: Prompt for body image when opening with reuseClothingItems
+  // Prompt for body image when opening dialog without body image
   const [hasPromptedForBodyImage, setHasPromptedForBodyImage] = useState(false);
   useEffect(() => {
-    // Only trigger once when dialog opens with clothing items but no body image
+    // Trigger when dialog opens without body image (any flow)
+    // This covers: Quick Try, Outfit Try, and normal dialog open
     if (
-      reuseClothingItems.length > 0 &&
-      !initialGarmentUrl && // Not Quick Try flow
-      !historyResult && // Not history retry flow
       !bodyImage &&
       !profile?.default_body_image_url &&
+      !historyResult?.bodyImageUrl && // Not history retry flow (already has body)
       !hasPromptedForBodyImage
     ) {
       setHasPromptedForBodyImage(true);
       // Small delay to let dialog animation complete
       const timer = setTimeout(() => {
         setShowBodyImageSourceDialog(true);
-        toast.info(t('quick_try_need_body'));
+        // Show appropriate message based on context
+        if (reuseClothingItems.length > 0 || initialGarmentUrl) {
+          toast.info(t('quick_try_need_body') || 'Vui lòng chọn ảnh toàn thân để thử đồ');
+        } else {
+          toast.info(t('body_image_required') || 'Vui lòng tải lên ảnh toàn thân');
+        }
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [reuseClothingItems.length, initialGarmentUrl, historyResult, bodyImage, profile?.default_body_image_url, hasPromptedForBodyImage, t]);
+  }, [bodyImage, profile?.default_body_image_url, historyResult?.bodyImageUrl, hasPromptedForBodyImage, reuseClothingItems.length, initialGarmentUrl, t]);
 
   // Auto-start try-on when ready
   useEffect(() => {
@@ -875,7 +878,6 @@ const TryOnDialogContent = ({
 
     const COOLDOWN_SECONDS = 20;
     setCooldownRemaining(COOLDOWN_SECONDS);
-    setShowProcessingSkeleton(true);
 
     if (cooldownTimerRef.current) {
       clearInterval(cooldownTimerRef.current);
@@ -918,8 +920,6 @@ const TryOnDialogContent = ({
     console.log('Starting AI try-on with compressed images:', clothingItemsData.length, 'items');
     const result = await processVirtualTryOn(compressedBodyImage, clothingItemsData);
 
-    setShowProcessingSkeleton(false);
-
     if (result?.success && result.generatedImage) {
       triggerSuccess();
       refreshQuota();
@@ -941,7 +941,14 @@ const TryOnDialogContent = ({
           name: item.name,
           imageUrl: item.imageUrl,
         }));
+        console.log('Saving try-on result:', {
+          userId: user.id,
+          bodyImageType: bodyImage?.substring(0, 50),
+          resultImageType: result.generatedImage?.substring(0, 50),
+          clothingCount: clothingForHistory.length,
+        });
         const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
+        console.log('Save result:', saved);
         if (saved) {
           setIsResultSaved(true);
         }
@@ -1257,21 +1264,6 @@ const TryOnDialogContent = ({
           <div className="flex items-center justify-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 rounded-lg border border-yellow-500/20">
             <Crown size={14} className="text-yellow-500" />
             <span className="text-xs font-medium text-yellow-600">Không giới hạn</span>
-          </div>
-        )}
-
-        {/* Processing Skeleton - Compact */}
-        {showProcessingSkeleton && !aiResultImage && (
-          <div className="relative w-full aspect-[3/4] max-h-[28vh] rounded-xl overflow-hidden bg-secondary border border-border animate-pulse">
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <Loader2 size={24} className="animate-spin text-primary" />
-              </div>
-              <div className="text-center space-y-0.5">
-                <p className="text-sm font-medium text-foreground">Đang xử lý...</p>
-                <p className="text-[10px] text-muted-foreground">AI đang tạo hình ảnh thử đồ</p>
-              </div>
-            </div>
           </div>
         )}
 

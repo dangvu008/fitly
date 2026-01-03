@@ -178,9 +178,18 @@ export const useTryOnHistory = () => {
     clothingItems: ClothingItemData[]
   ): Promise<boolean> => {
     try {
+      console.log('saveTryOnResult called with:', {
+        userId,
+        bodyImageLength: bodyImage?.length,
+        resultImageLength: resultImage?.length,
+        clothingItemsCount: clothingItems?.length,
+      });
+
       // Check if images are already URLs (from temp) or base64
       const isBodyUrl = bodyImage.startsWith('http');
       const isResultUrl = resultImage.startsWith('http');
+
+      console.log('Image types:', { isBodyUrl, isResultUrl });
 
       let bodyImageUrl: string | null;
       let resultImageUrl: string | null;
@@ -217,9 +226,12 @@ export const useTryOnHistory = () => {
       }
 
       if (!bodyImageUrl || !resultImageUrl) {
+        console.error('Failed to get image URLs:', { bodyImageUrl, resultImageUrl });
         toast.error('Không thể tải ảnh lên');
         return false;
       }
+
+      console.log('Image URLs ready:', { bodyImageUrl, resultImageUrl });
 
       // Save to database
       const record = prepareTryOnHistoryRecord(
@@ -228,14 +240,18 @@ export const useTryOnHistory = () => {
         resultImageUrl,
         clothingItems
       );
-      const { error } = await supabase.from('try_on_history').insert([record]);
+      
+      console.log('Inserting record:', record);
+      
+      const { data, error } = await supabase.from('try_on_history').insert([record]).select().single();
 
       if (error) {
         console.error('Save error:', error);
-        toast.error('Không thể lưu kết quả');
+        toast.error(`Không thể lưu kết quả: ${error.message}`);
         return false;
       }
 
+      console.log('Saved successfully:', data);
       toast.success('Đã lưu vào lịch sử!');
       return true;
     } catch (error) {

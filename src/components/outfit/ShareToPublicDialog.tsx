@@ -91,8 +91,16 @@ export const ShareToPublicDialog = ({
 
   const handleShare = async () => {
     if (!title.trim()) {
+      toast.error('Vui lòng nhập tiêu đề');
       return;
     }
+
+    console.log('Starting share with:', {
+      title: title.trim(),
+      resultImageUrl,
+      clothingItems: clothingItems.filter(item => item.name.trim()),
+      description: description.trim() || undefined,
+    });
 
     setIsSharing(true);
     const success = await shareOutfit(
@@ -103,6 +111,8 @@ export const ShareToPublicDialog = ({
       inspiredByOutfitId
     );
     setIsSharing(false);
+
+    console.log('Share result:', success);
 
     if (success) {
       setIsSuccess(true);

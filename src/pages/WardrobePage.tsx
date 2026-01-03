@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Shirt, Plus, Trash2, Share2, FolderPlus, Edit2, 
-  ImageOff, ChevronRight, MoreVertical, Heart, Clock,
-  Sparkles, Eye, EyeOff
+  ImageOff, MoreVertical, Heart, Clock,
+  Sparkles, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,8 @@ interface WardrobePageProps {
   onNavigateToTryOn?: () => void;
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -65,6 +67,8 @@ export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   
   // Dialog states
@@ -84,52 +88,96 @@ export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
     }
   }, [user, authLoading]);
 
-  const fetchData = async () => {
+  const fetchData = async (loadMore = false) => {
     if (!user) return;
     
-    setLoading(true);
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setHistory([]);
+      setHasMore(true);
+    }
     
-    // Fetch try-on history and collections in parallel
-    const [historyResult, collectionsResult] = await Promise.all([
-      supabase
+    const offset = loadMore ? history.length : 0;
+    
+    try {
+      // Fetch try-on history with pagination and only needed columns
+      const historyPromise = supabase
         .from('try_on_history')
-        .select('*')
+        .select('id, result_image_url, clothing_items, created_at, is_favorite')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('user_collections')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
-    ]);
-
-    if (historyResult.error) {
-      console.error('History error:', historyResult.error);
-    } else {
-      const typedData = (historyResult.data || []).map(item => ({
-        ...item,
-        clothing_items: (item.clothing_items || []) as unknown as ClothingItemData[],
-      }));
-      setHistory(typedData);
+        .order('created_at', { ascending: false })
+        .range(offset, offset + ITEMS_PER_PAGE - 1);
       
-      // Set favorite IDs
-      const favIds = new Set(
-        typedData.filter(item => item.is_favorite).map(item => item.id)
-      );
-      setFavoriteIds(favIds);
-    }
+      // Only fetch collections on initial load
+      const collectionsPromise = !loadMore 
+        ? supabase
+            .from('user_collections')
+            .select('id, name, description, cover_image_url, items, created_at, updated_at')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false })
+            .limit(20)
+        : null;
 
-    if (collectionsResult.error) {
-      console.error('Collections error:', collectionsResult.error);
-    } else {
-      const typedCollections = (collectionsResult.data || []).map(col => ({
-        ...col,
-        items: (col.items || []) as unknown as TryOnHistoryItem[],
-      }));
-      setCollections(typedCollections);
-    }
+      const [historyResult, collectionsResult] = await Promise.all([
+        historyPromise,
+        collectionsPromise
+      ]);
 
-    setLoading(false);
+      if (historyResult.error) {
+        console.error('History error:', historyResult.error);
+      } else {
+        const newData = (historyResult.data || []).map((item) => ({
+          id: item.id,
+          body_image_url: '',
+          result_image_url: item.result_image_url,
+          clothing_items: (item.clothing_items || []) as unknown as ClothingItemData[],
+          created_at: item.created_at,
+          is_favorite: item.is_favorite,
+        }));
+        
+        if (loadMore) {
+          setHistory(prev => [...prev, ...newData]);
+        } else {
+          setHistory(newData);
+          // Set favorite IDs
+          const favIds = new Set(
+            newData.filter(item => item.is_favorite).map(item => item.id)
+          );
+          setFavoriteIds(favIds);
+        }
+        
+        // Check if there are more items
+        setHasMore(newData.length === ITEMS_PER_PAGE);
+      }
+
+      if (collectionsResult && !collectionsResult.error) {
+        const typedCollections = (collectionsResult.data || []).map((col) => ({
+          id: col.id,
+          name: col.name,
+          description: col.description,
+          cover_image_url: col.cover_image_url,
+          items: (col.items || []) as unknown as TryOnHistoryItem[],
+          created_at: col.created_at,
+          updated_at: col.updated_at,
+        }));
+        setCollections(typedCollections);
+      } else if (collectionsResult?.error) {
+        console.error('Collections error:', collectionsResult.error);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchData(true);
+    }
   };
 
   const handleCreateCollection = async () => {
@@ -443,102 +491,128 @@ export const WardrobePage = ({ onNavigateToTryOn }: WardrobePageProps) => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {history.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border animate-slide-up group relative"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="relative aspect-[3/4] bg-secondary">
-                    <img
-                      src={item.result_image_url}
-                      alt="Outfit"
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    
-                    {/* Top actions */}
-                    <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-                      {/* Clothing count badge */}
-                      {item.clothing_items?.length > 0 && (
-                        <div className="px-2 py-1 rounded-full bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground">
-                          {item.clothing_items.length} món
-                        </div>
-                      )}
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                {history.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border animate-slide-up group relative"
+                    style={{ animationDelay: `${Math.min(index, 5) * 0.05}s` }}
+                  >
+                    <div className="relative aspect-[3/4] bg-secondary">
+                      <img
+                        src={item.result_image_url}
+                        alt="Outfit"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        loading="lazy"
+                      />
                       
-                      {/* Favorite button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(item.id);
-                        }}
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                          favoriteIds.has(item.id) 
-                            ? "bg-red-500 text-white" 
-                            : "bg-card/90 backdrop-blur-sm text-foreground opacity-0 group-hover:opacity-100"
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      
+                      {/* Top actions */}
+                      <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+                        {/* Clothing count badge */}
+                        {item.clothing_items?.length > 0 && (
+                          <div className="px-2 py-1 rounded-full bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground">
+                            {item.clothing_items.length} món
+                          </div>
                         )}
-                      >
-                        <Heart size={14} className={cn(favoriteIds.has(item.id) && "fill-current")} />
-                      </button>
+                        
+                        {/* Favorite button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(item.id);
+                          }}
+                          className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                            favoriteIds.has(item.id) 
+                              ? "bg-red-500 text-white" 
+                              : "bg-card/90 backdrop-blur-sm text-foreground opacity-0 group-hover:opacity-100"
+                          )}
+                        >
+                          <Heart size={14} className={cn(favoriteIds.has(item.id) && "fill-current")} />
+                        </button>
+                      </div>
+
+                      {/* Bottom actions - visible on hover */}
+                      <div className="absolute bottom-2 left-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => {
+                            setSelectedOutfit(item);
+                            setIsAddToCollectionOpen(true);
+                          }}
+                          className="flex-1 py-1.5 rounded-lg bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground flex items-center justify-center gap-1"
+                        >
+                          <FolderPlus size={12} />
+                          Thêm vào
+                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="w-8 h-8 rounded-lg bg-card/90 backdrop-blur-sm flex items-center justify-center">
+                              <MoreVertical size={14} className="text-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              navigator.clipboard.writeText(item.result_image_url);
+                              toast.success('Đã sao chép link ảnh');
+                            }}>
+                              <Share2 size={14} className="mr-2" />
+                              Chia sẻ
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDeleteOutfit(item.id)}
+                            >
+                              <Trash2 size={14} className="mr-2" />
+                              Xóa
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
 
-                    {/* Bottom actions - visible on hover */}
-                    <div className="absolute bottom-2 left-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => {
-                          setSelectedOutfit(item);
-                          setIsAddToCollectionOpen(true);
-                        }}
-                        className="flex-1 py-1.5 rounded-lg bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground flex items-center justify-center gap-1"
-                      >
-                        <FolderPlus size={12} />
-                        Thêm vào
-                      </button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="w-8 h-8 rounded-lg bg-card/90 backdrop-blur-sm flex items-center justify-center">
-                            <MoreVertical size={14} className="text-foreground" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                            navigator.clipboard.writeText(item.result_image_url);
-                            toast.success('Đã sao chép link ảnh');
-                          }}>
-                            <Share2 size={14} className="mr-2" />
-                            Chia sẻ
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => handleDeleteOutfit(item.id)}
-                          >
-                            <Trash2 size={14} className="mr-2" />
-                            Xóa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="p-3">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock size={12} />
+                        {formatDate(item.created_at)}
+                      </div>
+                      {item.clothing_items?.length > 0 && (
+                        <p className="text-xs text-foreground mt-1 truncate">
+                          {item.clothing_items.map(c => c.name).join(', ')}
+                        </p>
+                      )}
                     </div>
                   </div>
-
-                  <div className="p-3">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock size={12} />
-                      {formatDate(item.created_at)}
+                ))}
+                
+                {/* Skeleton loading items */}
+                {loadingMore && Array.from({ length: 4 }).map((_, i) => (
+                  <div key={`skeleton-${i}`} className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border">
+                    <div className="aspect-[3/4] bg-secondary animate-pulse" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-3 bg-secondary rounded animate-pulse w-2/3" />
+                      <div className="h-3 bg-secondary rounded animate-pulse w-1/2" />
                     </div>
-                    {item.clothing_items?.length > 0 && (
-                      <p className="text-xs text-foreground mt-1 truncate">
-                        {item.clothing_items.map(c => c.name).join(', ')}
-                      </p>
-                    )}
                   </div>
+                ))}
+              </div>
+              
+              {/* Load more button */}
+              {hasMore && !loadingMore && history.length > 0 && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={loadMore}
+                    className="w-full max-w-xs"
+                  >
+                    Xem thêm
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </section>
       ) : (

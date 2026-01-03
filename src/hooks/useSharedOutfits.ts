@@ -68,7 +68,6 @@ export interface SharedOutfit {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
-  inspired_by_outfit_id: string | null;
   isLiked?: boolean;
 }
 
@@ -122,7 +121,6 @@ export const useSharedOutfits = () => {
       const typedData: SharedOutfit[] = data.map(item => ({
         ...item,
         clothing_items: (item.clothing_items || []) as unknown as ClothingItemData[],
-        inspired_by_outfit_id: (item as any).inspired_by_outfit_id ?? null,
         isLiked: userLikes.has(item.id),
       }));
       
@@ -216,25 +214,36 @@ export const useSharedOutfits = () => {
       return false;
     }
 
-    // Requirements 5.2: Create shared outfit with attribution to original outfit
-    const record = prepareSharedOutfitRecord(
-      user.id,
+    // Prepare insert data - only include fields that exist in the table
+    const insertData: {
+      user_id: string;
+      title: string;
+      description: string | null;
+      result_image_url: string;
+      clothing_items: any;
+    } = {
+      user_id: user.id,
       title,
-      resultImageUrl,
-      clothingItems,
-      description,
-      inspiredByOutfitId
-    );
-    const { error } = await supabase.from('shared_outfits').insert({
-      ...record,
-      clothing_items: record.clothing_items as any,
-    });
+      description: description || null,
+      result_image_url: resultImageUrl,
+      clothing_items: clothingItems,
+    };
+    
+    console.log('Sharing outfit with data:', insertData);
+    
+    const { data, error } = await supabase
+      .from('shared_outfits')
+      .insert(insertData)
+      .select()
+      .single();
 
     if (error) {
-      toast.error('Không thể chia sẻ outfit');
+      console.error('Share outfit error:', error);
+      toast.error(`Không thể chia sẻ outfit: ${error.message}`);
       return false;
     }
 
+    console.log('Shared outfit successfully:', data);
     toast.success('Đã chia sẻ outfit thành công!');
     await fetchSharedOutfits(true);
     return true;

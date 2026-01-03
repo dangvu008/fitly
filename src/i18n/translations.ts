@@ -598,6 +598,7 @@ export const translations = {
     // Smart Paste & Quick Try
     quick_try_ready: 'Outfit đã sẵn sàng! Bấm để thử ngay.',
     quick_try_need_body: 'Vui lòng chọn ảnh cơ thể trước.',
+    body_image_required: 'Vui lòng tải lên ảnh toàn thân để bắt đầu',
     quick_try_loading: 'Đang tải outfit...',
     clipboard_detected_title: 'Phát hiện link {platform}',
     clipboard_detected_desc: 'Bạn có muốn thử chiếc đồ này không?',
@@ -1242,6 +1243,7 @@ export const translations = {
     // Smart Paste & Quick Try
     quick_try_ready: 'Outfit loaded! Ready to generate.',
     quick_try_need_body: 'Please select a body image first.',
+    body_image_required: 'Please upload a full-body photo to start',
     quick_try_loading: 'Loading outfit...',
     clipboard_detected_title: 'Detected {platform} link',
     clipboard_detected_desc: 'Would you like to try this item?',
@@ -1870,6 +1872,7 @@ export const translations = {
     // Smart Paste & Quick Try
     quick_try_ready: '搭配已加载！准备生成。',
     quick_try_need_body: '请先选择身体照片。',
+    body_image_required: '请上传全身照片开始试穿',
     quick_try_loading: '正在加载搭配...',
     clipboard_detected_title: '检测到 {platform} 链接',
     clipboard_detected_desc: '您想试穿这件衣服吗？',
@@ -2494,6 +2497,7 @@ export const translations = {
     // Smart Paste & Quick Try
     quick_try_ready: '코디가 로드됐어요! 생성 준비 완료.',
     quick_try_need_body: '먼저 바디 이미지를 선택해 주세요.',
+    body_image_required: '전신 사진을 업로드해 주세요',
     quick_try_loading: '코디 로딩 중...',
     clipboard_detected_title: '{platform} 링크 감지됨',
     clipboard_detected_desc: '이 아이템을 입어보시겠어요?',
@@ -3118,6 +3122,7 @@ export const translations = {
     // Smart Paste & Quick Try
     quick_try_ready: 'コーデが読み込まれました！生成準備完了。',
     quick_try_need_body: '先にボディ画像を選択してください。',
+    body_image_required: '全身写真をアップロードしてください',
     quick_try_loading: 'コーデを読み込み中...',
     clipboard_detected_title: '{platform}のリンクを検出',
     clipboard_detected_desc: 'このアイテムを試着しますか？',
@@ -3742,6 +3747,7 @@ export const translations = {
     // Smart Paste & Quick Try
     quick_try_ready: 'โหลดชุดแล้ว! พร้อมสร้าง',
     quick_try_need_body: 'กรุณาเลือกรูปร่างกายก่อน',
+    body_image_required: 'กรุณาอัปโหลดรูปเต็มตัวเพื่อเริ่มต้น',
     quick_try_loading: 'กำลังโหลดชุด...',
     clipboard_detected_title: 'ตรวจพบลิงก์ {platform}',
     clipboard_detected_desc: 'คุณต้องการลองชุดนี้ไหม?',
