@@ -9,9 +9,10 @@ import { useUserGems } from '@/hooks/useUserGems';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProSubscription } from '@/hooks/useProSubscription';
 import { toast } from 'sonner';
+import { TRY_OUTFIT_COST } from '@/lib/pricing';
 
-// Cost in gems to try on an outfit from the feed
-export const TRY_OUTFIT_GEM_COST = 1;
+// Cost in gems to try on an outfit from the feed (from pricing constants)
+export const TRY_OUTFIT_GEM_COST = TRY_OUTFIT_COST;
 
 interface TryOutfitButtonProps {
   outfit: SharedOutfit;

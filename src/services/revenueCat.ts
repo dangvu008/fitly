@@ -2,7 +2,20 @@
  * RevenueCat Service
  * Handles in-app purchases for both iOS and Android
  * Manages subscriptions (Pro) and consumables (Gems)
+ * 
+ * PRICING STRATEGY (Updated):
+ * - Standard try-on: 2 gems
+ * - 4K try-on: 4 gems
+ * - Pro Monthly: $9.99/month with 500 fast-pass try-ons
+ * - Pro Yearly: $79.99/year with 800 fast-pass try-ons
  */
+
+import { 
+  GEM_PACKAGES, 
+  SUBSCRIPTION_PLANS,
+  type GemPackage,
+  type SubscriptionPlan 
+} from '@/lib/pricing';
 
 // RevenueCat product identifiers
 export const PRODUCT_IDS = {
@@ -11,9 +24,9 @@ export const PRODUCT_IDS = {
   GEMS_150: 'gems_150',
   GEMS_500: 'gems_500',
   
-  // Subscriptions
-  PRO_MONTHLY: 'pro_monthly',
-  PRO_YEARLY: 'pro_yearly',
+  // Subscriptions - Updated pricing
+  PRO_MONTHLY: 'pro_monthly',  // $9.99/month
+  PRO_YEARLY: 'pro_yearly',    // $79.99/year
 } as const;
 
 // Entitlement identifiers
@@ -75,6 +88,48 @@ export interface CustomerInfo {
 export interface PurchaseResult {
   customerInfo: CustomerInfo;
   productIdentifier: string;
+}
+
+// Helper to convert GemPackage to RevenueCat Package
+function gemPackageToRCPackage(pkg: GemPackage): Package {
+  const totalGems = pkg.gems + (pkg.bonusGems || 0);
+  return {
+    identifier: pkg.productId,
+    packageType: 'CUSTOM',
+    product: {
+      identifier: pkg.productId,
+      title: `${pkg.gems} Gems${pkg.bonusGems ? ` + ${pkg.bonusGems} Bonus` : ''}`,
+      description: pkg.isBestValue 
+        ? `Get ${totalGems} gems for try-ons (Best Value!)`
+        : `Get ${totalGems} gems for try-ons`,
+      price: pkg.price,
+      priceString: pkg.priceString,
+      currencyCode: 'USD',
+    },
+  };
+}
+
+// Helper to convert SubscriptionPlan to RevenueCat Package
+function subscriptionToRCPackage(plan: SubscriptionPlan): Package {
+  return {
+    identifier: plan.productId,
+    packageType: plan.period === 'yearly' ? 'ANNUAL' : 'MONTHLY',
+    product: {
+      identifier: plan.productId,
+      title: plan.name,
+      description: `${plan.fastPassTryOns} fast-pass try-ons/tháng, ${plan.bonusGemsPerMonth} bonus gems`,
+      price: plan.price,
+      priceString: plan.priceString,
+      currencyCode: 'USD',
+      ...(plan.period === 'yearly' ? {
+        introPrice: {
+          price: 0,
+          priceString: 'Free',
+          period: '7 days',
+        },
+      } : {}),
+    },
+  };
 }
 
 class RevenueCatService {
@@ -164,6 +219,7 @@ class RevenueCatService {
 
   /**
    * Get available offerings (products)
+   * Uses pricing constants from @/lib/pricing
    */
   async getOfferings(): Promise<Offering[]> {
     if (!this.initialized) {
@@ -175,81 +231,17 @@ class RevenueCatService {
       return this.offerings;
     }
 
-    // Mock offerings for development
-    // In production, this would fetch from RevenueCat
+    // Build offerings from pricing constants
+    const gemPackages = GEM_PACKAGES.map(gemPackageToRCPackage);
+    const subscriptionPackages = SUBSCRIPTION_PLANS.map(subscriptionToRCPackage);
+
     this.offerings = [
       {
         identifier: 'default',
         serverDescription: 'Default Offering',
-        availablePackages: [
-          {
-            identifier: PRODUCT_IDS.GEMS_50,
-            packageType: 'CUSTOM',
-            product: {
-              identifier: PRODUCT_IDS.GEMS_50,
-              title: '50 Gems',
-              description: 'Get 50 gems for try-ons',
-              price: 0.99,
-              priceString: '$0.99',
-              currencyCode: 'USD',
-            },
-          },
-          {
-            identifier: PRODUCT_IDS.GEMS_150,
-            packageType: 'CUSTOM',
-            product: {
-              identifier: PRODUCT_IDS.GEMS_150,
-              title: '150 Gems',
-              description: 'Get 150 gems for try-ons (Best Value)',
-              price: 2.99,
-              priceString: '$2.99',
-              currencyCode: 'USD',
-            },
-          },
-          {
-            identifier: PRODUCT_IDS.GEMS_500,
-            packageType: 'CUSTOM',
-            product: {
-              identifier: PRODUCT_IDS.GEMS_500,
-              title: '500 Gems',
-              description: 'Get 500 gems for try-ons',
-              price: 7.99,
-              priceString: '$7.99',
-              currencyCode: 'USD',
-            },
-          },
-          {
-            identifier: PRODUCT_IDS.PRO_MONTHLY,
-            packageType: 'MONTHLY',
-            product: {
-              identifier: PRODUCT_IDS.PRO_MONTHLY,
-              title: 'Pro Monthly',
-              description: 'Unlimited try-ons, no ads',
-              price: 4.99,
-              priceString: '$4.99/month',
-              currencyCode: 'USD',
-            },
-          },
-          {
-            identifier: PRODUCT_IDS.PRO_YEARLY,
-            packageType: 'ANNUAL',
-            product: {
-              identifier: PRODUCT_IDS.PRO_YEARLY,
-              title: 'Pro Yearly',
-              description: 'Unlimited try-ons, no ads (Save 50%)',
-              price: 29.99,
-              priceString: '$29.99/year',
-              currencyCode: 'USD',
-              introPrice: {
-                price: 0,
-                priceString: 'Free',
-                period: '7 days',
-              },
-            },
-          },
-        ],
-        monthly: undefined,
-        annual: undefined,
+        availablePackages: [...gemPackages, ...subscriptionPackages],
+        monthly: subscriptionPackages.find(p => p.packageType === 'MONTHLY'),
+        annual: subscriptionPackages.find(p => p.packageType === 'ANNUAL'),
       },
     ];
 
@@ -278,11 +270,16 @@ class RevenueCatService {
     // Add the purchased product to customer info
     if (productId.startsWith('pro_')) {
       customerInfo.activeSubscriptions.push(productId);
+      
+      // Set expiration based on plan
+      const isYearly = productId === 'pro_yearly';
+      const expirationDays = isYearly ? 365 : 30;
+      
       customerInfo.entitlements.active[ENTITLEMENTS.PRO] = {
         identifier: ENTITLEMENTS.PRO,
         isActive: true,
         willRenew: true,
-        expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        expirationDate: new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000).toISOString(),
         productIdentifier: productId,
       };
     }
@@ -337,7 +334,24 @@ class RevenueCatService {
     
     return null;
   }
+
+  /**
+   * Get the current subscription plan details
+   */
+  getSubscriptionPlan(productId: string): SubscriptionPlan | undefined {
+    return SUBSCRIPTION_PLANS.find(p => p.productId === productId);
+  }
+
+  /**
+   * Get gem package details
+   */
+  getGemPackage(productId: string): GemPackage | undefined {
+    return GEM_PACKAGES.find(p => p.productId === productId);
+  }
 }
 
 // Export singleton instance
 export const revenueCatService = new RevenueCatService();
+
+// Re-export pricing types
+export type { GemPackage, SubscriptionPlan } from '@/lib/pricing';

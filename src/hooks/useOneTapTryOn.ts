@@ -4,6 +4,7 @@ import { useUserGems } from './useUserGems';
 import { useAITryOn, TryOnProgress } from './useAITryOn';
 import { ClothingItem } from '@/types/clothing';
 import { toast } from 'sonner';
+import { TRY_ON_COST_STANDARD, TRY_ON_COST_4K } from '@/lib/pricing';
 
 export interface TryOnResult {
   id: string;
@@ -28,8 +29,10 @@ export interface UseOneTapTryOnOptions {
   outfitId?: string;
   /** Clothing items to try on */
   clothingItems?: ClothingItem[];
-  /** Cost in gems for this try-on */
+  /** Cost in gems for this try-on (defaults to standard cost from pricing) */
   gemCost?: number;
+  /** Quality of try-on: 'standard' or '4k' */
+  quality?: 'standard' | '4k';
 }
 
 export interface UseOneTapTryOnReturn {
@@ -79,7 +82,12 @@ const OVERTIME_THRESHOLD_SECONDS = 20;
  * @requirements 3.1, 3.3, 3.4, 3.6, 3.7
  */
 export function useOneTapTryOn(options: UseOneTapTryOnOptions = {}): UseOneTapTryOnReturn {
-  const { outfitId, clothingItems = [], gemCost = 1 } = options;
+  const { 
+    outfitId, 
+    clothingItems = [], 
+    quality = 'standard',
+    gemCost = quality === '4k' ? TRY_ON_COST_4K : TRY_ON_COST_STANDARD 
+  } = options;
 
   // Hooks
   const {
