@@ -23,6 +23,7 @@ import {
   Pencil,
   ShoppingBag,
   X,
+  Ruler,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -33,6 +34,7 @@ import { useSharedOutfits } from '@/hooks/useSharedOutfits';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
+import { toast } from 'sonner';
 
 interface ClothingItemData {
   id?: string;
@@ -63,12 +65,16 @@ export const ShareToPublicDialog = ({
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const [isSharing, setIsSharing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [itemsExpanded, setItemsExpanded] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [clothingItems, setClothingItems] = useState<ClothingItemData[]>([]);
   const { shareOutfit } = useSharedOutfits();
+
+  // Size options for StyleHint feature
+  const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
   // Initialize clothing items when dialog opens
   useEffect(() => {
@@ -230,6 +236,35 @@ export const ShareToPublicDialog = ({
                 />
                 <p className="text-[10px] text-muted-foreground text-right">
                   {description.length}/500
+                </p>
+              </div>
+
+              {/* Size selector - StyleHint feature */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Ruler size={14} className="text-primary" />
+                  Kích cỡ bạn đang mặc
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {sizeOptions.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setSelectedSize(selectedSize === size ? '' : size)}
+                      className={cn(
+                        'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                        'border-2',
+                        selectedSize === size
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50'
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  💡 Giúp người khác biết bạn đang mặc size gì (tùy chọn)
                 </p>
               </div>
 

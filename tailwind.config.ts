@@ -148,6 +148,10 @@ export default {
           "0%, 100%": { transform: "scale(1)" },
           "50%": { transform: "scale(1.2)" },
         },
+        "pulse-subtle": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(var(--primary-rgb), 0.4)", transform: "scale(1)" },
+          "50%": { boxShadow: "0 0 0 8px rgba(var(--primary-rgb), 0)", transform: "scale(1.05)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -159,6 +163,7 @@ export default {
         "slide-in-up": "slide-in-up 0.4s ease-out",
         shimmer: "shimmer 2s infinite",
         "heart-beat": "heart-beat 0.3s ease-in-out",
+        "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
       },
       boxShadow: {
         soft: "0 1px 3px rgba(0, 0, 0, 0.08)",

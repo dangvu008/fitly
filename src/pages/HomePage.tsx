@@ -9,8 +9,8 @@ import { useOutfitActions } from '@/hooks/useOutfitActions';
 import { CommentsSheet } from '@/components/feed/CommentsSheet';
 import { HorizontalScrollSection, OutfitItem } from '@/components/home/HorizontalScrollSection';
 import { HomeOutfitCard } from '@/components/home/HomeOutfitCard';
-import { 
-  Flame, 
+import {
+  Flame,
   Sparkles,
   Plus,
   Clock,
@@ -65,10 +65,10 @@ const localeMap: Record<string, Locale> = {
  * - 2.3: "For You" 2-column grid at bottom
  * - 6.1: Section headers with icons
  */
-export const HomePage = ({ 
-  onNavigateToTryOn, 
-  onNavigateToHistory, 
-  onSelectItem, 
+export const HomePage = ({
+  onNavigateToTryOn,
+  onNavigateToHistory,
+  onSelectItem,
   onViewHistoryResult,
   onQuickTry,
 }: HomePageProps) => {
@@ -77,20 +77,20 @@ export const HomePage = ({
   const { user } = useAuth();
   const { openDialog } = useTryOnDialog();
   const { isSaved, toggleSave, hideOutfit, hiddenOutfitIds } = useOutfitActions();
-  
+
   // Use dedicated hooks for each section with React Query caching (Requirements 2.1, 2.2)
-  const { 
-    data: newArrivals = [], 
+  const {
+    data: newArrivals = [],
     isLoading: isLoadingNewArrivals,
     refetch: refetchNewArrivals,
   } = useNewArrivals(10);
-  
-  const { 
-    data: trendingStyles = [], 
+
+  const {
+    data: trendingStyles = [],
     isLoading: isLoadingTrending,
     refetch: refetchTrending,
   } = useTrendingOutfits(10);
-  
+
   // Calculate IDs to exclude from "For You" section to avoid repetition
   const excludeIds = useMemo(() => {
     const ids = new Set<string>();
@@ -98,24 +98,24 @@ export const HomePage = ({
     trendingStyles.slice(0, 6).forEach(o => ids.add(o.id));
     return Array.from(ids);
   }, [newArrivals, trendingStyles]);
-  
-  const { 
-    data: forYouOutfits = [], 
+
+  const {
+    data: forYouOutfits = [],
     isLoading: isLoadingForYou,
     refetch: refetchForYou,
   } = useForYouOutfits(excludeIds, 20);
-  
+
   // Combined loading state
   const isLoading = isLoadingNewArrivals || isLoadingTrending || isLoadingForYou;
-  
+
   const [commentsOutfitId, setCommentsOutfitId] = useState<string | null>(null);
   const [history, setHistory] = useState<TryOnHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  
+
   // Infinite scroll observer for "For You" section
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const dateLocale = localeMap[language] || enUS;
-  
+
   // Refresh all sections
   const refresh = () => {
     refetchNewArrivals();
@@ -174,7 +174,7 @@ export const HomePage = ({
   });
 
   // Filter out hidden outfits
-  const filterHidden = (outfits: HomeOutfitItem[]) => 
+  const filterHidden = (outfits: HomeOutfitItem[]) =>
     outfits.filter(o => !hiddenOutfitIds.has(o.id));
 
   const handleViewOutfitDetail = (outfitId: string) => {
@@ -192,7 +192,7 @@ export const HomePage = ({
         shopUrl: item.shopUrl,
         price: item.price,
       }));
-      
+
       // Open TryOnDialog with the clothing items
       openDialog({
         reuseClothingItems: clothingItems,
@@ -211,7 +211,7 @@ export const HomePage = ({
   return (
     <div className="pb-24 pt-16 max-w-lg mx-auto bg-background min-h-screen">
       <div className="animate-fade-in">
-        
+
         {/* YOUR RECENT LOOKS - History Section (Requirements 1.1, 1.2, 1.3, 1.4, 1.5) */}
         <section className="py-4">
           <div className="flex items-center justify-between px-3 sm:px-4 mb-3">
@@ -319,6 +319,22 @@ export const HomePage = ({
           onViewAll={() => navigate('/community')}
           isLoading={isLoading}
           data-testid="trending-styles-section"
+        />
+
+        {/* COMMUNITY SUGGESTIONS - Reusing HorizontalScrollSection for consistency */}
+        <HorizontalScrollSection
+          title={t('community_suggestions')}
+          icon={Sparkles}
+          items={filterHidden(trendingStyles).slice(0, 8).map(toOutfitItem)}
+          onItemClick={(item) => handleViewOutfitDetail(item.id)}
+          onTryItem={handleTryOutfit}
+          onSaveItem={handleSaveOutfit}
+          onHideItem={handleHideOutfit}
+          isItemSaved={isSaved}
+          showViewAll={true}
+          onViewAll={() => navigate('/community')}
+          isLoading={isLoading}
+          data-testid="community-suggestions-section"
         />
 
         {/* FOR YOU - 2-Column Grid Section (Requirements 2.3) */}
