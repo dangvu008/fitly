@@ -1252,27 +1252,98 @@ const TryOnDialogContent = ({
           />
         </div>
 
-        {/* Selected Clothing List with Quick Add */}
-        <div className="space-y-2">
-          <SelectedClothingList
-            items={selectedItems}
-            onRemove={handleRemoveClothing}
-            savedClothing={userClothing}
-            sampleClothing={clothing}
-            onSelectItem={handleAddClothing}
-            onAddClothingForCategory={handleAddClothingForCategory}
-            onEditClothing={handleEditClothing}
-            onDeleteClothing={handleDeleteSavedClothing}
-          />
-          
-          {/* Quick Add Clothing - Link/Gallery/Camera */}
-          <div className="flex justify-center">
-            <QuickAddClothing
-              onImageSelected={handleQuickAddClothing}
-              isProcessing={isValidatingClothing}
-            />
-          </div>
+        {/* Mode Toggle Tabs */}
+        <div className="flex rounded-lg bg-secondary/50 border border-border p-0.5">
+          <button
+            onClick={() => setTryOnMode('individual')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+              tryOnMode === 'individual'
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Shirt size={14} />
+            Thử từng món
+          </button>
+          <button
+            onClick={() => setTryOnMode('outfit')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+              tryOnMode === 'outfit'
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Layers size={14} />
+            Thử nguyên outfit
+          </button>
         </div>
+
+        {/* Individual Items Mode */}
+        {tryOnMode === 'individual' && (
+          <div className="space-y-2">
+            <SelectedClothingList
+              items={selectedItems}
+              onRemove={handleRemoveClothing}
+              savedClothing={userClothing}
+              sampleClothing={clothing}
+              onSelectItem={handleAddClothing}
+              onAddClothingForCategory={handleAddClothingForCategory}
+              onEditClothing={handleEditClothing}
+              onDeleteClothing={handleDeleteSavedClothing}
+            />
+            
+            {/* Quick Add Clothing - Link/Gallery/Camera */}
+            <div className="flex justify-center">
+              <QuickAddClothing
+                onImageSelected={handleQuickAddClothing}
+                isProcessing={isValidatingClothing}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Outfit Mode */}
+        {tryOnMode === 'outfit' && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Tải lên ảnh người mặc outfit bạn muốn thử — AI sẽ trích xuất toàn bộ trang phục
+            </p>
+            <button
+              onClick={() => outfitInputRef.current?.click()}
+              className={cn(
+                "w-full rounded-xl border-2 border-dashed transition-all overflow-hidden",
+                outfitImage
+                  ? "border-primary bg-primary/5"
+                  : "border-border/60 hover:border-primary/50 bg-secondary/30"
+              )}
+            >
+              {outfitImage ? (
+                <div className="relative aspect-[3/4] max-h-[25vh]">
+                  <img
+                    src={outfitImage}
+                    alt="Outfit"
+                    className="w-full h-full object-contain"
+                  />
+                  <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1 text-[10px] font-medium text-foreground border border-border">
+                    Đổi ảnh
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <ImageIcon size={20} className="text-muted-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">Tải ảnh outfit</p>
+                    <p className="text-xs text-muted-foreground">Ảnh người mặc bộ đồ bạn thích</p>
+                  </div>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Quality Selector - More compact */}
         <div className="flex gap-2">
