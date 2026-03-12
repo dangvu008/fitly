@@ -77,18 +77,10 @@ export const TryOutfitButton = ({
   };
 
   const openTryOnDialog = () => {
-    // Convert outfit clothing items to ClothingItem format
-    const clothingItems = outfit.clothing_items?.map((item, index) => ({
-      id: `outfit-${outfit.id}-${index}`,
-      name: item.name,
-      imageUrl: item.imageUrl,
-      category: 'all' as const,
-      shopUrl: item.shopUrl,
-      price: item.price,
-    })) || [];
-
+    // Use the full outfit image as garment — AI replicates the entire look on user's body
     openDialog({
-      reuseClothingItems: clothingItems,
+      initialGarmentUrl: outfit.result_image_url,
+      autoStart: false,
     });
   };
 

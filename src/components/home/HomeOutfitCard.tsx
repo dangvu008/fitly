@@ -190,8 +190,8 @@ export const HomeOutfitCard = ({
           className="w-full h-8 text-xs font-medium rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
           data-testid="try-button"
         >
-          <span className="text-sm">⚡</span>
-          {t('try_this')}
+          <span className="text-sm">👗</span>
+          {t('feed_try_outfit')}
         </button>
       </div>
     </div>

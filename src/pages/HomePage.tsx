@@ -182,22 +182,11 @@ export const HomePage = ({
   };
 
   const handleTryOutfit = (outfit: OutfitItem) => {
-    if (outfit.clothing_items && outfit.clothing_items.length > 0) {
-      // Convert outfit clothing items to ClothingItem format
-      const clothingItems = outfit.clothing_items.map((item, index) => ({
-        id: `outfit-${outfit.id}-${index}`,
-        name: item.name,
-        imageUrl: item.imageUrl,
-        category: 'all' as const,
-        shopUrl: item.shopUrl,
-        price: item.price,
-      }));
-
-      // Open TryOnDialog with the clothing items
-      openDialog({
-        reuseClothingItems: clothingItems,
-      });
-    }
+    // Use the full outfit image as the garment — AI will replicate the entire look
+    openDialog({
+      initialGarmentUrl: outfit.result_image_url,
+      autoStart: false,
+    });
   };
 
   const handleSaveOutfit = (outfit: OutfitItem) => {
