@@ -323,6 +323,11 @@ const TryOnDialogContent = ({
     return [];
   });
 
+  // Try-on mode: 'individual' = pick items one by one, 'outfit' = upload full outfit image
+  const [tryOnMode, setTryOnMode] = useState<'individual' | 'outfit'>('individual');
+  const [outfitImage, setOutfitImage] = useState<string | null>(null);
+  const outfitInputRef = useRef<HTMLInputElement>(null);
+
   // UI state
   const [activeCategory, setActiveCategory] = useState<ClothingCategory>('top');
   const [clothingSource, setClothingSource] = useState<'sample' | 'saved'>('sample');
