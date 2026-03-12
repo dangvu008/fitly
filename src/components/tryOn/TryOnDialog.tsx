@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Camera, Sparkles, Loader2, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Share2 } from 'lucide-react';
+import { X, Camera, Sparkles, Loader2, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Share2, Image as ImageIcon, Layers } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -322,6 +322,11 @@ const TryOnDialogContent = ({
     if (initialItem) return [initialItem];
     return [];
   });
+
+  // Try-on mode: 'individual' = pick items one by one, 'outfit' = upload full outfit image
+  const [tryOnMode, setTryOnMode] = useState<'individual' | 'outfit'>('individual');
+  const [outfitImage, setOutfitImage] = useState<string | null>(null);
+  const outfitInputRef = useRef<HTMLInputElement>(null);
 
   // UI state
   const [activeCategory, setActiveCategory] = useState<ClothingCategory>('top');
@@ -850,6 +855,19 @@ const TryOnDialogContent = ({
   };
 
 
+  const handleOutfitFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setOutfitImage(event.target?.result as string);
+        toast.success('Đã tải ảnh outfit');
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
   const handleAITryOn = async () => {
     if (cooldownRemaining > 0 || isProcessing) {
       return;
@@ -871,8 +889,14 @@ const TryOnDialogContent = ({
       return;
     }
 
-    if (selectedItems.length === 0) {
+    // Validate based on mode
+    if (tryOnMode === 'individual' && selectedItems.length === 0) {
       toast.error(t('msg_select_clothing'));
+      return;
+    }
+
+    if (tryOnMode === 'outfit' && !outfitImage) {
+      toast.error('Vui lòng tải lên ảnh outfit cần thử');
       return;
     }
 
@@ -901,60 +925,83 @@ const TryOnDialogContent = ({
 
     const { compressImageForAI, fetchAndCompressImage } = await import('@/utils/imageCompression');
 
-    updateProgress('compressing', 15, `Đang xử lý ${selectedItems.length + 1} hình ảnh...`);
+    if (tryOnMode === 'outfit' && outfitImage) {
+      // Outfit mode: compress body + outfit image
+      updateProgress('compressing', 15, 'Đang xử lý hình ảnh...');
+      const [compressedBody, compressedOutfit] = await Promise.all([
+        compressImageForAI(bodyImage, 1024, 1024, 0.85),
+        compressImageForAI(outfitImage, 1024, 1024, 0.85),
+      ]);
 
-    const [compressedBodyImage, ...compressedClothingResults] = await Promise.all([
-      compressImageForAI(bodyImage, 1024, 1024, 0.85),
-      ...selectedItems.map(item =>
-        fetchAndCompressImage(item.imageUrl, 600, 600, 0.75)
-          .then(compressedUrl => ({ imageUrl: compressedUrl, name: item.name }))
-          .catch(error => {
-            console.error('Error compressing image:', error);
-            return { imageUrl: item.imageUrl, name: item.name };
-          })
-      )
-    ]);
+      console.log('Starting AI try-on in OUTFIT mode');
+      const result = await processVirtualTryOn(compressedBody, [
+        { imageUrl: compressedOutfit, name: '__FULL_OUTFIT__' }
+      ]);
 
-    const clothingItemsData = compressedClothingResults as Array<{ imageUrl: string; name: string }>;
-
-    console.log('Starting AI try-on with compressed images:', clothingItemsData.length, 'items');
-    const result = await processVirtualTryOn(compressedBodyImage, clothingItemsData);
-
-    if (result?.success && result.generatedImage) {
-      triggerSuccess();
-      refreshQuota();
-
-      setCooldownRemaining(0);
-      if (cooldownTimerRef.current) {
-        clearInterval(cooldownTimerRef.current);
-        cooldownTimerRef.current = null;
-      }
-
-      setAiResultImage(result.generatedImage);
-      setIsResultSaved(false);
-
-      // Call onSuccess callback
-      onSuccess?.(result.generatedImage);
-
-      if (user) {
-        const clothingForHistory = selectedItems.map(item => ({
-          name: item.name,
-          imageUrl: item.imageUrl,
-        }));
-        console.log('Saving try-on result:', {
-          userId: user.id,
-          bodyImageType: bodyImage?.substring(0, 50),
-          resultImageType: result.generatedImage?.substring(0, 50),
-          clothingCount: clothingForHistory.length,
-        });
-        const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
-        console.log('Save result:', saved);
-        if (saved) {
-          setIsResultSaved(true);
+      if (result?.success && result.generatedImage) {
+        triggerSuccess();
+        refreshQuota();
+        setCooldownRemaining(0);
+        if (cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+          cooldownTimerRef.current = null;
         }
+        setAiResultImage(result.generatedImage);
+        setIsResultSaved(false);
+        onSuccess?.(result.generatedImage);
+
+        if (user) {
+          const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, [
+            { name: 'Full Outfit', imageUrl: outfitImage },
+          ]);
+          if (saved) setIsResultSaved(true);
+        }
+      } else {
+        triggerError();
       }
     } else {
-      triggerError();
+      // Individual mode (existing logic)
+      updateProgress('compressing', 15, `Đang xử lý ${selectedItems.length + 1} hình ảnh...`);
+
+      const [compressedBodyImage, ...compressedClothingResults] = await Promise.all([
+        compressImageForAI(bodyImage, 1024, 1024, 0.85),
+        ...selectedItems.map(item =>
+          fetchAndCompressImage(item.imageUrl, 600, 600, 0.75)
+            .then(compressedUrl => ({ imageUrl: compressedUrl, name: item.name }))
+            .catch(error => {
+              console.error('Error compressing image:', error);
+              return { imageUrl: item.imageUrl, name: item.name };
+            })
+        )
+      ]);
+
+      const clothingItemsData = compressedClothingResults as Array<{ imageUrl: string; name: string }>;
+      console.log('Starting AI try-on with compressed images:', clothingItemsData.length, 'items');
+      const result = await processVirtualTryOn(compressedBodyImage, clothingItemsData);
+
+      if (result?.success && result.generatedImage) {
+        triggerSuccess();
+        refreshQuota();
+        setCooldownRemaining(0);
+        if (cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+          cooldownTimerRef.current = null;
+        }
+        setAiResultImage(result.generatedImage);
+        setIsResultSaved(false);
+        onSuccess?.(result.generatedImage);
+
+        if (user) {
+          const clothingForHistory = selectedItems.map(item => ({
+            name: item.name,
+            imageUrl: item.imageUrl,
+          }));
+          const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
+          if (saved) setIsResultSaved(true);
+        }
+      } else {
+        triggerError();
+      }
     }
   };
 
@@ -1087,6 +1134,13 @@ const TryOnDialogContent = ({
         onChange={handleClothingFileChange}
         className="hidden"
       />
+      <input
+        ref={outfitInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleOutfitFileChange}
+        className="hidden"
+      />
 
       {/* AI Result Modal */}
       {aiResultImage && (
@@ -1198,27 +1252,98 @@ const TryOnDialogContent = ({
           />
         </div>
 
-        {/* Selected Clothing List with Quick Add */}
-        <div className="space-y-2">
-          <SelectedClothingList
-            items={selectedItems}
-            onRemove={handleRemoveClothing}
-            savedClothing={userClothing}
-            sampleClothing={clothing}
-            onSelectItem={handleAddClothing}
-            onAddClothingForCategory={handleAddClothingForCategory}
-            onEditClothing={handleEditClothing}
-            onDeleteClothing={handleDeleteSavedClothing}
-          />
-          
-          {/* Quick Add Clothing - Link/Gallery/Camera */}
-          <div className="flex justify-center">
-            <QuickAddClothing
-              onImageSelected={handleQuickAddClothing}
-              isProcessing={isValidatingClothing}
-            />
-          </div>
+        {/* Mode Toggle Tabs */}
+        <div className="flex rounded-lg bg-secondary/50 border border-border p-0.5">
+          <button
+            onClick={() => setTryOnMode('individual')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+              tryOnMode === 'individual'
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Shirt size={14} />
+            Thử từng món
+          </button>
+          <button
+            onClick={() => setTryOnMode('outfit')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+              tryOnMode === 'outfit'
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Layers size={14} />
+            Thử nguyên outfit
+          </button>
         </div>
+
+        {/* Individual Items Mode */}
+        {tryOnMode === 'individual' && (
+          <div className="space-y-2">
+            <SelectedClothingList
+              items={selectedItems}
+              onRemove={handleRemoveClothing}
+              savedClothing={userClothing}
+              sampleClothing={clothing}
+              onSelectItem={handleAddClothing}
+              onAddClothingForCategory={handleAddClothingForCategory}
+              onEditClothing={handleEditClothing}
+              onDeleteClothing={handleDeleteSavedClothing}
+            />
+            
+            {/* Quick Add Clothing - Link/Gallery/Camera */}
+            <div className="flex justify-center">
+              <QuickAddClothing
+                onImageSelected={handleQuickAddClothing}
+                isProcessing={isValidatingClothing}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Outfit Mode */}
+        {tryOnMode === 'outfit' && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Tải lên ảnh người mặc outfit bạn muốn thử — AI sẽ trích xuất toàn bộ trang phục
+            </p>
+            <button
+              onClick={() => outfitInputRef.current?.click()}
+              className={cn(
+                "w-full rounded-xl border-2 border-dashed transition-all overflow-hidden",
+                outfitImage
+                  ? "border-primary bg-primary/5"
+                  : "border-border/60 hover:border-primary/50 bg-secondary/30"
+              )}
+            >
+              {outfitImage ? (
+                <div className="relative aspect-[3/4] max-h-[25vh]">
+                  <img
+                    src={outfitImage}
+                    alt="Outfit"
+                    className="w-full h-full object-contain"
+                  />
+                  <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1 text-[10px] font-medium text-foreground border border-border">
+                    Đổi ảnh
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <ImageIcon size={20} className="text-muted-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">Tải ảnh outfit</p>
+                    <p className="text-xs text-muted-foreground">Ảnh người mặc bộ đồ bạn thích</p>
+                  </div>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Quality Selector - More compact */}
         <div className="flex gap-2">
@@ -1291,7 +1416,7 @@ const TryOnDialogContent = ({
           variant="instagram"
           className="w-full h-10 text-sm relative overflow-hidden"
           onClick={handleAITryOn}
-          disabled={isProcessing || cooldownRemaining > 0 || !bodyImage || selectedItems.length === 0 || (!hasQuotaRemaining && !isUnlimited)}
+          disabled={isProcessing || cooldownRemaining > 0 || !bodyImage || (tryOnMode === 'individual' ? selectedItems.length === 0 : !outfitImage) || (!hasQuotaRemaining && !isUnlimited)}
         >
           {isProcessing || cooldownRemaining > 0 ? (
             <>

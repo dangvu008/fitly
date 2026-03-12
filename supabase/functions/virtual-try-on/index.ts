@@ -83,12 +83,61 @@ serve(async (req) => {
     console.log('Starting virtual try-on process...');
     console.log('Clothing items:', items.map(i => i.name).join(', '));
 
-    // Build clothing description and image content for the prompt
-    const clothingNames = items.map(i => i.name).join(', ');
-    const clothingList = items.map((item, idx) => `${idx + 1}. ${item.name}`).join('\n');
+    // Detect outfit mode: single item named '__FULL_OUTFIT__'
+    const isOutfitMode = items.length === 1 && items[0].name === '__FULL_OUTFIT__';
 
-    // Use Lovable AI Gateway with improved prompt for accuracy
-    const basePrompt = `VIRTUAL CLOTHING TRY-ON — PIXEL-PERFECT ACCURACY
+    let contentArray: Array<{ type: string; text?: string; image_url?: { url: string } }>;
+
+    if (isOutfitMode) {
+      console.log('OUTFIT MODE: Transferring entire outfit from reference image');
+
+      const outfitPrompt = `FULL OUTFIT TRANSFER — PIXEL-PERFECT ACCURACY
+
+YOU ARE GIVEN:
+1. A TARGET PERSON photo (keep this person's identity)
+2. A REFERENCE OUTFIT photo (a different person wearing an outfit)
+
+YOUR TASK: Make the TARGET PERSON wear the EXACT SAME OUTFIT as in the REFERENCE OUTFIT photo.
+
+ABSOLUTE RULES:
+1. PERSON IDENTITY (from target photo):
+   - Keep the EXACT same face, hair, skin tone, body shape, pose
+   - Keep the EXACT same background
+   - Do NOT blend features from the outfit reference person
+
+2. OUTFIT EXTRACTION (from reference photo):
+   - Identify EVERY piece of clothing visible: top, bottom, shoes, accessories, outerwear, hat, bag, etc.
+   - Extract the EXACT color, pattern, design, logo, texture of each piece
+   - Transfer ALL pieces to the target person
+
+3. COLOR & DESIGN — EXACT MATCH:
+   - Each piece must have the EXACT SAME COLOR as in the reference
+   - Reproduce every stripe, logo, print, pattern at correct scale
+   - Do NOT change, tint, or shift any color
+
+4. FIT & PLACEMENT:
+   - Tops → replace target's upper body clothing
+   - Bottoms → replace target's lower body clothing  
+   - Shoes → MUST be ON THE FEET
+   - Accessories → placed on correct body part
+   - Natural fabric draping with proper wrinkles and shadows
+   - Proper occlusion and layering
+
+OUTPUT: A single photorealistic image of the TARGET PERSON wearing the COMPLETE outfit from the REFERENCE photo. Should look like a real photograph.`;
+
+      contentArray = [
+        { type: "text", text: outfitPrompt },
+        { type: "text", text: "=== TARGET PERSON (keep this person's face and body) ===" },
+        { type: "image_url", image_url: { url: bodyImage } },
+        { type: "text", text: "=== REFERENCE OUTFIT (extract ALL clothing from this image and apply to target person) ===" },
+        { type: "image_url", image_url: { url: items[0].imageUrl } },
+      ];
+    } else {
+      // Individual items mode (existing logic)
+      const clothingNames = items.map(i => i.name).join(', ');
+      const clothingList = items.map((item, idx) => `${idx + 1}. ${item.name}`).join('\n');
+
+      const basePrompt = `VIRTUAL CLOTHING TRY-ON — PIXEL-PERFECT ACCURACY
 
 ABSOLUTE RULES (violating any = failure):
 
@@ -129,28 +178,28 @@ ${clothingList}
 
 OUTPUT: A single photorealistic image of the same person wearing ALL specified items. The result should be indistinguishable from a real photograph.`;
 
-    // Build content array with body image first, then clothing images
-    const contentArray: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
-      { type: "text", text: basePrompt },
-      { type: "text", text: "=== ORIGINAL PHOTO (keep this person's face and body) ===" },
-      { type: "image_url", image_url: { url: bodyImage } },
-      { type: "text", text: "=== CLOTHING ITEMS (apply these to the person) ===" },
-    ];
+      contentArray = [
+        { type: "text", text: basePrompt },
+        { type: "text", text: "=== ORIGINAL PHOTO (keep this person's face and body) ===" },
+        { type: "image_url", image_url: { url: bodyImage } },
+        { type: "text", text: "=== CLOTHING ITEMS (apply these to the person) ===" },
+      ];
 
-    // Add clothing items with more specific instructions
-    items.forEach((item, idx) => {
-      const itemType = item.name.toLowerCase();
-      let placement = "wear on body";
-      if (itemType.includes('giày') || itemType.includes('shoe') || itemType.includes('sneaker') || itemType.includes('boot')) {
-        placement = "MUST BE WORN ON THE FEET - not beside or floating";
-      } else if (itemType.includes('áo') || itemType.includes('shirt') || itemType.includes('top') || itemType.includes('jacket')) {
-        placement = "replace current top clothing";
-      } else if (itemType.includes('quần') || itemType.includes('pant') || itemType.includes('short') || itemType.includes('jean')) {
-        placement = "replace current bottom clothing";
-      }
-      contentArray.push({ type: "text", text: `ITEM ${idx + 1}: "${item.name}" - ${placement}. Use EXACT color from this image:` });
-      contentArray.push({ type: "image_url", image_url: { url: item.imageUrl } });
-    });
+      // Add clothing items with more specific instructions
+      items.forEach((item, idx) => {
+        const itemType = item.name.toLowerCase();
+        let placement = "wear on body";
+        if (itemType.includes('giày') || itemType.includes('shoe') || itemType.includes('sneaker') || itemType.includes('boot')) {
+          placement = "MUST BE WORN ON THE FEET - not beside or floating";
+        } else if (itemType.includes('áo') || itemType.includes('shirt') || itemType.includes('top') || itemType.includes('jacket')) {
+          placement = "replace current top clothing";
+        } else if (itemType.includes('quần') || itemType.includes('pant') || itemType.includes('short') || itemType.includes('jean')) {
+          placement = "replace current bottom clothing";
+        }
+        contentArray.push({ type: "text", text: `ITEM ${idx + 1}: "${item.name}" - ${placement}. Use EXACT color from this image:` });
+        contentArray.push({ type: "image_url", image_url: { url: item.imageUrl } });
+      });
+    }
 
     // Use more capable model first for better accuracy
     const attempts: Array<{ model: string }> = [
