@@ -191,7 +191,7 @@ export const HomeOutfitCard = ({
           data-testid="try-button"
         >
           <span className="text-sm">👗</span>
-          {t('try_outfit')}
+          {t('feed_try_outfit')}
         </button>
       </div>
     </div>
