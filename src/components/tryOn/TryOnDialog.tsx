@@ -855,6 +855,19 @@ const TryOnDialogContent = ({
   };
 
 
+  const handleOutfitFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setOutfitImage(event.target?.result as string);
+        toast.success('Đã tải ảnh outfit');
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
   const handleAITryOn = async () => {
     if (cooldownRemaining > 0 || isProcessing) {
       return;
@@ -876,8 +889,14 @@ const TryOnDialogContent = ({
       return;
     }
 
-    if (selectedItems.length === 0) {
+    // Validate based on mode
+    if (tryOnMode === 'individual' && selectedItems.length === 0) {
       toast.error(t('msg_select_clothing'));
+      return;
+    }
+
+    if (tryOnMode === 'outfit' && !outfitImage) {
+      toast.error('Vui lòng tải lên ảnh outfit cần thử');
       return;
     }
 
@@ -906,60 +925,83 @@ const TryOnDialogContent = ({
 
     const { compressImageForAI, fetchAndCompressImage } = await import('@/utils/imageCompression');
 
-    updateProgress('compressing', 15, `Đang xử lý ${selectedItems.length + 1} hình ảnh...`);
+    if (tryOnMode === 'outfit' && outfitImage) {
+      // Outfit mode: compress body + outfit image
+      updateProgress('compressing', 15, 'Đang xử lý hình ảnh...');
+      const [compressedBody, compressedOutfit] = await Promise.all([
+        compressImageForAI(bodyImage, 1024, 1024, 0.85),
+        compressImageForAI(outfitImage, 1024, 1024, 0.85),
+      ]);
 
-    const [compressedBodyImage, ...compressedClothingResults] = await Promise.all([
-      compressImageForAI(bodyImage, 1024, 1024, 0.85),
-      ...selectedItems.map(item =>
-        fetchAndCompressImage(item.imageUrl, 600, 600, 0.75)
-          .then(compressedUrl => ({ imageUrl: compressedUrl, name: item.name }))
-          .catch(error => {
-            console.error('Error compressing image:', error);
-            return { imageUrl: item.imageUrl, name: item.name };
-          })
-      )
-    ]);
+      console.log('Starting AI try-on in OUTFIT mode');
+      const result = await processVirtualTryOn(compressedBody, [
+        { imageUrl: compressedOutfit, name: '__FULL_OUTFIT__' }
+      ]);
 
-    const clothingItemsData = compressedClothingResults as Array<{ imageUrl: string; name: string }>;
-
-    console.log('Starting AI try-on with compressed images:', clothingItemsData.length, 'items');
-    const result = await processVirtualTryOn(compressedBodyImage, clothingItemsData);
-
-    if (result?.success && result.generatedImage) {
-      triggerSuccess();
-      refreshQuota();
-
-      setCooldownRemaining(0);
-      if (cooldownTimerRef.current) {
-        clearInterval(cooldownTimerRef.current);
-        cooldownTimerRef.current = null;
-      }
-
-      setAiResultImage(result.generatedImage);
-      setIsResultSaved(false);
-
-      // Call onSuccess callback
-      onSuccess?.(result.generatedImage);
-
-      if (user) {
-        const clothingForHistory = selectedItems.map(item => ({
-          name: item.name,
-          imageUrl: item.imageUrl,
-        }));
-        console.log('Saving try-on result:', {
-          userId: user.id,
-          bodyImageType: bodyImage?.substring(0, 50),
-          resultImageType: result.generatedImage?.substring(0, 50),
-          clothingCount: clothingForHistory.length,
-        });
-        const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
-        console.log('Save result:', saved);
-        if (saved) {
-          setIsResultSaved(true);
+      if (result?.success && result.generatedImage) {
+        triggerSuccess();
+        refreshQuota();
+        setCooldownRemaining(0);
+        if (cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+          cooldownTimerRef.current = null;
         }
+        setAiResultImage(result.generatedImage);
+        setIsResultSaved(false);
+        onSuccess?.(result.generatedImage);
+
+        if (user) {
+          const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, [
+            { name: 'Full Outfit', imageUrl: outfitImage },
+          ]);
+          if (saved) setIsResultSaved(true);
+        }
+      } else {
+        triggerError();
       }
     } else {
-      triggerError();
+      // Individual mode (existing logic)
+      updateProgress('compressing', 15, `Đang xử lý ${selectedItems.length + 1} hình ảnh...`);
+
+      const [compressedBodyImage, ...compressedClothingResults] = await Promise.all([
+        compressImageForAI(bodyImage, 1024, 1024, 0.85),
+        ...selectedItems.map(item =>
+          fetchAndCompressImage(item.imageUrl, 600, 600, 0.75)
+            .then(compressedUrl => ({ imageUrl: compressedUrl, name: item.name }))
+            .catch(error => {
+              console.error('Error compressing image:', error);
+              return { imageUrl: item.imageUrl, name: item.name };
+            })
+        )
+      ]);
+
+      const clothingItemsData = compressedClothingResults as Array<{ imageUrl: string; name: string }>;
+      console.log('Starting AI try-on with compressed images:', clothingItemsData.length, 'items');
+      const result = await processVirtualTryOn(compressedBodyImage, clothingItemsData);
+
+      if (result?.success && result.generatedImage) {
+        triggerSuccess();
+        refreshQuota();
+        setCooldownRemaining(0);
+        if (cooldownTimerRef.current) {
+          clearInterval(cooldownTimerRef.current);
+          cooldownTimerRef.current = null;
+        }
+        setAiResultImage(result.generatedImage);
+        setIsResultSaved(false);
+        onSuccess?.(result.generatedImage);
+
+        if (user) {
+          const clothingForHistory = selectedItems.map(item => ({
+            name: item.name,
+            imageUrl: item.imageUrl,
+          }));
+          const saved = await saveTryOnResult(user.id, bodyImage, result.generatedImage, clothingForHistory);
+          if (saved) setIsResultSaved(true);
+        }
+      } else {
+        triggerError();
+      }
     }
   };
 
