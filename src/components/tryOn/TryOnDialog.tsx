@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Camera, Sparkles, Loader2, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Share2 } from 'lucide-react';
+import { X, Camera, Sparkles, Loader2, Shirt, Square, Crown, Footprints, Glasses, MoreHorizontal, Share2, Image as ImageIcon, Layers } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
