@@ -1165,6 +1165,25 @@ const TryOnDialogContent = ({
 
       {/* Main Content */}
       <div className="px-3 space-y-2">
+        {/* Outfit Reference Preview - shown when trying an outfit from feed */}
+        {initialGarmentUrl && (
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-secondary/50 border border-border">
+            <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-border">
+              <img
+                src={initialGarmentUrl}
+                alt="Outfit gốc"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-foreground">{t('feed_try_outfit')}</p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Chọn ảnh toàn thân để thử bộ đồ này
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Body Image Section - Compact for mobile */}
         <div className="relative w-full aspect-[3/4] max-h-[32vh] rounded-xl overflow-hidden bg-secondary border border-border">
           <TryOnCanvas
