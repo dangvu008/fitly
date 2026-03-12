@@ -1134,6 +1134,13 @@ const TryOnDialogContent = ({
         onChange={handleClothingFileChange}
         className="hidden"
       />
+      <input
+        ref={outfitInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleOutfitFileChange}
+        className="hidden"
+      />
 
       {/* AI Result Modal */}
       {aiResultImage && (
