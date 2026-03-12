@@ -88,33 +88,46 @@ serve(async (req) => {
     const clothingList = items.map((item, idx) => `${idx + 1}. ${item.name}`).join('\n');
 
     // Use Lovable AI Gateway with improved prompt for accuracy
-    const basePrompt = `VIRTUAL CLOTHING TRY-ON - STRICT ACCURACY REQUIRED
+    const basePrompt = `VIRTUAL CLOTHING TRY-ON — PIXEL-PERFECT ACCURACY
 
-YOU MUST FOLLOW THESE RULES EXACTLY:
+ABSOLUTE RULES (violating any = failure):
 
-1. IDENTITY PRESERVATION (CRITICAL):
-   - Keep the EXACT same face, hair, skin tone, body shape from the original photo
-   - Keep the EXACT same pose and background
+1. PERSON IDENTITY — DO NOT ALTER:
+   - Face, hair style, hair color, skin tone, body proportions → copy exactly from the reference photo
+   - Pose, posture, camera angle, lighting direction → keep identical
+   - Background → preserve 100 % unchanged
 
-2. CLOTHING PLACEMENT (CRITICAL):
-   - SHOES must be WORN ON THE FEET of the person, NOT floating or placed beside them
-   - TOPS/SHIRTS must replace the current top the person is wearing
-   - BOTTOMS/PANTS must replace the current bottom the person is wearing
-   - ACCESSORIES must be worn properly (hats on head, bags on shoulder, etc.)
+2. GARMENT PLACEMENT — ANATOMICALLY CORRECT:
+   - TOPS (áo, shirt, jacket, hoodie, blazer) → replace the person's current upper-body garment; align neckline, sleeves, hem naturally
+   - BOTTOMS (quần, pants, skirt, shorts, jeans) → replace current lower-body garment; waistband at natural waist, hem at correct length
+   - DRESSES (đầm, váy, dress) → replace both top and bottom; maintain silhouette from reference
+   - SHOES (giày, sneaker, boot, sandal, dép) → MUST appear ON THE FEET, touching the ground, correct perspective
+   - OUTERWEAR (áo khoác, coat) → layer OVER the inner top; do not hide inner garment unless it would be hidden naturally
+   - ACCESSORIES (mũ, túi, belt, watch, necklace) → place on correct body part with proper scale
 
-3. COLOR & DESIGN ACCURACY (CRITICAL):
-   - Each clothing item MUST have the EXACT SAME COLOR as shown in its reference image
-   - Each clothing item MUST have the EXACT SAME PATTERN/DESIGN as its reference
-   - Do NOT change or blend colors - use the EXACT colors from the clothing reference images
+3. COLOR & PATTERN — EXACT MATCH:
+   - Sample the DOMINANT COLOR directly from each clothing reference image
+   - Reproduce every stripe, logo, print, texture, pattern at the correct scale and orientation
+   - DO NOT average, tint, or shift any color — match the source image precisely
+   - If the reference has metallic/shiny/matte finish, replicate that material quality
 
-4. REALISM:
-   - Natural fabric draping and shadows
-   - Proper perspective matching the body pose
-   - Seamless integration - should look like a real photo
+4. FIT & DRAPING — REALISTIC:
+   - Fabric must follow the body's contours: wrinkles at elbows, knees, waist
+   - Gravity-correct draping: skirts fall down, scarves hang, laces dangle
+   - Proper occlusion: arms in front of torso hide part of the shirt, collar overlaps neck
+   - Cast shadows from clothing onto body and vice-versa matching the scene's light source
+
+5. MULTI-ITEM COHERENCE:
+   - When multiple items are provided, combine them into ONE cohesive outfit
+   - Layering order must be physically logical (underwear < shirt < jacket < coat)
+   - Color palette should look intentional even if items are from different sources
 
 CLOTHING TO APPLY: ${clothingNames}
 
-OUTPUT: Generate ONE photorealistic image showing the person WEARING all specified items correctly.`;
+Clothing list:
+${clothingList}
+
+OUTPUT: A single photorealistic image of the same person wearing ALL specified items. The result should be indistinguishable from a real photograph.`;
 
     // Build content array with body image first, then clothing images
     const contentArray: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
