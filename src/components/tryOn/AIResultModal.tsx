@@ -41,11 +41,28 @@ export const AIResultModal: React.FC<AIResultModalProps> = ({
 
       {/* Result Image - Single image only */}
       <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-        <img 
-          src={resultImage} 
-          alt="AI Try-On Result" 
-          className="max-w-full max-h-full object-contain rounded-xl"
-        />
+        {resultImage ? (
+          <img 
+            src={resultImage} 
+            alt="AI Try-On Result" 
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onError={(e) => {
+              console.error('Failed to load result image. Length:', resultImage.length, 'Starts with:', resultImage.substring(0, 50));
+              // Try to fix common base64 issues
+              const target = e.target as HTMLImageElement;
+              if (!resultImage.startsWith('data:')) {
+                target.src = `data:image/png;base64,${resultImage}`;
+              }
+            }}
+            onLoad={() => {
+              console.log('Result image loaded successfully. Length:', resultImage.length);
+            }}
+          />
+        ) : (
+          <div className="text-center text-muted-foreground">
+            <p>Không thể hiển thị ảnh kết quả</p>
+          </div>
+        )}
       </div>
 
       {/* Action Bar - Reorganized */}
