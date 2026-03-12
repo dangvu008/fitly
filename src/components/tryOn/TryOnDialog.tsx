@@ -1416,7 +1416,7 @@ const TryOnDialogContent = ({
           variant="instagram"
           className="w-full h-10 text-sm relative overflow-hidden"
           onClick={handleAITryOn}
-          disabled={isProcessing || cooldownRemaining > 0 || !bodyImage || selectedItems.length === 0 || (!hasQuotaRemaining && !isUnlimited)}
+          disabled={isProcessing || cooldownRemaining > 0 || !bodyImage || (tryOnMode === 'individual' ? selectedItems.length === 0 : !outfitImage) || (!hasQuotaRemaining && !isUnlimited)}
         >
           {isProcessing || cooldownRemaining > 0 ? (
             <>
