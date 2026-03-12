@@ -135,9 +135,17 @@ export const useAITryOn = () => {
 
       updateProgress('complete', 100, 'Hoàn thành!');
 
+      const generatedImage = data.generatedImage;
+      console.log('Try-on result received:', {
+        success: data.success,
+        hasImage: !!generatedImage,
+        imageLength: generatedImage?.length || 0,
+        imagePrefix: generatedImage?.substring(0, 80) || 'none',
+      });
+
       const tryOnResult: TryOnResult = {
         success: true,
-        generatedImage: data.generatedImage,
+        generatedImage,
         message: data.message,
       };
 
