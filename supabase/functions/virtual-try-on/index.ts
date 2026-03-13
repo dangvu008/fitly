@@ -385,7 +385,12 @@ OUTPUT: One photorealistic corrected image with locked target identity.`;
               { type: "image_url", image_url: { url: bodyImage } },
             ];
 
-            for (const refinementAttempt of attempts) {
+            const refinementAttempts: Array<{ model: string }> = [
+              { model: "google/gemini-3.1-flash-image-preview" },
+              { model: "google/gemini-3-pro-image-preview" },
+            ];
+
+            for (const refinementAttempt of refinementAttempts) {
               console.log(`Identity refinement with model: ${refinementAttempt.model}`);
 
               const refinementResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
