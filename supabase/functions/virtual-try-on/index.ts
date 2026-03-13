@@ -300,9 +300,179 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
       if (generatedImage) {
         let finalImage = generatedImage;
 
-        // Conditional identity-lock refinement for full outfit mode
-        if (isOutfitMode) {
-          // Step 1: Quick identity verification using lightweight text model
+        // Identity-lock verification for ALL modes (outfit + individual items)
+        const runIdentityVerification = async (
+          candidateImage: string,
+          phase: 'initial' | 'refined'
+        ): Promise<boolean> => {
+          console.log(`Running identity verification check (${phase})...`);
+
+          const verifyResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: `Compare IMAGE A (original person) and IMAGE B (try-on result).
+
+CRITICAL GOAL: IMAGE B must be the SAME PERSON as IMAGE A.
+If B looks like a different person (for example copied from clothing/model reference), return MISMATCH.
+
+Check strictly:
+1) Face identity (eyes, nose, lips, jawline, facial proportions)
+2) Skin tone consistency (face/neck/arms/hands)
+3) Head-neck-shoulder geometry and natural seam alignment
+4) Body proportions, pose, camera angle, framing
+5) Background structure and perspective
+
+If ANY check fails or is uncertain => MISMATCH.
+Answer EXACTLY one word:
+- MATCH
+- MISMATCH`,
+                    },
+                    { type: "text", text: "IMAGE A (original person):" },
+                    { type: "image_url", image_url: { url: bodyImage } },
+                    { type: "text", text: "IMAGE B (try-on result):" },
+                    { type: "image_url", image_url: { url: candidateImage } },
+                  ],
+                },
+              ],
+            }),
+          });
+
+          if (!verifyResponse.ok) {
+            console.error(`Identity check failed (${phase}) with status`, verifyResponse.status);
+            return false;
+          }
+
+          try {
+            const verifyData = await verifyResponse.json();
+            const rawVerdict = verifyData.choices?.[0]?.message?.content || '';
+            const verdict = rawVerdict.trim().toUpperCase().replace(/[^A-Z]/g, '');
+            console.log(`Identity verification verdict (${phase}):`, verdict || 'EMPTY');
+            return verdict === 'MATCH';
+          } catch {
+            console.error(`Failed to parse identity check response (${phase})`);
+            return false;
+          }
+        };
+
+        const initialMatch = await runIdentityVerification(finalImage, 'initial');
+
+        if (!initialMatch) {
+          console.log('Identity mismatch detected — starting refinement pass...');
+
+          const identityRefinementPrompt = `IDENTITY LOCK REFINEMENT (STRICT)
+
+MODE: ${isOutfitMode ? 'FULL OUTFIT' : 'INDIVIDUAL ITEMS'}
+INPUT A: Draft try-on result image (use this as OUTFIT/APPLIED GARMENT source)
+INPUT B: Original target person image (ABSOLUTE identity/pose/background source)
+
+TASK:
+- Extract ONLY garment details from INPUT A: item type, color, pattern, logo, material, layering.
+- Re-apply those garments onto INPUT B.
+- Preserve INPUT B exactly for: face, hairline, ears, neck skin, arms, hands,
+  body proportions, pose, camera framing, and background.
+
+STRICT RULES:
+- Never copy person identity from INPUT A.
+- Never copy body geometry, pose, or background from INPUT A.
+- If there is any head/neck seam mismatch, correct it to natural anatomy.
+- Keep clothing details photorealistic and faithful to references.
+
+OUTPUT: One corrected photorealistic image where person identity is from INPUT B and outfit is preserved from INPUT A.`;
+
+          const refinementContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+            { type: "text", text: identityRefinementPrompt },
+            { type: "text", text: "=== INPUT A: DRAFT TRY-ON RESULT (extract applied outfit from here) ===" },
+            { type: "image_url", image_url: { url: generatedImage } },
+            { type: "text", text: "=== INPUT B: ORIGINAL TARGET PERSON (identity source) ===" },
+            { type: "image_url", image_url: { url: bodyImage } },
+            { type: "text", text: "=== CLOTHING REFERENCES (preserve these garments accurately) ===" },
+          ];
+
+          items.forEach((item, idx) => {
+            refinementContent.push({ type: "text", text: `REFERENCE ITEM ${idx + 1}: ${item.name}` });
+            refinementContent.push({ type: "image_url", image_url: { url: item.imageUrl } });
+          });
+
+          const refinementAttempts: Array<{ model: string }> = [
+            { model: "google/gemini-3.1-flash-image-preview" },
+            { model: "google/gemini-3-pro-image-preview" },
+          ];
+
+          let refinementSucceeded = false;
+
+          for (const refinementAttempt of refinementAttempts) {
+            console.log(`Identity refinement with model: ${refinementAttempt.model}`);
+
+            const refinementResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: refinementAttempt.model,
+                messages: [{ role: "user", content: refinementContent }],
+                modalities: ["image", "text"],
+              }),
+            });
+
+            if (!refinementResponse.ok) {
+              console.error(`Identity refinement failed with status ${refinementResponse.status}`);
+              continue;
+            }
+
+            const refinementText = await refinementResponse.text();
+            if (!refinementText || refinementText.trim() === '') continue;
+
+            try {
+              const refinementData = JSON.parse(refinementText);
+              const refinedImage = refinementData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+              if (refinedImage) {
+                finalImage = refinedImage;
+                refinementSucceeded = true;
+                break;
+              }
+            } catch {
+              console.error('Failed to parse identity refinement response');
+            }
+          }
+
+          if (!refinementSucceeded) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Không thể giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh rõ mặt hơn.',
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          const refinedMatch = await runIdentityVerification(finalImage, 'refined');
+          if (!refinedMatch) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Kết quả chưa giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh đứng thẳng, rõ mặt và đủ sáng.',
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          console.log('Identity-lock refinement completed successfully');
+        } else {
+          console.log('Identity verified OK — skipping refinement pass');
+        }
           console.log('Running identity verification check...');
 
           const verifyResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
