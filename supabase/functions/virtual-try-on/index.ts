@@ -312,15 +312,21 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
+              model: "google/gemini-2.5-flash",
               messages: [
                 {
                   role: "user",
                   content: [
-                    { type: "text", text: `Compare the FACE and ARMS of the person in IMAGE A (original) vs IMAGE B (result).
-Answer ONLY "MATCH" if face, skin tone, arms, and hands look like the same person.
-Answer ONLY "MISMATCH" if face, skin tone, arms, or hands appear to belong to a different person.
-One word only.` },
+                    { type: "text", text: `Compare IMAGE A (original person) and IMAGE B (try-on result).
+Focus ONLY on identity consistency and head-body coherence:
+1) Face identity (eyes, nose, lips, jawline)
+2) Skin tone consistency (face/neck/arms/hands)
+3) Arm/hand identity and proportions
+4) Head-neck-shoulder alignment naturalness
+
+Answer EXACTLY one word:
+- MATCH = all 4 criteria are clearly consistent
+- MISMATCH = any criterion is inconsistent or uncertain` },
                     { type: "text", text: "IMAGE A (original person):" },
                     { type: "image_url", image_url: { url: bodyImage } },
                     { type: "text", text: "IMAGE B (try-on result):" },
@@ -331,19 +337,23 @@ One word only.` },
             }),
           });
 
-          let needsRefinement = false;
+          // Safe default: refine unless verifier is confidently MATCH
+          let needsRefinement = true;
 
           if (verifyResponse.ok) {
             try {
               const verifyData = await verifyResponse.json();
-              const verdict = (verifyData.choices?.[0]?.message?.content || '').trim().toUpperCase();
-              console.log('Identity verification verdict:', verdict);
-              needsRefinement = verdict.includes('MISMATCH');
+              const rawVerdict = verifyData.choices?.[0]?.message?.content || '';
+              const verdict = rawVerdict.trim().toUpperCase().replace(/[^A-Z]/g, '');
+              console.log('Identity verification verdict:', verdict || 'EMPTY');
+              needsRefinement = verdict !== 'MATCH';
             } catch {
-              console.error('Failed to parse identity check response, skipping refinement');
+              console.error('Failed to parse identity check response, will run refinement');
+              needsRefinement = true;
             }
           } else {
-            console.error('Identity check failed with status', verifyResponse.status, '— skipping refinement');
+            console.error('Identity check failed with status', verifyResponse.status, '— will run refinement');
+            needsRefinement = true;
           }
 
           // Step 2: Only run heavy refinement if identity mismatch detected
