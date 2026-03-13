@@ -368,7 +368,9 @@ INPUT B: Original target person image (identity source)
 TASK:
 - Keep outfit, clothing colors/patterns/logos, and background from INPUT A.
 - Restore identity regions from INPUT B with exact fidelity:
-  face, hairline, ears, neck skin, arms, hands, visible skin tone, and body proportions.
+  face, hairline, ears, neck skin, arms, hands, visible skin tone, body proportions,
+  and head-neck-shoulder geometry/alignment.
+- Remove any mismatch seam between head and torso so the result looks anatomically natural.
 
 STRICT RULES:
 - Do NOT copy any face/skin/arms/hands from outfit reference person.
