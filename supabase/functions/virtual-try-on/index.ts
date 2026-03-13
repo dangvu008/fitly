@@ -300,11 +300,57 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
       if (generatedImage) {
         let finalImage = generatedImage;
 
-        // Extra identity-lock refinement pass for full outfit mode
+        // Conditional identity-lock refinement for full outfit mode
         if (isOutfitMode) {
-          console.log('Starting identity-lock refinement pass...');
+          // Step 1: Quick identity verification using lightweight text model
+          console.log('Running identity verification check...');
 
-          const identityRefinementPrompt = `IDENTITY LOCK REFINEMENT (STRICT)
+          const verifyResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash-lite",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: `Compare the FACE and ARMS of the person in IMAGE A (original) vs IMAGE B (result).
+Answer ONLY "MATCH" if face, skin tone, arms, and hands look like the same person.
+Answer ONLY "MISMATCH" if face, skin tone, arms, or hands appear to belong to a different person.
+One word only.` },
+                    { type: "text", text: "IMAGE A (original person):" },
+                    { type: "image_url", image_url: { url: bodyImage } },
+                    { type: "text", text: "IMAGE B (try-on result):" },
+                    { type: "image_url", image_url: { url: generatedImage } },
+                  ],
+                },
+              ],
+            }),
+          });
+
+          let needsRefinement = false;
+
+          if (verifyResponse.ok) {
+            try {
+              const verifyData = await verifyResponse.json();
+              const verdict = (verifyData.choices?.[0]?.message?.content || '').trim().toUpperCase();
+              console.log('Identity verification verdict:', verdict);
+              needsRefinement = verdict.includes('MISMATCH');
+            } catch {
+              console.error('Failed to parse identity check response, skipping refinement');
+            }
+          } else {
+            console.error('Identity check failed with status', verifyResponse.status, '— skipping refinement');
+          }
+
+          // Step 2: Only run heavy refinement if identity mismatch detected
+          if (needsRefinement) {
+            console.log('Identity mismatch detected — starting refinement pass...');
+
+            const identityRefinementPrompt = `IDENTITY LOCK REFINEMENT (STRICT)
 
 INPUT A: Draft try-on result image (contains outfit placement)
 INPUT B: Original target person image (identity source)
@@ -321,60 +367,52 @@ STRICT RULES:
 
 OUTPUT: One photorealistic corrected image with locked target identity.`;
 
-          const refinementContent = [
-            { type: "text", text: identityRefinementPrompt },
-            { type: "text", text: "=== DRAFT TRY-ON RESULT (keep outfit + background exactly) ===" },
-            { type: "image_url", image_url: { url: generatedImage } },
-            { type: "text", text: "=== ORIGINAL TARGET PERSON (restore exact identity from this image) ===" },
-            { type: "image_url", image_url: { url: bodyImage } },
-          ];
+            const refinementContent = [
+              { type: "text", text: identityRefinementPrompt },
+              { type: "text", text: "=== DRAFT TRY-ON RESULT (keep outfit + background exactly) ===" },
+              { type: "image_url", image_url: { url: generatedImage } },
+              { type: "text", text: "=== ORIGINAL TARGET PERSON (restore exact identity from this image) ===" },
+              { type: "image_url", image_url: { url: bodyImage } },
+            ];
 
-          for (const refinementAttempt of attempts) {
-            console.log(`Identity refinement with model: ${refinementAttempt.model}`);
+            for (const refinementAttempt of attempts) {
+              console.log(`Identity refinement with model: ${refinementAttempt.model}`);
 
-            const refinementResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${LOVABLE_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: refinementAttempt.model,
-                messages: [
-                  {
-                    role: "user",
-                    content: refinementContent,
-                  },
-                ],
-                modalities: ["image", "text"],
-              }),
-            });
+              const refinementResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: refinementAttempt.model,
+                  messages: [{ role: "user", content: refinementContent }],
+                  modalities: ["image", "text"],
+                }),
+              });
 
-            if (!refinementResponse.ok) {
-              console.error(`Identity refinement failed with status ${refinementResponse.status}`);
-              continue;
-            }
-
-            const refinementText = await refinementResponse.text();
-            if (!refinementText || refinementText.trim() === '') {
-              console.error('Identity refinement returned empty response');
-              continue;
-            }
-
-            try {
-              const refinementData = JSON.parse(refinementText);
-              const refinedImage = refinementData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-              if (refinedImage) {
-                finalImage = refinedImage;
-                console.log('Identity-lock refinement completed successfully');
-                break;
+              if (!refinementResponse.ok) {
+                console.error(`Identity refinement failed with status ${refinementResponse.status}`);
+                continue;
               }
 
-              console.error('Identity refinement returned no image');
-            } catch (refinementParseError) {
-              console.error('Failed to parse identity refinement response:', refinementParseError);
+              const refinementText = await refinementResponse.text();
+              if (!refinementText || refinementText.trim() === '') continue;
+
+              try {
+                const refinementData = JSON.parse(refinementText);
+                const refinedImage = refinementData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+                if (refinedImage) {
+                  finalImage = refinedImage;
+                  console.log('Identity-lock refinement completed successfully');
+                  break;
+                }
+              } catch {
+                console.error('Failed to parse identity refinement response');
+              }
             }
+          } else {
+            console.log('Identity verified OK — skipping refinement pass');
           }
         }
 
