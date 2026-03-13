@@ -318,15 +318,18 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
                   role: "user",
                   content: [
                     { type: "text", text: `Compare IMAGE A (original person) and IMAGE B (try-on result).
-Focus ONLY on identity consistency and head-body coherence:
+Focus on STRICT preservation from A to B:
 1) Face identity (eyes, nose, lips, jawline)
 2) Skin tone consistency (face/neck/arms/hands)
 3) Arm/hand identity and proportions
 4) Head-neck-shoulder alignment naturalness
+5) Same pose, camera angle, body silhouette and framing
+6) Same background structure and perspective
 
+If ANY item is different or uncertain, answer MISMATCH.
 Answer EXACTLY one word:
-- MATCH = all 4 criteria are clearly consistent
-- MISMATCH = any criterion is inconsistent or uncertain` },
+- MATCH = all items are clearly preserved from A
+- MISMATCH = any item is changed/not preserved` },
                     { type: "text", text: "IMAGE A (original person):" },
                     { type: "image_url", image_url: { url: bodyImage } },
                     { type: "text", text: "IMAGE B (try-on result):" },
@@ -366,24 +369,25 @@ INPUT A: Draft try-on result image (contains outfit placement)
 INPUT B: Original target person image (identity source)
 
 TASK:
-- Keep outfit, clothing colors/patterns/logos, and background from INPUT A.
-- Restore identity regions from INPUT B with exact fidelity:
-  face, hairline, ears, neck skin, arms, hands, visible skin tone, body proportions,
-  and head-neck-shoulder geometry/alignment.
-- Remove any mismatch seam between head and torso so the result looks anatomically natural.
+- Extract ONLY outfit details from INPUT A (garment type, color, pattern, logo, material).
+- Re-apply that outfit onto INPUT B while preserving INPUT B as source of truth.
+- Preserve from INPUT B with exact fidelity:
+  face, hairline, ears, neck skin, arms, hands, full body proportions,
+  head-neck-shoulder geometry/alignment, pose, camera framing, and background.
+- Remove any mismatch seam between head and torso so result looks anatomically natural.
 
 STRICT RULES:
-- Do NOT copy any face/skin/arms/hands from outfit reference person.
-- Do NOT alter garment design, color, or placement from INPUT A.
-- Do NOT alter background.
+- Never copy the whole person from INPUT A.
+- Never copy pose, body geometry, or background from INPUT A.
+- Do NOT alter outfit design/color/pattern/logo while re-applying to INPUT B.
 
-OUTPUT: One photorealistic corrected image with locked target identity.`;
+OUTPUT: One photorealistic corrected image where person/pose/background are from INPUT B and outfit is from INPUT A.`;
 
             const refinementContent = [
               { type: "text", text: identityRefinementPrompt },
-              { type: "text", text: "=== DRAFT TRY-ON RESULT (keep outfit + background exactly) ===" },
+              { type: "text", text: "=== INPUT A: DRAFT TRY-ON RESULT (extract outfit details only) ===" },
               { type: "image_url", image_url: { url: generatedImage } },
-              { type: "text", text: "=== ORIGINAL TARGET PERSON (restore exact identity from this image) ===" },
+              { type: "text", text: "=== INPUT B: ORIGINAL TARGET PERSON (preserve person/pose/background exactly) ===" },
               { type: "image_url", image_url: { url: bodyImage } },
             ];
 
