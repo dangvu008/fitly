@@ -385,9 +385,9 @@ OUTPUT: One photorealistic corrected image where person/pose/background are from
 
             const refinementContent = [
               { type: "text", text: identityRefinementPrompt },
-              { type: "text", text: "=== DRAFT TRY-ON RESULT (keep outfit + background exactly) ===" },
+              { type: "text", text: "=== INPUT A: DRAFT TRY-ON RESULT (extract outfit details only) ===" },
               { type: "image_url", image_url: { url: generatedImage } },
-              { type: "text", text: "=== ORIGINAL TARGET PERSON (restore exact identity from this image) ===" },
+              { type: "text", text: "=== INPUT B: ORIGINAL TARGET PERSON (preserve person/pose/background exactly) ===" },
               { type: "image_url", image_url: { url: bodyImage } },
             ];
 
