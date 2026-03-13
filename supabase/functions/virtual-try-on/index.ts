@@ -298,11 +298,91 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
       lastTextResponse = message?.content;
 
       if (generatedImage) {
+        let finalImage = generatedImage;
+
+        // Extra identity-lock refinement pass for full outfit mode
+        if (isOutfitMode) {
+          console.log('Starting identity-lock refinement pass...');
+
+          const identityRefinementPrompt = `IDENTITY LOCK REFINEMENT (STRICT)
+
+INPUT A: Draft try-on result image (contains outfit placement)
+INPUT B: Original target person image (identity source)
+
+TASK:
+- Keep outfit, clothing colors/patterns/logos, and background from INPUT A.
+- Restore identity regions from INPUT B with exact fidelity:
+  face, hairline, ears, neck skin, arms, hands, visible skin tone, and body proportions.
+
+STRICT RULES:
+- Do NOT copy any face/skin/arms/hands from outfit reference person.
+- Do NOT alter garment design, color, or placement from INPUT A.
+- Do NOT alter background.
+
+OUTPUT: One photorealistic corrected image with locked target identity.`;
+
+          const refinementContent = [
+            { type: "text", text: identityRefinementPrompt },
+            { type: "text", text: "=== DRAFT TRY-ON RESULT (keep outfit + background exactly) ===" },
+            { type: "image_url", image_url: { url: generatedImage } },
+            { type: "text", text: "=== ORIGINAL TARGET PERSON (restore exact identity from this image) ===" },
+            { type: "image_url", image_url: { url: bodyImage } },
+          ];
+
+          for (const refinementAttempt of attempts) {
+            console.log(`Identity refinement with model: ${refinementAttempt.model}`);
+
+            const refinementResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: refinementAttempt.model,
+                messages: [
+                  {
+                    role: "user",
+                    content: refinementContent,
+                  },
+                ],
+                modalities: ["image", "text"],
+              }),
+            });
+
+            if (!refinementResponse.ok) {
+              console.error(`Identity refinement failed with status ${refinementResponse.status}`);
+              continue;
+            }
+
+            const refinementText = await refinementResponse.text();
+            if (!refinementText || refinementText.trim() === '') {
+              console.error('Identity refinement returned empty response');
+              continue;
+            }
+
+            try {
+              const refinementData = JSON.parse(refinementText);
+              const refinedImage = refinementData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+              if (refinedImage) {
+                finalImage = refinedImage;
+                console.log('Identity-lock refinement completed successfully');
+                break;
+              }
+
+              console.error('Identity refinement returned no image');
+            } catch (refinementParseError) {
+              console.error('Failed to parse identity refinement response:', refinementParseError);
+            }
+          }
+        }
+
         console.log('Virtual try-on completed successfully');
         return new Response(
           JSON.stringify({
             success: true,
-            generatedImage,
+            generatedImage: finalImage,
             message: 'Try-on image generated successfully!',
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
