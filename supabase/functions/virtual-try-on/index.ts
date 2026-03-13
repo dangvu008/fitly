@@ -91,39 +91,33 @@ serve(async (req) => {
     if (isOutfitMode) {
       console.log('OUTFIT MODE: Transferring entire outfit from reference image');
 
-      const outfitPrompt = `FULL OUTFIT TRANSFER — PIXEL-PERFECT ACCURACY
+      const outfitPrompt = `FULL OUTFIT TRANSFER — IDENTITY LOCK MODE
 
 YOU ARE GIVEN:
-1. A TARGET PERSON photo (keep this person's identity)
-2. A REFERENCE OUTFIT photo (a different person wearing an outfit)
+1. A TARGET PERSON photo (identity source)
+2. A REFERENCE OUTFIT photo (clothing source)
 
-YOUR TASK: Make the TARGET PERSON wear the EXACT SAME OUTFIT as in the REFERENCE OUTFIT photo.
+YOUR TASK: Put the TARGET PERSON in the EXACT SAME OUTFIT as the reference while preserving the TARGET identity 100%.
 
-ABSOLUTE RULES:
-1. PERSON IDENTITY (from target photo):
-   - Keep the EXACT same face, hair, skin tone, body shape, pose
-   - Keep the EXACT same background
-   - Do NOT blend features from the outfit reference person
+SOURCE-OF-TRUTH PRIORITY (MANDATORY):
+- Identity regions MUST come only from TARGET PERSON photo:
+  face, hair, ears, neck, skin tone, arms, hands, body proportions, pose.
+- Outfit regions MUST come only from REFERENCE OUTFIT photo:
+  top, bottom, shoes, outerwear, accessories, colors, patterns, logos, textures.
 
-2. OUTFIT EXTRACTION (from reference photo):
-   - Identify EVERY piece of clothing visible: top, bottom, shoes, accessories, outerwear, hat, bag, etc.
-   - Extract the EXACT color, pattern, design, logo, texture of each piece
-   - Transfer ALL pieces to the target person
+ABSOLUTE FORBIDDEN ACTIONS:
+- Never copy or blend face/head/skin/arms/hands from reference person.
+- Never transfer reference person's body shape, skin tone, or limb geometry.
+- Never alter target background.
 
-3. COLOR & DESIGN — EXACT MATCH:
-   - Each piece must have the EXACT SAME COLOR as in the reference
-   - Reproduce every stripe, logo, print, pattern at correct scale
-   - Do NOT change, tint, or shift any color
+OUTFIT TRANSFER RULES:
+1. Extract ALL visible garments and accessories from reference.
+2. Apply garments to correct anatomy on target person (shoes on feet, accessories on proper body parts).
+3. Preserve exact color, print, logo, material finish and scale.
+4. Keep physically correct layering, draping, wrinkles, shadows, and occlusion.
+5. If reference outfit exposes skin, keep TARGET person's original skin identity in exposed areas.
 
-4. FIT & PLACEMENT:
-   - Tops → replace target's upper body clothing
-   - Bottoms → replace target's lower body clothing  
-   - Shoes → MUST be ON THE FEET
-   - Accessories → placed on correct body part
-   - Natural fabric draping with proper wrinkles and shadows
-   - Proper occlusion and layering
-
-OUTPUT: A single photorealistic image of the TARGET PERSON wearing the COMPLETE outfit from the REFERENCE photo. Should look like a real photograph.`;
+OUTPUT: One photorealistic image of TARGET PERSON wearing the full reference outfit with strict identity preservation.`;
 
       contentArray = [
         { type: "text", text: outfitPrompt },
@@ -304,11 +298,91 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
       lastTextResponse = message?.content;
 
       if (generatedImage) {
+        let finalImage = generatedImage;
+
+        // Extra identity-lock refinement pass for full outfit mode
+        if (isOutfitMode) {
+          console.log('Starting identity-lock refinement pass...');
+
+          const identityRefinementPrompt = `IDENTITY LOCK REFINEMENT (STRICT)
+
+INPUT A: Draft try-on result image (contains outfit placement)
+INPUT B: Original target person image (identity source)
+
+TASK:
+- Keep outfit, clothing colors/patterns/logos, and background from INPUT A.
+- Restore identity regions from INPUT B with exact fidelity:
+  face, hairline, ears, neck skin, arms, hands, visible skin tone, and body proportions.
+
+STRICT RULES:
+- Do NOT copy any face/skin/arms/hands from outfit reference person.
+- Do NOT alter garment design, color, or placement from INPUT A.
+- Do NOT alter background.
+
+OUTPUT: One photorealistic corrected image with locked target identity.`;
+
+          const refinementContent = [
+            { type: "text", text: identityRefinementPrompt },
+            { type: "text", text: "=== DRAFT TRY-ON RESULT (keep outfit + background exactly) ===" },
+            { type: "image_url", image_url: { url: generatedImage } },
+            { type: "text", text: "=== ORIGINAL TARGET PERSON (restore exact identity from this image) ===" },
+            { type: "image_url", image_url: { url: bodyImage } },
+          ];
+
+          for (const refinementAttempt of attempts) {
+            console.log(`Identity refinement with model: ${refinementAttempt.model}`);
+
+            const refinementResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: refinementAttempt.model,
+                messages: [
+                  {
+                    role: "user",
+                    content: refinementContent,
+                  },
+                ],
+                modalities: ["image", "text"],
+              }),
+            });
+
+            if (!refinementResponse.ok) {
+              console.error(`Identity refinement failed with status ${refinementResponse.status}`);
+              continue;
+            }
+
+            const refinementText = await refinementResponse.text();
+            if (!refinementText || refinementText.trim() === '') {
+              console.error('Identity refinement returned empty response');
+              continue;
+            }
+
+            try {
+              const refinementData = JSON.parse(refinementText);
+              const refinedImage = refinementData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+              if (refinedImage) {
+                finalImage = refinedImage;
+                console.log('Identity-lock refinement completed successfully');
+                break;
+              }
+
+              console.error('Identity refinement returned no image');
+            } catch (refinementParseError) {
+              console.error('Failed to parse identity refinement response:', refinementParseError);
+            }
+          }
+        }
+
         console.log('Virtual try-on completed successfully');
         return new Response(
           JSON.stringify({
             success: true,
-            generatedImage,
+            generatedImage: finalImage,
             message: 'Try-on image generated successfully!',
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
