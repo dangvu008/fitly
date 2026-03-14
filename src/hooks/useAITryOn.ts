@@ -7,6 +7,7 @@ interface TryOnResult {
   generatedImage?: string;
   message?: string;
   error?: string;
+  identityWarning?: string | null;
 }
 
 export interface TryOnProgress {
@@ -147,10 +148,15 @@ export const useAITryOn = () => {
         success: true,
         generatedImage,
         message: data.message,
+        identityWarning: data.identityWarning || null,
       };
 
       setResult(tryOnResult);
-      toast.success('Đã tạo hình ảnh thử đồ thành công!');
+      if (data.identityWarning) {
+        toast.warning(data.identityWarning);
+      } else {
+        toast.success('Đã tạo hình ảnh thử đồ thành công!');
+      }
       return tryOnResult;
 
     } catch (error) {

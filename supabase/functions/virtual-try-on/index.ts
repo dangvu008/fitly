@@ -301,10 +301,13 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
         let finalImage = generatedImage;
 
         // Identity-lock verification for ALL modes (outfit + individual items)
+        type VerifyResult = 'match' | 'unsure' | 'mismatch';
+        const isMultiItemMode = !isOutfitMode && items.length > 1;
+
         const runIdentityVerification = async (
           candidateImage: string,
           phase: 'initial' | 'refined'
-        ): Promise<boolean> => {
+        ): Promise<VerifyResult> => {
           console.log(`Running identity verification check (${phase})...`);
 
           const verifyResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -326,17 +329,17 @@ OUTPUT: A single photorealistic image of the same person wearing ALL specified i
 CRITICAL GOAL: IMAGE B must be the SAME PERSON as IMAGE A.
 If B looks like a different person (for example copied from clothing/model reference), return MISMATCH.
 
-Check strictly:
+Check:
 1) Face identity (eyes, nose, lips, jawline, facial proportions)
 2) Skin tone consistency (face/neck/arms/hands)
 3) Head-neck-shoulder geometry and natural seam alignment
 4) Body proportions, pose, camera angle, framing
 5) Background structure and perspective
 
-If ANY check fails or is uncertain => MISMATCH.
 Answer EXACTLY one word:
-- MATCH
-- MISMATCH`,
+- MATCH    — clearly the same person, all checks pass
+- UNSURE   — might be the same person but hard to confirm (face partially occluded, different angle, lighting change, etc.)
+- MISMATCH — clearly a different person (face/body copied from another image)`,
                     },
                     { type: "text", text: "IMAGE A (original person):" },
                     { type: "image_url", image_url: { url: bodyImage } },
@@ -350,7 +353,7 @@ Answer EXACTLY one word:
 
           if (!verifyResponse.ok) {
             console.error(`Identity check failed (${phase}) with status`, verifyResponse.status);
-            return false;
+            return 'mismatch';
           }
 
           try {
@@ -358,17 +361,25 @@ Answer EXACTLY one word:
             const rawVerdict = verifyData.choices?.[0]?.message?.content || '';
             const verdict = rawVerdict.trim().toUpperCase().replace(/[^A-Z]/g, '');
             console.log(`Identity verification verdict (${phase}):`, verdict || 'EMPTY');
-            return verdict === 'MATCH';
+            if (verdict === 'MATCH') return 'match';
+            if (verdict === 'UNSURE') return 'unsure';
+            return 'mismatch';
           } catch {
             console.error(`Failed to parse identity check response (${phase})`);
-            return false;
+            return 'mismatch';
           }
         };
 
-        const initialMatch = await runIdentityVerification(finalImage, 'initial');
+        const initialVerdict = await runIdentityVerification(finalImage, 'initial');
+        let identityWarning: string | null = null;
 
-        if (!initialMatch) {
-          console.log('Identity mismatch detected — starting refinement pass...');
+        // Multi-item + UNSURE at initial → pass with warning, skip refinement
+        if (initialVerdict === 'unsure' && isMultiItemMode) {
+          console.log('Identity UNSURE in multi-item mode — passing with warning');
+          identityWarning = 'Kết quả có thể chưa giữ chính xác khuôn mặt gốc do ảnh phức tạp. Vui lòng kiểm tra lại.';
+        } else if (initialVerdict !== 'match') {
+          // MISMATCH (all modes) or UNSURE (outfit mode) → attempt refinement
+          console.log(`Identity ${initialVerdict} detected — starting refinement pass...`);
 
           const identityRefinementPrompt = `IDENTITY LOCK REFINEMENT (STRICT)
 
@@ -449,37 +460,66 @@ OUTPUT: One corrected photorealistic image where person identity is from INPUT B
           }
 
           if (!refinementSucceeded) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: 'Không thể giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh rõ mặt hơn.',
-              }),
-              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
+            // Multi-item: fallback to original generated image + warning
+            if (isMultiItemMode) {
+              console.log('Refinement failed in multi-item mode — falling back to initial image with warning');
+              finalImage = generatedImage;
+              identityWarning = 'Không thể xác minh chính xác khuôn mặt. Kết quả có thể chưa hoàn hảo.';
+            } else {
+              // Outfit mode: hard fail
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'Không thể giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh rõ mặt hơn.',
+                }),
+                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          } else {
+            // Refinement succeeded — verify the refined image
+            const refinedVerdict = await runIdentityVerification(finalImage, 'refined');
 
-          const refinedMatch = await runIdentityVerification(finalImage, 'refined');
-          if (!refinedMatch) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: 'Kết quả chưa giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh đứng thẳng, rõ mặt và đủ sáng.',
-              }),
-              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
+            if (refinedVerdict === 'mismatch') {
+              // Severe mismatch after refinement → hard fail for ALL modes
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'Kết quả chưa giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh đứng thẳng, rõ mặt và đủ sáng.',
+                }),
+                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+
+            if (refinedVerdict === 'unsure') {
+              if (isMultiItemMode) {
+                // Multi-item: pass with warning
+                console.log('Refined identity UNSURE in multi-item mode — passing with warning');
+                identityWarning = 'Kết quả có thể chưa giữ chính xác khuôn mặt gốc. Vui lòng kiểm tra lại.';
+              } else {
+                // Outfit mode: hard fail
+                return new Response(
+                  JSON.stringify({
+                    success: false,
+                    error: 'Kết quả chưa giữ đúng khuôn mặt gốc. Vui lòng thử lại với ảnh đứng thẳng, rõ mặt và đủ sáng.',
+                  }),
+                  { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+              }
+            }
           }
 
           console.log('Identity-lock refinement completed successfully');
-        } else {
+        } else if (initialVerdict === 'match') {
           console.log('Identity verified OK — skipping refinement pass');
         }
 
-        console.log('Virtual try-on completed successfully');
+        console.log('Virtual try-on completed successfully', identityWarning ? '(with identity warning)' : '');
         return new Response(
           JSON.stringify({
             success: true,
             generatedImage: finalImage,
-            message: 'Try-on image generated successfully!',
+            message: identityWarning || 'Try-on image generated successfully!',
+            identityWarning: identityWarning,
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
